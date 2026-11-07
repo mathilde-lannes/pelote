@@ -15,7 +15,8 @@ const envSchema = z.object({
   EXPO_PUBLIC_ENABLE_DEMO_MODE: z.boolean(),
   EXPO_PUBLIC_ASSOCIATED_DOMAIN: z.string().url().optional(),
 
-  // Build-time / server-only (never EXPO_PUBLIC) — set via EAS Secrets
+  // Build-time only — injected into app.config `extra` (local .env or EAS Secrets).
+  // Requires a native rebuild (`pnpm ios` / EAS) to appear in Constants.expoConfig.
   RAVELRY_CLIENT_SECRET: z.string().optional(),
 });
 

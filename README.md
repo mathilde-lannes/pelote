@@ -25,14 +25,14 @@ With `EXPO_PUBLIC_ENABLE_DEMO_MODE=true` (default when no client id is set in de
 ### Real OAuth
 
 1. Create an app in the [Ravelry developer portal](https://www.ravelry.com/pro/developer).
-2. Set redirect URI to your AuthSession callback, e.g. `pelote://oauth` (scheme `pelote`, path `oauth`). For Expo Go, also add the Expo auth proxy redirect AuthSession prints at runtime.
+2. Set redirect URI to your AuthSession callback, e.g. `pelote://oauth` (scheme `pelote`, path `oauth`).
 3. Request scope **`offline`** (refresh token).
-4. Put credentials in `.env` (local) or EAS Secrets (builds):
+4. Put credentials in `.env` (local) — **not** as `EXPO_PUBLIC_*` for the secret:
 
 | Variable | Where | Notes |
 | --- | --- | --- |
 | `EXPO_PUBLIC_RAVELRY_CLIENT_ID` | `.env` / EAS env | Public client id |
-| `RAVELRY_CLIENT_SECRET` | `.env` / EAS secret | Never commit; injected via `app.config` `extra` |
+| `RAVELRY_CLIENT_SECRET` | `.env` / EAS Secret | Never commit; copied into `app.config` `extra` at **native/EAS build** time |
 | `EXPO_TOKEN` | GitHub Actions secret | EAS CI builds |
 | `EAS_PROJECT_ID` / `EXPO_ACCOUNT_OWNER` | EAS / CI env | Replace placeholders before first store build |
 
@@ -40,14 +40,41 @@ With `EXPO_PUBLIC_ENABLE_DEMO_MODE=true` (default when no client id is set in de
 EXPO_PUBLIC_ENABLE_DEMO_MODE=false
 EXPO_PUBLIC_RAVELRY_CLIENT_ID=your_client_id
 RAVELRY_CLIENT_SECRET=your_client_secret
-pnpm start
+# Secret is baked into the binary — Metro restart is not enough:
+pnpm ios
 ```
+
+This project uses a **dev client** (not Expo Go) because of native modules such as MMKV.
+
+## Ship to production
+
+Checklist before the first store / TestFlight build:
+
+1. **Expo / EAS project**
+   - Create the project on [expo.dev](https://expo.dev) and set real values for `EAS_PROJECT_ID` and `EXPO_ACCOUNT_OWNER` (see `app.config.ts` placeholders).
+2. **Ravelry OAuth**
+   - Production redirect URI must match the store app scheme, e.g. `pelote://oauth`.
+   - Set scope `offline`.
+3. **EAS Secrets / environment variables** (project → Secrets / Environment)
+   - `RAVELRY_CLIENT_SECRET` — required; read by `app.config.ts` into `extra.ravelryClientSecret` during the EAS build.
+   - `EXPO_PUBLIC_RAVELRY_CLIENT_ID` — public client id.
+   - `EXPO_PUBLIC_ENABLE_DEMO_MODE=false` for production (also set in `eas.json` production profile).
+4. **CI**
+   - GitHub Actions secret `EXPO_TOKEN` for EAS builds on merge to `main`.
+5. **Build**
+   - Local: `pnpm build:production:ios` / `pnpm build:production:android`
+   - Or push/merge to `main` to trigger `eas-build-prod.yml`
+6. **Submit**
+   - Use EAS Submit / App Store Connect / Play Console as usual after the build finishes.
+
+Note: with on-device token exchange, the client secret is present inside the app binary (via `extra`). For a stricter confidential-client setup later, move the code→token exchange to a backend and keep `RAVELRY_CLIENT_SECRET` only on the server.
 
 ## Scripts
 
 | Command | Purpose |
 | --- | --- |
 | `pnpm start` | Expo dev server |
+| `pnpm ios` | Native rebuild (picks up `RAVELRY_CLIENT_SECRET` into `extra`) |
 | `pnpm lint` / `pnpm type-check` / `pnpm test` | Quality gates |
 | `pnpm build:preview:android` | EAS preview APK |
 | `pnpm build:production:ios` | EAS production iOS |
@@ -55,7 +82,7 @@ pnpm start
 ## CI/CD
 
 - **PR → main:** lint (`lint-ts.yml`), type-check, unit tests (`test.yml`)
-- **Merge to main:** EAS production build (`eas-build-prod.yml`) — needs `EXPO_TOKEN`
+- **Merge to main:** EAS production build (`eas-build-prod.yml`) — needs `EXPO_TOKEN` and EAS Secrets above
 - **Release / manual:** EAS preview/staging (`eas-build-preview.yml`)
 
 ## Product slices in this repo

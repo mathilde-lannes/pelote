@@ -3,6 +3,7 @@ import type { ConfigContext, ExpoConfig } from '@expo/config';
 import type { AppIconBadgeConfig } from 'app-icon-badge/types';
 
 import 'tsx/cjs';
+import 'dotenv/config';
 
 // adding lint exception as we need to import tsx/cjs before env.ts is imported
 // eslint-disable-next-line perfectionist/sort-imports
@@ -124,7 +125,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     eas: {
       projectId: EAS_PROJECT_ID,
     },
-    // Injected at build/prebuild from EAS Secrets / local .env — never commit the value.
+    // From local .env or EAS Secrets — baked into the binary at native/EAS build time.
     ravelryClientSecret: process.env.RAVELRY_CLIENT_SECRET ?? '',
     ravelryOAuth: {
       hasClientId: Boolean(Env.EXPO_PUBLIC_RAVELRY_CLIENT_ID),
