@@ -2,7 +2,7 @@ import * as React from 'react';
 import { ActivityIndicator } from 'react-native';
 
 import { PeloteWordmark } from '@/components/brand/pelote-wordmark';
-import { Button, Text, View } from '@/components/ui';
+import { Button, SafeAreaView, Text, View } from '@/components/ui';
 import Env from 'env';
 
 export type LoginFormProps = {
@@ -25,7 +25,7 @@ export function LoginForm({
       || Env.EXPO_PUBLIC_APP_ENV === 'development';
 
   return (
-    <View className="flex-1 justify-center bg-oat-100 px-6">
+    <SafeAreaView className="flex-1 justify-center bg-oat-100 px-6" edges={['top', 'bottom']}>
       <View className="mb-10 items-center">
         <PeloteWordmark
           size="lg"
@@ -101,6 +101,6 @@ export function LoginForm({
         offline
         .
       </Text>
-    </View>
+    </SafeAreaView>
   );
 }

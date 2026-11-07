@@ -15,7 +15,7 @@ export function OnboardingScreen() {
   const [_, setIsFirstTime] = useIsFirstTime();
   const router = useRouter();
   return (
-    <View className="flex h-full bg-oat-100 px-6">
+    <SafeAreaView className="flex h-full bg-oat-100 px-6" edges={['top', 'bottom']}>
       <FocusAwareStatusBar />
       <View className="flex-1 items-center justify-center">
         <PeloteWordmark size="lg" subtitle="Connects to Ravelry" />
@@ -38,7 +38,7 @@ export function OnboardingScreen() {
           </Text>
         </View>
       </View>
-      <SafeAreaView className="mb-4">
+      <View className="mb-4">
         <Button
           label="Continue"
           onPress={() => {
@@ -46,7 +46,7 @@ export function OnboardingScreen() {
             router.replace('/login');
           }}
         />
-      </SafeAreaView>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }

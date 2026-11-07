@@ -4,6 +4,7 @@ import * as React from 'react';
 import {
   colors,
   FocusAwareStatusBar,
+  SafeAreaView,
   ScrollView,
   Text,
   View,
@@ -18,11 +19,11 @@ export function SettingsScreen() {
   const isDemo = useAuth.use.isDemo();
 
   return (
-    <>
+    <SafeAreaView className="flex-1 bg-oat-100" edges={['top']}>
       <FocusAwareStatusBar />
 
       <ScrollView className="bg-oat-100">
-        <View className="flex-1 px-4 pt-16">
+        <View className="flex-1 px-4 pt-4">
           <Text className="font-display text-2xl font-semibold text-charcoal-900">
             Settings
           </Text>
@@ -74,7 +75,7 @@ export function SettingsScreen() {
           </Text>
         </View>
       </ScrollView>
-    </>
+    </SafeAreaView>
   );
 }
 

@@ -8,6 +8,7 @@ import {
   Button,
   FocusAwareStatusBar,
   Input,
+  SafeAreaView,
   Text,
   View,
 } from '@/components/ui';
@@ -138,7 +139,7 @@ export function FriendsScreen() {
   };
 
   return (
-    <View className="flex-1 bg-oat-100 px-4 pt-2">
+    <SafeAreaView className="flex-1 bg-oat-100 px-4 pt-2" edges={['top']}>
       <FocusAwareStatusBar />
       <Text className="mb-1 font-display text-2xl font-semibold text-charcoal-900">
         Friends & designers
@@ -203,6 +204,6 @@ export function FriendsScreen() {
             : null
         }
       />
-    </View>
+    </SafeAreaView>
   );
 }

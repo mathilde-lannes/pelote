@@ -7,6 +7,7 @@ import { PeloteWordmark } from '@/components/brand/pelote-wordmark';
 import {
   Button,
   FocusAwareStatusBar,
+  SafeAreaView,
   Text,
   View,
 } from '@/components/ui';
@@ -41,19 +42,19 @@ export function FeedScreen() {
 
   if (!user || isPending) {
     return (
-      <View className="flex-1 items-center justify-center bg-oat-100">
+      <SafeAreaView className="flex-1 items-center justify-center bg-oat-100" edges={['top']}>
         <FocusAwareStatusBar />
         <ActivityIndicator color="#9A3F24" size="large" />
         <Text className="mt-3 text-sm text-charcoal-600">
           Loading friends’ activity…
         </Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (isError) {
     return (
-      <View className="flex-1 items-center justify-center bg-oat-100 px-6">
+      <SafeAreaView className="flex-1 items-center justify-center bg-oat-100 px-6" edges={['top']}>
         <FocusAwareStatusBar />
         <Text className="mb-2 text-center text-lg font-semibold text-charcoal-900">
           Couldn’t load your feed
@@ -62,13 +63,13 @@ export function FeedScreen() {
           Check your connection and try again.
         </Text>
         <Button label="Retry" onPress={() => refetch()} />
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (!photoFirst.length) {
     return (
-      <View className="flex-1 bg-oat-100 px-6 pt-16">
+      <SafeAreaView className="flex-1 bg-oat-100 px-6 pt-4" edges={['top']}>
         <FocusAwareStatusBar />
         <PeloteWordmark size="md" />
         <Text className="mt-8 text-center text-2xl font-display font-semibold text-charcoal-900">
@@ -84,12 +85,12 @@ export function FeedScreen() {
             onPress={() => router.push('/friends')}
           />
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View className="flex-1 bg-oat-100">
+    <SafeAreaView className="flex-1 bg-oat-100" edges={['top']}>
       <FocusAwareStatusBar />
       {isDemo
         ? (
@@ -100,23 +101,25 @@ export function FeedScreen() {
             </View>
           )
         : null}
-      <FlashList
-        data={photoFirst}
-        renderItem={renderItem}
-        keyExtractor={item => item.id}
-        refreshControl={(
-          <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={() => refetch()}
-            tintColor="#9A3F24"
-          />
-        )}
-        ListHeaderComponent={(
-          <View className="items-center px-4 pb-2 pt-4">
-            <PeloteWordmark size="sm" />
-          </View>
-        )}
-      />
-    </View>
+      <View className="flex-1">
+        <FlashList
+          data={photoFirst}
+          renderItem={renderItem}
+          keyExtractor={item => item.id}
+          refreshControl={(
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={() => refetch()}
+              tintColor="#9A3F24"
+            />
+          )}
+          ListHeaderComponent={(
+            <View className="items-center px-4 pb-2 pt-4">
+              <PeloteWordmark size="sm" />
+            </View>
+          )}
+        />
+      </View>
+    </SafeAreaView>
   );
 }

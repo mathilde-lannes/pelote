@@ -9,6 +9,7 @@ import { StyleSheet } from 'react-native';
 import FlashMessage from 'react-native-flash-message';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeConfig } from '@/components/ui/use-theme-config';
 import { hydrateAuth, setAuthUser, useAuthStore } from '@/features/auth/use-auth-store';
 
@@ -96,6 +97,7 @@ function Providers({
   onLayout: ViewProps['onLayout'];
 }) {
   const theme = useThemeConfig();
+  const insets = useSafeAreaInsets();
   return (
     <GestureHandlerRootView
       onLayout={onLayout}
@@ -106,7 +108,7 @@ function Providers({
           <APIProvider>
             <BottomSheetModalProvider>
               {children}
-              <FlashMessage position="top" />
+              <FlashMessage position="top" statusBarHeight={insets.top} />
             </BottomSheetModalProvider>
           </APIProvider>
         </ThemeProvider>
