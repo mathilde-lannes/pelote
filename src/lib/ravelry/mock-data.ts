@@ -1,5 +1,6 @@
 import type {
   FriendActivity,
+  FriendEntry,
   FriendsListResponse,
   PeopleSearchResponse,
   RavelryPerson,
@@ -176,8 +177,12 @@ export function getMockProject(
   return { ...found };
 }
 
+function asFriendEntry(person: RavelryPerson): FriendEntry {
+  return { ...person, friendship_id: person.id };
+}
+
 export function getMockFriends(): FriendsListResponse {
-  return { friends: FRIENDS };
+  return { friends: FRIENDS.map(asFriendEntry) };
 }
 
 export function searchMockPeople(query: string): PeopleSearchResponse {
@@ -214,11 +219,11 @@ export function searchMockPeople(query: string): PeopleSearchResponse {
   };
 }
 
-let localFriends = [...FRIENDS];
+let localFriends: FriendEntry[] = FRIENDS.map(asFriendEntry);
 
 export function addMockFriend(person: RavelryPerson) {
   if (!localFriends.some(f => f.username === person.username)) {
-    localFriends = [person, ...localFriends];
+    localFriends = [asFriendEntry(person), ...localFriends];
   }
   return localFriends;
 }

@@ -1,6 +1,7 @@
 import type { AxiosError } from 'axios';
-import { createMutation, createQuery } from 'react-query-kit';
+import type { FriendEntry, RavelryPerson } from '@/lib/ravelry/types';
 
+import { createMutation, createQuery } from 'react-query-kit';
 import { useAuthStore } from '@/features/auth/use-auth-store';
 import {
   addFriend,
@@ -8,9 +9,8 @@ import {
   removeFriend,
   searchPeople,
 } from '@/lib/ravelry/api';
-import type { RavelryPerson } from '@/lib/ravelry/types';
 
-export const useFriends = createQuery<RavelryPerson[], void, AxiosError>({
+export const useFriends = createQuery<FriendEntry[], void, AxiosError>({
   queryKey: ['friends'],
   fetcher: async () => {
     const username = useAuthStore.getState().user?.username;
@@ -48,13 +48,13 @@ export const useAddFriend = createMutation<
 
 export const useRemoveFriend = createMutation<
   void,
-  { friendUsername: string },
+  { friendshipId: number; friendUsername?: string },
   AxiosError
 >({
-  mutationFn: async ({ friendUsername }) => {
+  mutationFn: async ({ friendshipId, friendUsername }) => {
     const username = useAuthStore.getState().user?.username;
     if (!username)
       throw new Error('Not signed in');
-    await removeFriend(username, friendUsername);
+    await removeFriend(username, friendshipId, friendUsername);
   },
 });

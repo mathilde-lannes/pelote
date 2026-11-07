@@ -62,8 +62,13 @@ export type PeopleSearchResponse = {
   people: RavelryPerson[];
 };
 
+/** Friend row from friendships/list — includes API friendship id for destroy. */
+export type FriendEntry = RavelryPerson & {
+  friendship_id: number;
+};
+
 export type FriendsListResponse = {
-  friends: RavelryPerson[];
+  friends: FriendEntry[];
 };
 
 export type CurrentUserResponse = {

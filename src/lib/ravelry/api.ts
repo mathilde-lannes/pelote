@@ -1,6 +1,16 @@
+import type {
+  CurrentUserResponse,
+  FriendActivity,
+  FriendEntry,
+  FriendsListResponse,
+  PeopleSearchResponse,
+  RavelryPerson,
+  RavelryPhoto,
+  RavelryProject,
+} from './types';
 import { useAuthStore } from '@/features/auth/use-auth-store';
-import { client } from '@/lib/api';
 
+import { client } from '@/lib/api';
 import {
   addMockFriend,
   getLocalMockFriends,
@@ -11,15 +21,6 @@ import {
   removeMockFriend,
   searchMockPeople,
 } from './mock-data';
-import type {
-  CurrentUserResponse,
-  FriendActivity,
-  FriendsListResponse,
-  PeopleSearchResponse,
-  RavelryPerson,
-  RavelryPhoto,
-  RavelryProject,
-} from './types';
 
 function isDemo() {
   return useAuthStore.getState().isDemo;
@@ -135,12 +136,14 @@ export async function fetchFriends(
   if (isDemo())
     return { friends: getLocalMockFriends() };
 
+  // Documented: GET people/{username}/friends/list.json → { friendships: [...] }
   const { data } = await client.get(
-    `people/${encodeURIComponent(username)}/friends.json`,
+    `people/${encodeURIComponent(username)}/friends/list.json`,
   );
-  const friends = (data.friendships ?? data.friends ?? []).map((item: any) =>
-    normalizePerson(item.friend ?? item.user ?? item),
-  );
+  const friends: FriendEntry[] = (data.friendships ?? []).map((item: any) => ({
+    ...normalizePerson(item.friend ?? item.user ?? item),
+    friendship_id: item.id,
+  }));
   return { friends };
 }
 
@@ -150,11 +153,58 @@ export async function searchPeople(
   if (isDemo())
     return searchMockPeople(query);
 
-  const { data } = await client.get('people/search.json', {
-    params: { query },
-  });
-  const people = (data.people ?? data.users ?? []).map(normalizePerson);
-  return { people };
+  const q = query.trim();
+  if (!q)
+    return { people: [] };
+
+  // Ravelry has no people/search endpoint — only people/{username}.json
+  // plus designers/search for name matches that link to user accounts.
+  const byId = new Map<number, RavelryPerson>();
+
+  const looksLikeUsername = !/\s/.test(q);
+  if (looksLikeUsername) {
+    try {
+      const { data } = await client.get(
+        `people/${encodeURIComponent(q)}.json`,
+      );
+      const user = data.user ?? data;
+      if (user?.id != null && user?.username)
+        byId.set(user.id, normalizePerson(user));
+    }
+    catch (error) {
+      const status = (error as { response?: { status?: number } })?.response?.status;
+      if (status !== 404)
+        throw error;
+    }
+  }
+
+  try {
+    const { data } = await client.get('designers/search.json', {
+      params: { query: q, page_size: 20 },
+    });
+    for (const designer of data.designers ?? []) {
+      for (const user of designer.users ?? []) {
+        if (user?.id == null || !user?.username)
+          continue;
+        if (byId.has(user.id))
+          continue;
+        byId.set(
+          user.id,
+          normalizePerson({
+            ...user,
+            about_me:
+              user.about_me
+              ?? (designer.name ? `Designer · ${designer.name}` : null),
+          }),
+        );
+      }
+    }
+  }
+  catch {
+    // Designer search is best-effort; username hits above still count.
+  }
+
+  return { people: [...byId.values()] };
 }
 
 export async function addFriend(
@@ -170,22 +220,37 @@ export async function addFriend(
     return;
   }
 
+  let friendUserId = person?.id;
+  if (friendUserId == null) {
+    const { data } = await client.get(
+      `people/${encodeURIComponent(friendUsername)}.json`,
+    );
+    friendUserId = data.user?.id;
+  }
+  if (friendUserId == null)
+    throw new Error(`Could not resolve Ravelry user id for ${friendUsername}`);
+
+  // Documented: POST people/{username}/friends/create.json?friend_user_id=
   await client.post(
-    `people/${encodeURIComponent(username)}/friends/${encodeURIComponent(friendUsername)}.json`,
+    `people/${encodeURIComponent(username)}/friends/create.json`,
+    null,
+    { params: { friend_user_id: friendUserId } },
   );
 }
 
 export async function removeFriend(
   username: string,
-  friendUsername: string,
+  friendshipId: number,
+  friendUsername?: string,
 ): Promise<void> {
   if (isDemo()) {
-    removeMockFriend(friendUsername);
+    removeMockFriend(friendUsername ?? String(friendshipId));
     return;
   }
 
-  await client.delete(
-    `people/${encodeURIComponent(username)}/friends/${encodeURIComponent(friendUsername)}.json`,
+  // Documented: POST people/{username}/friends/{friendship_id}/destroy.json
+  await client.post(
+    `people/${encodeURIComponent(username)}/friends/${friendshipId}/destroy.json`,
   );
 }
 

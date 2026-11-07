@@ -32,15 +32,16 @@ export function FriendsScreen() {
         Friends & designers
       </Text>
       <Text className="mb-4 text-sm text-fog-400">
-        Find people on Ravelry to fill your Pelote feed.
+        Look up a Ravelry username (or designer name) to fill your feed.
       </Text>
 
       <Input
-        placeholder="Search username or name"
+        placeholder="Search Ravelry username"
         value={query}
         onChangeText={setQuery}
         autoCapitalize="none"
         autoCorrect={false}
+        autoComplete="off"
       />
 
       {friendsQuery.isPending || (showingSearch && searchQuery.isPending)
@@ -90,9 +91,9 @@ export function FriendsScreen() {
           showingSearch && !searchQuery.isPending
             ? (
                 <Text className="mt-6 text-center text-sm text-fog-400">
-                  No people matched “
-                  {debounced}
-                  ”.
+                  {searchQuery.isError
+                    ? 'Search failed. Check your connection and try again.'
+                    : `No Ravelry user found for “${debounced}”. Try the exact username.`}
                 </Text>
               )
             : null
