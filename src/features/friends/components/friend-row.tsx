@@ -12,6 +12,9 @@ type Props = {
 };
 
 export function FriendRow({ item, isFriend, onAdd, onRemove }: Props) {
+  const username = item.username?.trim() || `user-${item.id}`;
+  const initial = username.slice(0, 1).toUpperCase() || '?';
+
   return (
     <View className="mb-3 flex-row items-center gap-3 border-b border-ink-300 px-1 py-3">
       {item.small_photo_url
@@ -24,13 +27,13 @@ export function FriendRow({ item, isFriend, onAdd, onRemove }: Props) {
         : (
             <View className="size-12 items-center justify-center rounded-full bg-ink-300">
               <Text className="font-semibold text-white">
-                {item.username.slice(0, 1).toUpperCase()}
+                {initial}
               </Text>
             </View>
           )}
       <View className="flex-1">
         <Text className="text-base font-semibold text-white">
-          {item.username}
+          {username}
         </Text>
         {item.first_name || item.about_me
           ? (
@@ -46,14 +49,14 @@ export function FriendRow({ item, isFriend, onAdd, onRemove }: Props) {
               size="sm"
               variant="outline"
               label="Remove"
-              onPress={() => onRemove(item.username)}
+              onPress={() => onRemove(username)}
             />
           )
         : (
             <Button
               size="sm"
               label="Add"
-              onPress={() => onAdd(item)}
+              onPress={() => onAdd({ ...item, username })}
             />
           )}
     </View>

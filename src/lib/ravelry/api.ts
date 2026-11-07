@@ -48,12 +48,62 @@ function normalizePhoto(raw: any): RavelryPhoto | null {
 
 function normalizePerson(raw: any): RavelryPerson {
   return {
-    id: raw.id,
-    username: raw.username,
-    first_name: raw.first_name ?? null,
-    small_photo_url: raw.small_photo_url ?? raw.tiny_photo_url ?? null,
-    photo_url: raw.photo_url ?? null,
-    about_me: raw.about_me ?? null,
+    id: raw?.id ?? 0,
+    username: String(raw?.username ?? ''),
+    first_name: raw?.first_name ?? null,
+    small_photo_url: raw?.small_photo_url ?? raw?.tiny_photo_url ?? null,
+    photo_url: raw?.photo_url ?? null,
+    about_me: raw?.about_me ?? null,
+  };
+}
+
+/** Pull a usable person out of a friendships/list row (shapes vary). */
+function personFromFriendship(item: any): FriendEntry | null {
+  const friendshipId = item?.id;
+  if (friendshipId == null)
+    return null;
+
+  // friend may be an embedded user, a username string, or absent.
+  if (typeof item?.friend === 'string') {
+    const id = item.friend_id ?? item.friend_user_id;
+    if (id == null)
+      return null;
+    return {
+      ...normalizePerson({
+        id,
+        username: item.friend,
+        small_photo_url: item.small_photo_url ?? item.tiny_photo_url,
+        photo_url: item.photo_url,
+        first_name: item.first_name,
+      }),
+      friendship_id: friendshipId,
+    };
+  }
+
+  const raw = item?.friend ?? item?.user ?? item;
+  const username
+    = (typeof raw?.username === 'string' && raw.username)
+      || (typeof item?.friend_username === 'string' && item.friend_username)
+      || (typeof item?.username === 'string' && item.username)
+      || null;
+  const id = raw?.id ?? item?.friend_id ?? item?.friend_user_id ?? null;
+  if (!username || id == null)
+    return null;
+
+  return {
+    ...normalizePerson({
+      ...(typeof raw === 'object' && raw ? raw : {}),
+      id,
+      username,
+      small_photo_url:
+        raw?.small_photo_url
+        ?? raw?.tiny_photo_url
+        ?? item?.small_photo_url
+        ?? null,
+      photo_url: raw?.photo_url ?? item?.photo_url ?? null,
+      first_name: raw?.first_name ?? item?.first_name ?? null,
+    }),
+    friendship_id: friendshipId,
   };
 }
 
@@ -158,10 +208,9 @@ export async function fetchFriends(
   const { data } = await client.get(
     `people/${encodeURIComponent(username)}/friends/list.json`,
   );
-  const friends: FriendEntry[] = (data.friendships ?? []).map((item: any) => ({
-    ...normalizePerson(item.friend ?? item.user ?? item),
-    friendship_id: item.id,
-  }));
+  const friends = (data.friendships ?? data.friends ?? [])
+    .map(personFromFriendship)
+    .filter((entry: FriendEntry | null): entry is FriendEntry => entry != null);
   return { friends };
 }
 
