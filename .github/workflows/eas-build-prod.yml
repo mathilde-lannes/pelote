@@ -1,0 +1,37 @@
+# Triggers a production EAS build on merge/push to main (and manual dispatch).
+# Requires GitHub secret EXPO_TOKEN and EAS secrets for Ravelry OAuth.
+
+name: EAS Production Build (Android & iOS)
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  Build:
+    name: EAS Production Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for EXPO_TOKEN
+        run: |
+          if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then
+            echo "You must provide an EXPO_TOKEN secret. Learn more: https://docs.expo.dev/eas-update/github-actions"
+            exit 1
+          fi
+
+      - name: 📦 Checkout project repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 📦 Setup Node + PNPM + install deps
+        uses: ./.github/actions/setup-node-pnpm-install
+
+      - name: ⏱️ EAS Build
+        uses: ./.github/actions/eas-build
+        with:
+          APP_ENV: production
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          ANDROID: 'true'
+          IOS: 'true'
