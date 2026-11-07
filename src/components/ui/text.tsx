@@ -1,4 +1,3 @@
-/* eslint-disable better-tailwindcss/no-unknown-classes */
 import type { TextProps, TextStyle } from 'react-native';
 import type { TxKeyPath } from '@/lib/i18n';
 import * as React from 'react';
@@ -22,7 +21,7 @@ export function Text({
   const textStyle = React.useMemo(
     () =>
       twMerge(
-        'font-sans text-base font-normal text-charcoal-900',
+        'font-sans text-base font-normal text-white',
         className,
       ),
     [className],

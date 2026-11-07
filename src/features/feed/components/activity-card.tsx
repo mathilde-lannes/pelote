@@ -1,10 +1,10 @@
-import { Link } from 'expo-router';
-import * as React from 'react';
-import { Image } from 'expo-image';
-
 import type { FriendActivity } from '@/lib/ravelry/types';
-import { bestPhotoUrl } from '@/lib/ravelry/api';
+import { Image } from 'expo-image';
+import { Link } from 'expo-router';
+
+import * as React from 'react';
 import { Pressable, Text, View } from '@/components/ui';
+import { bestPhotoUrl } from '@/lib/ravelry/api';
 
 function formatRelative(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -43,32 +43,32 @@ export function ActivityCard({ item }: { item: FriendActivity }) {
       : null;
 
   return (
-    <View className="mb-6 bg-oat-50">
-      <View className="flex-row items-center gap-3 px-4 py-3">
+    <View className="mb-4 bg-black">
+      <View className="flex-row items-center gap-3 p-3">
         {avatar
           ? (
               <Image
                 source={{ uri: avatar }}
-                style={{ width: 36, height: 36, borderRadius: 18 }}
+                style={{ width: 32, height: 32, borderRadius: 16 }}
                 contentFit="cover"
               />
             )
           : (
-              <View className="size-9 items-center justify-center rounded-full bg-rust-200">
-                <Text className="text-sm font-semibold text-rust-800">
+              <View className="size-8 items-center justify-center rounded-full bg-ink-300">
+                <Text className="text-sm font-semibold text-white">
                   {item.person.username.slice(0, 1).toUpperCase()}
                 </Text>
               </View>
             )}
         <View className="flex-1">
-          <Text className="text-sm font-semibold text-charcoal-900">
+          <Text className="text-sm font-semibold text-white">
             {item.person.username}
-            <Text className="font-normal text-charcoal-600">
+            <Text className="font-normal text-fog-400">
               {' '}
               {activityLabel(item)}
             </Text>
           </Text>
-          <Text className="text-xs text-charcoal-500">
+          <Text className="text-xs text-fog-500">
             {formatRelative(item.created_at)}
           </Text>
         </View>
@@ -97,24 +97,24 @@ export function ActivityCard({ item }: { item: FriendActivity }) {
               />
             )
           : (
-              <View className="mx-4 mb-2 rounded-lg bg-oat-200 px-4 py-8">
-                <Text className="text-center text-charcoal-700">
+              <View className="mx-3 mb-2 bg-ink-200 px-4 py-10">
+                <Text className="text-center text-fog-300">
                   {item.pattern_name ?? item.body ?? item.title ?? 'Activity'}
                 </Text>
               </View>
             )}
 
-      <View className="px-4 py-3">
+      <View className="p-3">
         {item.project
           ? (
               <Link href={projectHref as any} asChild>
                 <Pressable>
-                  <Text className="text-base font-semibold text-charcoal-900">
+                  <Text className="text-base font-semibold text-white">
                     {item.project.name}
                   </Text>
                   {item.project.pattern_name
                     ? (
-                        <Text className="mt-0.5 text-sm text-charcoal-600">
+                        <Text className="mt-0.5 text-sm text-fog-400">
                           {item.project.pattern_name}
                         </Text>
                       )
@@ -124,7 +124,7 @@ export function ActivityCard({ item }: { item: FriendActivity }) {
             )
           : item.pattern_name
             ? (
-                <Text className="text-base text-charcoal-800">
+                <Text className="text-base text-fog-200">
                   {item.pattern_name}
                 </Text>
               )

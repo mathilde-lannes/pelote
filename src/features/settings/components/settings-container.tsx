@@ -11,10 +11,10 @@ export function SettingsContainer({ children, title }: Props) {
     <>
       {title
         ? (
-            <Text className="pb-2 pt-4 text-lg text-charcoal-800">{title}</Text>
+            <Text className="pt-4 pb-2 text-lg text-fog-300">{title}</Text>
           )
         : null}
-      <View className="rounded-md border border-charcoal-200 bg-oat-50">
+      <View className="rounded-md border border-ink-300 bg-ink-100">
         {children}
       </View>
     </>

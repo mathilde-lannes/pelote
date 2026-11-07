@@ -1,22 +1,22 @@
 import type { Theme } from '@react-navigation/native';
-import { DefaultTheme } from '@react-navigation/native';
+import { DarkTheme as NavigationDarkTheme } from '@react-navigation/native';
 
 import colors from '@/components/ui/colors';
 
-const LightTheme: Theme = {
-  ...DefaultTheme,
+const PeloteDarkTheme: Theme = {
+  ...NavigationDarkTheme,
   colors: {
-    ...DefaultTheme.colors,
-    primary: colors.rust[500],
-    background: colors.oat[100],
-    card: colors.oat[50],
-    text: colors.charcoal[900],
-    border: colors.charcoal[200],
-    notification: colors.rust[500],
+    ...NavigationDarkTheme.colors,
+    primary: colors.white,
+    background: colors.black,
+    card: colors.ink[100],
+    text: colors.white,
+    border: colors.ink[300],
+    notification: colors.danger[500],
   },
 };
 
 export function useThemeConfig() {
-  // Pelote ships light-first cosy autumn chrome.
-  return LightTheme;
+  // Pelote ships Instagram-like dark mode only.
+  return PeloteDarkTheme;
 }

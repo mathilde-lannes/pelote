@@ -12,27 +12,26 @@ export type ColorSchemeType = 'light' | 'dark' | 'system';
  * selectedTheme should be one of the following values 'light', 'dark' or 'system'
  * don't use this hooks if you want to use it to style your component based on the theme use useUniwind from uniwind instead
  *
+ * Pelote is dark-mode-only; light/system choices still resolve to dark.
  */
 export function useSelectedTheme() {
   const { theme: _theme } = useUniwind();
   const [theme, _setTheme] = useMMKVString(SELECTED_THEME, storage);
 
   const setSelectedTheme = React.useCallback(
-    (t: ColorSchemeType) => {
-      Uniwind.setTheme(t);
-      _setTheme(t);
+    (_t: ColorSchemeType) => {
+      Uniwind.setTheme('dark');
+      _setTheme('dark');
     },
     [_setTheme],
   );
 
-  const selectedTheme = (theme ?? 'system') as ColorSchemeType;
+  const selectedTheme = 'dark' as ColorSchemeType;
+  void theme;
   return { selectedTheme, setSelectedTheme } as const;
 }
 // to be used in the root file to load the selected theme from MMKV
 export function loadSelectedTheme() {
-  const theme = storage.getString(SELECTED_THEME);
-  if (theme !== undefined) {
-    console.log('theme', theme);
-    Uniwind.setTheme(theme as ColorSchemeType);
-  }
+  Uniwind.setTheme('dark');
+  storage.set(SELECTED_THEME, 'dark');
 }

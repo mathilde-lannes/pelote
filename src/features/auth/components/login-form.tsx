@@ -1,9 +1,9 @@
+import Env from 'env';
 import * as React from 'react';
-import { ActivityIndicator } from 'react-native';
 
+import { ActivityIndicator } from 'react-native';
 import { PeloteWordmark } from '@/components/brand/pelote-wordmark';
 import { Button, SafeAreaView, Text, View } from '@/components/ui';
-import Env from 'env';
 
 export type LoginFormProps = {
   onOAuth?: () => void;
@@ -25,15 +25,15 @@ export function LoginForm({
       || Env.EXPO_PUBLIC_APP_ENV === 'development';
 
   return (
-    <SafeAreaView className="flex-1 justify-center bg-oat-100 px-6" edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 justify-center bg-black px-6" edges={['top', 'bottom']}>
       <View className="mb-10 items-center">
         <PeloteWordmark
           size="lg"
-          subtitle="A cosy Ravelry companion feed"
+          subtitle="Ravelry companion feed"
         />
       </View>
 
-      <Text className="mb-6 text-center text-base leading-6 text-charcoal-700">
+      <Text className="mb-6 text-center text-base/6 text-fog-400">
         Sign in with your Ravelry account to see friends’ project photos in an
         Instagram-style feed. Your personal API key is never used.
       </Text>
@@ -41,7 +41,7 @@ export function LoginForm({
       {error
         ? (
             <View className="mb-4 rounded-lg bg-danger-50 px-3 py-2">
-              <Text className="text-sm text-danger-700">{error}</Text>
+              <Text className="text-sm text-danger-600">{error}</Text>
             </View>
           )
         : null}
@@ -49,8 +49,8 @@ export function LoginForm({
       {loading
         ? (
             <View className="items-center py-4">
-              <ActivityIndicator color="#9A3F24" />
-              <Text className="mt-2 text-sm text-charcoal-600">
+              <ActivityIndicator color="#ffffff" />
+              <Text className="mt-2 text-sm text-fog-400">
                 Connecting to Ravelry…
               </Text>
             </View>
@@ -71,8 +71,8 @@ export function LoginForm({
               {demoEnabled
                 ? (
                     <View className="mt-2">
-                      <View className="mb-2 rounded-lg border border-moss-300 bg-moss-50 px-3 py-2">
-                        <Text className="text-center text-xs font-medium text-moss-700">
+                      <View className="mb-2 rounded-lg border border-ink-300 bg-ink-100 px-3 py-2">
+                        <Text className="text-center text-xs font-medium text-fog-400">
                           DEMO MODE — labeled mock data, not live Ravelry
                         </Text>
                       </View>
@@ -88,7 +88,7 @@ export function LoginForm({
             </View>
           )}
 
-      <Text className="mt-8 text-center text-xs leading-5 text-charcoal-500">
+      <Text className="mt-8 text-center text-xs/5 text-fog-500">
         Production and store builds require multi-user OAuth2 only. Register a
         Ravelry app with redirect
         {' '}

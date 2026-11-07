@@ -1,6 +1,6 @@
 # Pelote
 
-Cosy autumn Ravelry companion — Instagram-style friends activity feed.
+Instagram-style Ravelry companion — dark-mode photo feed of friends’ projects.
 
 Pelote connects to Ravelry with **multi-user OAuth2 only**. Personal Basic API keys are never used for shared, preview, or store builds.
 
@@ -65,7 +65,7 @@ pnpm start
 3. Ravelry client — axios bearer wrapper for friends activity, projects, people
 4. Feed MVP — photo-first friends activity + project detail (loading / empty / error)
 5. Social graph — search/add/remove friends & designers; empty-feed CTA
-6. Brand — rust / moss / oat / warm charcoal, Source Serif wordmark, Source Sans UI
+6. Brand — Instagram dark UI (black / white / muted gray), quiet white Pelote wordmark, Source Sans UI
 7. CI/CD — feature branch → PR checks → main → EAS
 
 ## Hard constraints

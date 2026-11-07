@@ -19,21 +19,21 @@ const DEMO_USER: RavelryPerson = {
 const FRIENDS: RavelryPerson[] = [
   {
     id: 11,
-    username: 'mossandmaple',
+    username: 'stitchstudio',
     first_name: 'Ada',
     small_photo_url:
       'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop',
   },
   {
     id: 12,
-    username: 'rustyarnstudio',
+    username: 'loopandline',
     first_name: 'Jules',
     small_photo_url:
       'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop',
   },
   {
     id: 13,
-    username: 'oatandindigo',
+    username: 'fiberframe',
     first_name: 'Sam',
     small_photo_url:
       'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop',
@@ -48,13 +48,14 @@ const PHOTOS = [
   'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=1200&h=1500&fit=crop',
 ];
 
-function project(
-  id: number,
-  name: string,
-  pattern: string,
-  photo: string,
-  ownerId: number,
-): RavelryProject {
+function project(input: {
+  id: number;
+  name: string;
+  pattern: string;
+  photo: string;
+  ownerId: number;
+}): RavelryProject {
+  const { id, name, pattern, photo, ownerId } = input;
   return {
     id,
     name,
@@ -63,7 +64,7 @@ function project(
     progress: 40 + (id % 5) * 10,
     craft_name: 'Knitting',
     notes_html:
-      '<p>Soft autumn yarn, slow evenings, and a cup of tea nearby.</p>',
+      '<p>Fresh project photos from the needles — patterns, fiber, and progress.</p>',
     user_id: ownerId,
     first_photo: {
       id: id * 10,
@@ -83,11 +84,11 @@ function project(
 }
 
 const PROJECTS: RavelryProject[] = [
-  project(101, 'Forest Cardigan', 'Fellwald', PHOTOS[0], 11),
-  project(102, 'Rust Cowl', 'Helix Loop', PHOTOS[1], 12),
-  project(103, 'Oat Pullover', 'Quiet Wool', PHOTOS[2], 13),
-  project(104, 'Moss Socks', 'Trail Pair', PHOTOS[3], 11),
-  project(105, 'Charcoal Mitts', 'Ember Hands', PHOTOS[4], 12),
+  project({ id: 101, name: 'Studio Cardigan', pattern: 'Fellwald', photo: PHOTOS[0], ownerId: 11 }),
+  project({ id: 102, name: 'Street Cowl', pattern: 'Line Loop', photo: PHOTOS[1], ownerId: 12 }),
+  project({ id: 103, name: 'Everyday Pullover', pattern: 'Quiet Wool', photo: PHOTOS[2], ownerId: 13 }),
+  project({ id: 104, name: 'Weekend Socks', pattern: 'Trail Pair', photo: PHOTOS[3], ownerId: 11 }),
+  project({ id: 105, name: 'Desk Mitts', pattern: 'Quick Hands', photo: PHOTOS[4], ownerId: 12 }),
 ];
 
 export const mockCurrentUser = DEMO_USER;
@@ -183,19 +184,19 @@ export function searchMockPeople(query: string): PeopleSearchResponse {
   const designers: RavelryPerson[] = [
     {
       id: 201,
-      username: 'mariehelix',
-      first_name: 'Marie',
+      username: 'patternframe',
+      first_name: 'Mina',
       small_photo_url:
         'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop',
-      about_me: 'Soft knits and intimate project photography.',
+      about_me: 'Clear project photography and wearable knits.',
     },
     {
       id: 202,
-      username: 'woolandtide',
+      username: 'needlegrid',
       first_name: 'River',
       small_photo_url:
         'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=200&h=200&fit=crop',
-      about_me: 'Coastal colourways and slow sweaters.',
+      about_me: 'Everyday sweaters and yarn notes.',
     },
     ...FRIENDS,
   ];

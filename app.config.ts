@@ -32,14 +32,14 @@ const appIconBadgeConfig: AppIconBadgeConfig = {
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: Env.EXPO_PUBLIC_NAME,
-  description: 'Pelote — a cosy Ravelry companion feed',
+  description: 'Pelote — Instagram-style Ravelry companion feed',
   owner: EXPO_ACCOUNT_OWNER,
   scheme: Env.EXPO_PUBLIC_SCHEME,
   slug: 'pelote',
   version: Env.EXPO_PUBLIC_VERSION.toString(),
   orientation: 'portrait',
   icon: './assets/icon.png',
-  userInterfaceStyle: 'light',
+  userInterfaceStyle: 'dark',
   newArchEnabled: true,
   updates: {
     fallbackToCacheTimeout: 0,
@@ -58,7 +58,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
-      backgroundColor: '#5C2E1F',
+      backgroundColor: '#000000',
     },
     package: Env.EXPO_PUBLIC_PACKAGE,
   },
@@ -70,7 +70,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-splash-screen',
       {
-        backgroundColor: '#F3E6D4',
+        backgroundColor: '#000000',
         image: './assets/splash-icon.png',
         imageWidth: 150,
       },
@@ -84,9 +84,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
             'node_modules/@expo-google-fonts/source-sans-3/500Medium/SourceSans3_500Medium.ttf',
             'node_modules/@expo-google-fonts/source-sans-3/600SemiBold/SourceSans3_600SemiBold.ttf',
             'node_modules/@expo-google-fonts/source-sans-3/700Bold/SourceSans3_700Bold.ttf',
-            'node_modules/@expo-google-fonts/source-serif-4/400Regular/SourceSerif4_400Regular.ttf',
-            'node_modules/@expo-google-fonts/source-serif-4/600SemiBold/SourceSerif4_600SemiBold.ttf',
-            'node_modules/@expo-google-fonts/source-serif-4/700Bold/SourceSerif4_700Bold.ttf',
           ],
         },
         android: {
@@ -108,23 +105,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
                 },
                 {
                   path: 'node_modules/@expo-google-fonts/source-sans-3/700Bold/SourceSans3_700Bold.ttf',
-                  weight: 700,
-                },
-              ],
-            },
-            {
-              fontFamily: 'SourceSerif4',
-              fontDefinitions: [
-                {
-                  path: 'node_modules/@expo-google-fonts/source-serif-4/400Regular/SourceSerif4_400Regular.ttf',
-                  weight: 400,
-                },
-                {
-                  path: 'node_modules/@expo-google-fonts/source-serif-4/600SemiBold/SourceSerif4_600SemiBold.ttf',
-                  weight: 600,
-                },
-                {
-                  path: 'node_modules/@expo-google-fonts/source-serif-4/700Bold/SourceSerif4_700Bold.ttf',
                   weight: 700,
                 },
               ],
@@ -152,4 +132,3 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
 });
-

@@ -27,16 +27,16 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: colors.rust[600],
-        tabBarInactiveTintColor: colors.charcoal[400],
+        tabBarActiveTintColor: colors.white,
+        tabBarInactiveTintColor: colors.fog[400],
         tabBarStyle: {
-          backgroundColor: colors.oat[50],
-          borderTopColor: colors.charcoal[200],
+          backgroundColor: colors.black,
+          borderTopColor: colors.ink[300],
         },
         headerStyle: {
-          backgroundColor: colors.oat[100],
+          backgroundColor: colors.black,
         },
-        headerTintColor: colors.charcoal[900],
+        headerTintColor: colors.white,
       }}
     >
       <Tabs.Screen

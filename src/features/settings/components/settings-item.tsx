@@ -19,10 +19,10 @@ export function SettingsItem({ text, value, icon, onPress }: ItemProps) {
     >
       <View className="flex-row items-center">
         {icon && <View className="pr-2">{icon}</View>}
-        <Text className="text-charcoal-900">{text}</Text>
+        <Text className="text-white">{text}</Text>
       </View>
       <View className="flex-row items-center">
-        <Text className="text-charcoal-600">{value}</Text>
+        <Text className="text-fog-400">{value}</Text>
         {isPressable && (
           <View className="pl-2">
             <ArrowRight />

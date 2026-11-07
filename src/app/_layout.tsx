@@ -14,9 +14,9 @@ import { useThemeConfig } from '@/components/ui/use-theme-config';
 import { hydrateAuth, setAuthUser, useAuthStore } from '@/features/auth/use-auth-store';
 
 import { APIProvider } from '@/lib/api';
+import { loadSelectedTheme } from '@/lib/hooks/use-selected-theme';
 import { fetchCurrentUser } from '@/lib/ravelry/api';
 import { mockCurrentUser } from '@/lib/ravelry/mock-data';
-import { loadSelectedTheme } from '@/lib/hooks/use-selected-theme';
 // Import  global CSS file
 import '../global.css';
 
@@ -120,5 +120,6 @@ function Providers({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#000000',
   },
 });

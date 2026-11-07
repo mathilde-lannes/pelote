@@ -2,134 +2,154 @@
 @import 'tailwindcss';
 @import 'uniwind';
 
-/* Pelote — cosy autumn, Marie Helix–inspired */
+/* Pelote — Instagram-like dark mode only */
 @theme {
   --font-family-sans: 'SourceSans3', ui-sans-serif, system-ui, sans-serif;
-  --font-family-display: 'SourceSerif4', ui-serif, Georgia, serif;
+  --font-family-display: 'SourceSans3', ui-sans-serif, system-ui, sans-serif;
 
   --color-white: #ffffff;
   --color-black: #000000;
 
-  /* Warm charcoal */
-  --color-charcoal-50: #F7F3EE;
-  --color-charcoal-100: #EDE6DC;
-  --color-charcoal-200: #D6CBBC;
-  --color-charcoal-300: #B8A993;
-  --color-charcoal-400: #8F7F6A;
-  --color-charcoal-500: #6E5F4D;
-  --color-charcoal-600: #56493B;
-  --color-charcoal-700: #3F352B;
-  --color-charcoal-800: #2C241D;
-  --color-charcoal-850: #241E18;
-  --color-charcoal-900: #1A1511;
-  --color-charcoal-950: #100D0A;
+  /* Near-black surfaces */
+  --color-ink-50: #0a0a0a;
+  --color-ink-100: #121212;
+  --color-ink-200: #1a1a1a;
+  --color-ink-300: #262626;
+  --color-ink-400: #363636;
+  --color-ink-500: #4a4a4a;
+  --color-ink-600: #5c5c5c;
+  --color-ink-700: #737373;
+  --color-ink-800: #8e8e8e;
+  --color-ink-900: #a8a8a8;
 
-  /* Oat / wool neutrals */
-  --color-oat-50: #FBF7F1;
-  --color-oat-100: #F3E6D4;
-  --color-oat-200: #E8D5BB;
-  --color-oat-300: #D4B896;
-  --color-oat-400: #C09A72;
-  --color-oat-500: #A67C52;
-  --color-oat-600: #8A6542;
-  --color-oat-700: #6B4D33;
-  --color-oat-800: #4E3825;
-  --color-oat-900: #322417;
+  /* Muted / secondary text on dark */
+  --color-fog-50: #fafafa;
+  --color-fog-100: #f5f5f5;
+  --color-fog-200: #efefef;
+  --color-fog-300: #dbdbdb;
+  --color-fog-400: #a8a8a8;
+  --color-fog-500: #8e8e8e;
+  --color-fog-600: #737373;
+  --color-fog-700: #5c5c5c;
+  --color-fog-800: #4a4a4a;
+  --color-fog-900: #262626;
 
-  /* Rust (primary) */
-  --color-rust-50: #F9EDE8;
-  --color-rust-100: #F0D2C4;
-  --color-rust-200: #E0A88E;
-  --color-rust-300: #C97A58;
-  --color-rust-400: #B25538;
-  --color-rust-500: #9A3F24;
-  --color-rust-600: #7E321C;
-  --color-rust-700: #5C2E1F;
-  --color-rust-800: #452217;
-  --color-rust-900: #2E160F;
+  /* Aliases so existing oat/charcoal/rust/moss classNames resolve to dark UI */
+  --color-charcoal-50: #fafafa;
+  --color-charcoal-100: #f5f5f5;
+  --color-charcoal-200: #262626;
+  --color-charcoal-300: #363636;
+  --color-charcoal-400: #a8a8a8;
+  --color-charcoal-500: #8e8e8e;
+  --color-charcoal-600: #a8a8a8;
+  --color-charcoal-700: #dbdbdb;
+  --color-charcoal-800: #f5f5f5;
+  --color-charcoal-850: #1a1a1a;
+  --color-charcoal-900: #ffffff;
+  --color-charcoal-950: #000000;
 
-  /* Moss */
-  --color-moss-50: #F0F4EC;
-  --color-moss-100: #DCE6D0;
-  --color-moss-200: #B8CBA3;
-  --color-moss-300: #8FA972;
-  --color-moss-400: #6B8650;
-  --color-moss-500: #536B3C;
-  --color-moss-600: #425530;
-  --color-moss-700: #334025;
-  --color-moss-800: #252E1B;
-  --color-moss-900: #181E12;
+  --color-oat-50: #121212;
+  --color-oat-100: #000000;
+  --color-oat-200: #1a1a1a;
+  --color-oat-300: #262626;
+  --color-oat-400: #363636;
+  --color-oat-500: #4a4a4a;
+  --color-oat-600: #5c5c5c;
+  --color-oat-700: #737373;
+  --color-oat-800: #8e8e8e;
+  --color-oat-900: #a8a8a8;
 
-  /* Map primary → rust for existing UI primitives */
-  --color-primary-50: #F9EDE8;
-  --color-primary-100: #F0D2C4;
-  --color-primary-200: #E0A88E;
-  --color-primary-300: #C97A58;
-  --color-primary-400: #B25538;
-  --color-primary-500: #9A3F24;
-  --color-primary-600: #7E321C;
-  --color-primary-700: #5C2E1F;
-  --color-primary-800: #452217;
-  --color-primary-900: #2E160F;
+  --color-rust-50: #262626;
+  --color-rust-100: #1a1a1a;
+  --color-rust-200: #262626;
+  --color-rust-300: #4a4a4a;
+  --color-rust-400: #8e8e8e;
+  --color-rust-500: #dbdbdb;
+  --color-rust-600: #ffffff;
+  --color-rust-700: #ffffff;
+  --color-rust-800: #fafafa;
+  --color-rust-900: #f5f5f5;
 
-  --color-neutral-50: #FBF7F1;
-  --color-neutral-100: #F3E6D4;
-  --color-neutral-200: #E8D5BB;
-  --color-neutral-300: #D4B896;
-  --color-neutral-400: #C09A72;
-  --color-neutral-500: #A67C52;
-  --color-neutral-600: #8A6542;
-  --color-neutral-700: #6B4D33;
-  --color-neutral-800: #4E3825;
-  --color-neutral-900: #322417;
+  --color-moss-50: #1a1a1a;
+  --color-moss-100: #262626;
+  --color-moss-200: #363636;
+  --color-moss-300: #4a4a4a;
+  --color-moss-400: #5c5c5c;
+  --color-moss-500: #737373;
+  --color-moss-600: #8e8e8e;
+  --color-moss-700: #a8a8a8;
+  --color-moss-800: #dbdbdb;
+  --color-moss-900: #f5f5f5;
 
-  --color-success-50: #F0F4EC;
-  --color-success-100: #DCE6D0;
-  --color-success-200: #B8CBA3;
-  --color-success-300: #8FA972;
-  --color-success-400: #6B8650;
-  --color-success-500: #536B3C;
-  --color-success-600: #425530;
-  --color-success-700: #334025;
-  --color-success-800: #252E1B;
-  --color-success-900: #181E12;
+  --color-primary-50: #262626;
+  --color-primary-100: #1a1a1a;
+  --color-primary-200: #262626;
+  --color-primary-300: #4a4a4a;
+  --color-primary-400: #8e8e8e;
+  --color-primary-500: #dbdbdb;
+  --color-primary-600: #ffffff;
+  --color-primary-700: #ffffff;
+  --color-primary-800: #fafafa;
+  --color-primary-900: #f5f5f5;
 
-  --color-warning-50: #FFF8EB;
-  --color-warning-100: #FCECC8;
-  --color-warning-200: #F5D896;
-  --color-warning-300: #E8BE62;
-  --color-warning-400: #D4A040;
-  --color-warning-500: #B88328;
-  --color-warning-600: #95661E;
-  --color-warning-700: #734D18;
-  --color-warning-800: #533711;
-  --color-warning-900: #35230B;
+  --color-neutral-50: #121212;
+  --color-neutral-100: #1a1a1a;
+  --color-neutral-200: #262626;
+  --color-neutral-300: #363636;
+  --color-neutral-400: #4a4a4a;
+  --color-neutral-500: #5c5c5c;
+  --color-neutral-600: #737373;
+  --color-neutral-700: #8e8e8e;
+  --color-neutral-800: #a8a8a8;
+  --color-neutral-900: #dbdbdb;
 
-  --color-danger-50: #FEF2F2;
-  --color-danger-100: #FEE2E2;
-  --color-danger-200: #FECACA;
-  --color-danger-300: #FCA5A5;
-  --color-danger-400: #F87171;
-  --color-danger-500: #EF4444;
-  --color-danger-600: #DC2626;
-  --color-danger-700: #B91C1C;
-  --color-danger-800: #991B1B;
-  --color-danger-900: #7F1D1D;
+  --color-success-50: #0f1f14;
+  --color-success-100: #16301d;
+  --color-success-200: #1f4a2c;
+  --color-success-300: #2a6640;
+  --color-success-400: #3d8f58;
+  --color-success-500: #58b574;
+  --color-success-600: #74c98b;
+  --color-success-700: #97d8a8;
+  --color-success-800: #bce6c6;
+  --color-success-900: #dff3e4;
 
-  --color-background: #F3E6D4;
-  --color-foreground: #1A1511;
+  --color-warning-50: #2a2108;
+  --color-warning-100: #3d300c;
+  --color-warning-200: #5c4812;
+  --color-warning-300: #85681b;
+  --color-warning-400: #b38d25;
+  --color-warning-500: #d4a940;
+  --color-warning-600: #e0bd66;
+  --color-warning-700: #ead18f;
+  --color-warning-800: #f3e3b8;
+  --color-warning-900: #faf1dc;
 
-  --color-card: #FBF7F1;
-  --color-card-foreground: #1A1511;
+  --color-danger-50: #2a0f0f;
+  --color-danger-100: #3f1515;
+  --color-danger-200: #5c1f1f;
+  --color-danger-300: #8a2e2e;
+  --color-danger-400: #c43b3b;
+  --color-danger-500: #ed4956;
+  --color-danger-600: #f06570;
+  --color-danger-700: #f48a92;
+  --color-danger-800: #f8b0b6;
+  --color-danger-900: #fcd6d9;
 
-  --color-muted: #E8D5BB;
-  --color-muted-foreground: #56493B;
+  --color-background: #000000;
+  --color-foreground: #ffffff;
 
-  --color-border: #D6CBBC;
-  --color-input: #E8D5BB;
-  --color-ring: #9A3F24;
+  --color-card: #121212;
+  --color-card-foreground: #ffffff;
 
-  --color-destructive: #DC2626;
+  --color-muted: #1a1a1a;
+  --color-muted-foreground: #a8a8a8;
+
+  --color-border: #262626;
+  --color-input: #1a1a1a;
+  --color-ring: #ffffff;
+
+  --color-destructive: #ed4956;
   --color-destructive-foreground: #ffffff;
 }
 
@@ -139,6 +159,6 @@
   }
 
   .font-display {
-    font-family: 'SourceSerif4', ui-serif, Georgia, serif;
+    font-family: 'SourceSans3', ui-sans-serif, system-ui, sans-serif;
   }
 }

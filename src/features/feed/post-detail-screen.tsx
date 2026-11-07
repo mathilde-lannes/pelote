@@ -22,18 +22,18 @@ export function ProjectDetailScreen() {
 
   if (isPending) {
     return (
-      <View className="flex-1 items-center justify-center bg-oat-100">
+      <View className="flex-1 items-center justify-center bg-black">
         <FocusAwareStatusBar />
-        <ActivityIndicator color="#9A3F24" />
+        <ActivityIndicator color="#ffffff" />
       </View>
     );
   }
 
   if (isError || !data) {
     return (
-      <View className="flex-1 items-center justify-center bg-oat-100 px-6">
+      <View className="flex-1 items-center justify-center bg-black px-6">
         <FocusAwareStatusBar />
-        <Text className="text-center text-base text-charcoal-700">
+        <Text className="text-center text-base text-fog-400">
           Couldn’t load this project.
         </Text>
       </View>
@@ -43,7 +43,7 @@ export function ProjectDetailScreen() {
   const hero = bestPhotoUrl(data.first_photo ?? data.photos?.[0]);
 
   return (
-    <ScrollView className="flex-1 bg-oat-100">
+    <ScrollView className="flex-1 bg-black">
       <FocusAwareStatusBar />
       {hero
         ? (
@@ -54,13 +54,13 @@ export function ProjectDetailScreen() {
             />
           )
         : null}
-      <View className="px-5 py-5">
-        <Text className="font-display text-3xl font-semibold text-charcoal-900">
+      <View className="px-4 py-5">
+        <Text className="text-2xl font-semibold text-white">
           {data.name}
         </Text>
         {data.pattern_name
           ? (
-              <Text className="mt-1 text-base text-charcoal-600">
+              <Text className="mt-1 text-base text-fog-400">
                 {data.pattern_name}
               </Text>
             )
@@ -68,8 +68,8 @@ export function ProjectDetailScreen() {
         <View className="mt-4 flex-row flex-wrap gap-2">
           {data.status_name
             ? (
-                <View className="rounded-md bg-oat-200 px-2 py-1">
-                  <Text className="text-xs text-charcoal-700">
+                <View className="rounded-md bg-ink-200 px-2 py-1">
+                  <Text className="text-xs text-fog-300">
                     {data.status_name}
                   </Text>
                 </View>
@@ -77,8 +77,8 @@ export function ProjectDetailScreen() {
             : null}
           {typeof data.progress === 'number'
             ? (
-                <View className="rounded-md bg-moss-100 px-2 py-1">
-                  <Text className="text-xs text-moss-800">
+                <View className="rounded-md bg-ink-200 px-2 py-1">
+                  <Text className="text-xs text-fog-300">
                     {data.progress}
                     %
                   </Text>
@@ -87,15 +87,15 @@ export function ProjectDetailScreen() {
             : null}
           {data.craft_name
             ? (
-                <View className="rounded-md bg-rust-100 px-2 py-1">
-                  <Text className="text-xs text-rust-800">{data.craft_name}</Text>
+                <View className="rounded-md bg-ink-200 px-2 py-1">
+                  <Text className="text-xs text-fog-300">{data.craft_name}</Text>
                 </View>
               )
             : null}
         </View>
         {data.notes_html
           ? (
-              <Text className="mt-5 text-base leading-6 text-charcoal-700">
+              <Text className="mt-5 text-base/6 text-fog-300">
                 {data.notes_html.replace(/<[^>]+>/g, ' ').trim()}
               </Text>
             )

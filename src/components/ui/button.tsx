@@ -9,40 +9,40 @@ const button = tv({
   slots: {
     container: 'my-2 flex flex-row items-center justify-center rounded-md px-4',
     label: 'font-inter text-base font-semibold',
-    indicator: 'h-6 text-white',
+    indicator: 'h-6 text-black',
   },
 
   variants: {
     variant: {
       default: {
-        container: 'bg-rust-600',
-        label: 'text-oat-50',
-        indicator: 'text-oat-50',
+        container: 'bg-white',
+        label: 'text-black',
+        indicator: 'text-black',
       },
       secondary: {
-        container: 'bg-moss-600',
-        label: 'text-oat-50',
-        indicator: 'text-oat-50',
+        container: 'bg-ink-200',
+        label: 'text-white',
+        indicator: 'text-white',
       },
       outline: {
-        container: 'border border-charcoal-300 bg-oat-50',
-        label: 'text-charcoal-800',
-        indicator: 'text-charcoal-800',
+        container: 'border border-ink-300 bg-transparent',
+        label: 'text-white',
+        indicator: 'text-white',
       },
       destructive: {
-        container: 'bg-red-600',
+        container: 'bg-danger-500',
         label: 'text-white',
         indicator: 'text-white',
       },
       ghost: {
         container: 'bg-transparent',
-        label: 'text-black underline dark:text-white',
-        indicator: 'text-black dark:text-white',
+        label: 'text-white underline',
+        indicator: 'text-white',
       },
       link: {
         container: 'bg-transparent',
-        label: 'text-black',
-        indicator: 'text-black',
+        label: 'text-white',
+        indicator: 'text-white',
       },
     },
     size: {
@@ -63,9 +63,9 @@ const button = tv({
     },
     disabled: {
       true: {
-        container: 'bg-neutral-300 dark:bg-neutral-300',
-        label: 'text-neutral-600 dark:text-neutral-600',
-        indicator: 'text-neutral-400 dark:text-neutral-400',
+        container: 'bg-ink-300',
+        label: 'text-fog-600',
+        indicator: 'text-fog-600',
       },
     },
     fullWidth: {
