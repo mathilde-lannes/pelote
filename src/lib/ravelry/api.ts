@@ -12,6 +12,11 @@ import { useAuthStore } from '@/features/auth/use-auth-store';
 
 import { client } from '@/lib/api';
 import {
+  normalizeCreatedAt,
+  normalizeFavoritesCount,
+  resolveActivityType,
+} from './activity-utils';
+import {
   addMockFriend,
   getLocalMockFriends,
   getMockActivities,
@@ -21,6 +26,8 @@ import {
   removeMockFriend,
   searchMockPeople,
 } from './mock-data';
+
+export { normalizeCreatedAt, resolveActivityType } from './activity-utils';
 
 function isDemo() {
   return useAuthStore.getState().isDemo;
@@ -63,6 +70,7 @@ function normalizeProject(raw: any): RavelryProject {
     completed: raw.completed ?? null,
     user_id: raw.user_id,
     craft_name: raw.craft_name ?? raw.craft?.name ?? null,
+    favorites_count: normalizeFavoritesCount(raw),
     first_photo: normalizePhoto(raw.first_photo),
     photos: Array.isArray(raw.photos)
       ? raw.photos.map(normalizePhoto).filter(Boolean) as RavelryPhoto[]
@@ -76,11 +84,21 @@ function normalizeActivity(raw: any, index: number): FriendActivity {
   const photo = normalizePhoto(
     raw.photo ?? raw.project_photo ?? project?.first_photo,
   );
+  const createdAt = normalizeCreatedAt(raw);
+  const patternFavorites = normalizeFavoritesCount(raw.pattern ?? raw);
+
+  if (
+    project
+    && (project.favorites_count == null)
+    && patternFavorites != null
+  ) {
+    project.favorites_count = patternFavorites;
+  }
 
   return {
-    id: String(raw.id ?? `${person.username}-${index}-${raw.created_at}`),
-    type: raw.type ?? raw.activity_type ?? 'project_photo',
-    created_at: raw.created_at ?? new Date().toISOString(),
+    id: String(raw.id ?? `${person.username}-${index}-${createdAt || index}`),
+    type: resolveActivityType(raw),
+    created_at: createdAt,
     title: raw.title ?? raw.description ?? null,
     body: raw.body ?? raw.comment ?? null,
     person,

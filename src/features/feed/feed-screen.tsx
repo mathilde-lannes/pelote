@@ -13,7 +13,7 @@ import {
   View,
 } from '@/components/ui';
 import { useAuthStore } from '@/features/auth/use-auth-store';
-import { useFriendsActivity } from './api';
+import { isHomeFeedActivity, useFriendsActivity } from './api';
 import { ActivityCard } from './components/activity-card';
 
 export function FeedScreen() {
@@ -24,13 +24,7 @@ export function FeedScreen() {
     = useFriendsActivity({ enabled: Boolean(user) });
 
   const photoFirst = React.useMemo(
-    () =>
-      (data ?? []).filter(
-        item =>
-          item.type === 'project_photo'
-          || item.photo
-          || item.project?.first_photo,
-      ),
+    () => (data ?? []).filter(isHomeFeedActivity),
     [data],
   );
 

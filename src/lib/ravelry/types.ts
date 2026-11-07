@@ -30,6 +30,8 @@ export type RavelryProject = {
   first_photo?: RavelryPhoto | null;
   photos?: RavelryPhoto[];
   craft_name?: string | null;
+  /** Ravelry favorites count — mapped to Instagram “likes” in the feed. */
+  favorites_count?: number | null;
 };
 
 export type ActivityType

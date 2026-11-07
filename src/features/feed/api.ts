@@ -1,4 +1,5 @@
 import type { AxiosError } from 'axios';
+import type { FriendActivity, RavelryProject } from '@/lib/ravelry/types';
 import { createQuery } from 'react-query-kit';
 
 import { useAuthStore } from '@/features/auth/use-auth-store';
@@ -6,9 +7,9 @@ import {
   fetchFriendsActivity,
   fetchProject,
 } from '@/lib/ravelry/api';
-import type { FriendActivity, RavelryProject } from '@/lib/ravelry/types';
 
 export type { FriendActivity, RavelryProject };
+export { isHomeFeedActivity } from './is-home-feed-activity';
 
 export const useFriendsActivity = createQuery<
   FriendActivity[],

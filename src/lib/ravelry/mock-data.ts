@@ -55,8 +55,10 @@ function project(input: {
   pattern: string;
   photo: string;
   ownerId: number;
+  favoritesCount?: number;
+  notes?: string;
 }): RavelryProject {
-  const { id, name, pattern, photo, ownerId } = input;
+  const { id, name, pattern, photo, ownerId, favoritesCount, notes } = input;
   return {
     id,
     name,
@@ -65,7 +67,9 @@ function project(input: {
     progress: 40 + (id % 5) * 10,
     craft_name: 'Knitting',
     notes_html:
-      '<p>Fresh project photos from the needles — patterns, fiber, and progress.</p>',
+      notes
+      ?? '<p>Fresh project photos from the needles — patterns, fiber, and progress.</p>',
+    favorites_count: favoritesCount ?? 12 + (id % 7) * 3,
     user_id: ownerId,
     first_photo: {
       id: id * 10,
@@ -85,11 +89,50 @@ function project(input: {
 }
 
 const PROJECTS: RavelryProject[] = [
-  project({ id: 101, name: 'Studio Cardigan', pattern: 'Fellwald', photo: PHOTOS[0], ownerId: 11 }),
-  project({ id: 102, name: 'Street Cowl', pattern: 'Line Loop', photo: PHOTOS[1], ownerId: 12 }),
-  project({ id: 103, name: 'Everyday Pullover', pattern: 'Quiet Wool', photo: PHOTOS[2], ownerId: 13 }),
-  project({ id: 104, name: 'Weekend Socks', pattern: 'Trail Pair', photo: PHOTOS[3], ownerId: 11 }),
-  project({ id: 105, name: 'Desk Mitts', pattern: 'Quick Hands', photo: PHOTOS[4], ownerId: 12 }),
+  project({
+    id: 101,
+    name: 'Studio Cardigan',
+    pattern: 'Fellwald',
+    photo: PHOTOS[0],
+    ownerId: 11,
+    favoritesCount: 48,
+    notes: '<p>Blocked and ready for buttons — finally.</p>',
+  }),
+  project({
+    id: 102,
+    name: 'Street Cowl',
+    pattern: 'Line Loop',
+    photo: PHOTOS[1],
+    ownerId: 12,
+    favoritesCount: 19,
+    notes: '<p>One skein wonder for cold bike rides.</p>',
+  }),
+  project({
+    id: 103,
+    name: 'Everyday Pullover',
+    pattern: 'Quiet Wool',
+    photo: PHOTOS[2],
+    ownerId: 13,
+    favoritesCount: 1,
+    notes: '<p>Soft heathered wool, second sleeve underway.</p>',
+  }),
+  project({
+    id: 104,
+    name: 'Weekend Socks',
+    pattern: 'Trail Pair',
+    photo: PHOTOS[3],
+    ownerId: 11,
+    favoritesCount: 33,
+  }),
+  project({
+    id: 105,
+    name: 'Desk Mitts',
+    pattern: 'Quick Hands',
+    photo: PHOTOS[4],
+    ownerId: 12,
+    favoritesCount: 7,
+    notes: '<p>Fingerless for typing days.</p>',
+  }),
 ];
 
 export const mockCurrentUser = DEMO_USER;
@@ -123,6 +166,9 @@ export function getMockActivities(): FriendActivity[] {
       title: 'Favorited a pattern',
       body: 'Quiet Wool',
       person: FRIENDS[2],
+      // Photo on purpose: Home must still exclude favourites (likes → For you later).
+      photo: PROJECTS[2].first_photo!,
+      project: PROJECTS[2],
       pattern_name: 'Quiet Wool',
     },
     {
