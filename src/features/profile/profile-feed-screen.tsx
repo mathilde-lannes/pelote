@@ -1,11 +1,87 @@
+import type { FlatList as FlatListType } from 'react-native';
 import type { RavelryProject } from './api';
 import { useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
-import { ActivityIndicator, FlatList } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+
+} from 'react-native';
 
 import { FocusAwareStatusBar, Text, View } from '@/components/ui';
 import { usePerson, usePersonProjects } from './api';
 import { ProfileProjectPost } from './components/profile-project-post';
+import { PROFILE_POST_ITEM_HEIGHT } from './profile-feed-layout';
+
+function FeedStatus({ message }: { message: string }) {
+  return (
+    <View className="flex-1 items-center justify-center bg-black px-6">
+      <FocusAwareStatusBar />
+      <Text className="text-center text-base text-fog-400">{message}</Text>
+    </View>
+  );
+}
+
+function useProfileFeedScroll(
+  username: string,
+  startId: string,
+  projects: RavelryProject[],
+) {
+  const listRef = React.useRef<FlatListType<RavelryProject>>(null);
+  const didScroll = React.useRef(false);
+
+  const startIndex = React.useMemo(() => {
+    if (!startId || !projects.length)
+      return 0;
+    const index = projects.findIndex(project => String(project.id) === startId);
+    return index >= 0 ? index : 0;
+  }, [projects, startId]);
+
+  React.useEffect(() => {
+    didScroll.current = false;
+  }, [username, startId]);
+
+  const getItemLayout = React.useCallback(
+    (_: ArrayLike<RavelryProject> | null | undefined, index: number) => ({
+      length: PROFILE_POST_ITEM_HEIGHT,
+      offset: PROFILE_POST_ITEM_HEIGHT * index,
+      index,
+    }),
+    [],
+  );
+
+  const scrollToStart = React.useCallback(() => {
+    if (didScroll.current || startIndex <= 0 || !projects.length)
+      return;
+    listRef.current?.scrollToIndex({
+      index: startIndex,
+      animated: false,
+      viewPosition: 0,
+    });
+    didScroll.current = true;
+  }, [projects.length, startIndex]);
+
+  const onScrollToIndexFailed = React.useCallback(
+    (info: { index: number }) => {
+      setTimeout(() => {
+        listRef.current?.scrollToOffset({
+          offset: info.index * PROFILE_POST_ITEM_HEIGHT,
+          animated: false,
+        });
+        didScroll.current = true;
+      }, 16);
+    },
+    [],
+  );
+
+  return {
+    listRef,
+    startIndex,
+    getItemLayout,
+    scrollToStart,
+    onScrollToIndexFailed,
+  };
+}
 
 export function ProfileFeedScreen() {
   const params = useLocalSearchParams<{ username: string; id: string }>();
@@ -21,31 +97,21 @@ export function ProfileFeedScreen() {
     enabled: Boolean(username),
   });
 
-  const projects = projectsQuery.data ?? [];
-  const startIndex = React.useMemo(() => {
-    if (!startId || !projects.length)
-      return 0;
-    const index = projects.findIndex(project => String(project.id) === startId);
-    return index >= 0 ? index : 0;
-  }, [projects, startId]);
-
-  /**
-   * Start at the tapped project, then older posts below.
-   * Avoids scrollToIndex failures / jumps when row heights change as photos load.
-   */
-  const feedProjects = React.useMemo(
-    () => (startIndex > 0 ? projects.slice(startIndex) : projects),
-    [projects, startIndex],
+  const projects = React.useMemo(
+    () => projectsQuery.data ?? [],
+    [projectsQuery.data],
   );
 
-  if (!username) {
-    return (
-      <View className="flex-1 items-center justify-center bg-black">
-        <FocusAwareStatusBar />
-        <Text className="text-fog-400">Missing username</Text>
-      </View>
-    );
-  }
+  const {
+    listRef,
+    startIndex,
+    getItemLayout,
+    scrollToStart,
+    onScrollToIndexFailed,
+  } = useProfileFeedScroll(username, startId, projects);
+
+  if (!username)
+    return <FeedStatus message="Missing username" />;
 
   if (projectsQuery.isPending && !projects.length) {
     return (
@@ -56,24 +122,26 @@ export function ProfileFeedScreen() {
     );
   }
 
-  if (projectsQuery.isError && !projects.length) {
-    return (
-      <View className="flex-1 items-center justify-center bg-black px-6">
-        <FocusAwareStatusBar />
-        <Text className="text-center text-base text-fog-400">
-          Couldn’t load projects.
-        </Text>
-      </View>
-    );
-  }
+  if (projectsQuery.isError && !projects.length)
+    return <FeedStatus message="Couldn’t load projects." />;
 
   return (
     <View className="flex-1 bg-black">
       <FocusAwareStatusBar />
       <FlatList
-        data={feedProjects}
+        ref={listRef}
+        data={projects}
         keyExtractor={(item: RavelryProject) => String(item.id)}
         key={`${username}:${startId}`}
+        getItemLayout={getItemLayout}
+        initialScrollIndex={startIndex > 0 ? startIndex : undefined}
+        initialNumToRender={Math.min(
+          projects.length,
+          Math.max(startIndex + 3, 5),
+        )}
+        windowSize={7}
+        onLayout={scrollToStart}
+        onScrollToIndexFailed={onScrollToIndexFailed}
         renderItem={({ item }) => (
           <ProfileProjectPost
             username={username}

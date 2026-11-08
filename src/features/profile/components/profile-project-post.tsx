@@ -8,6 +8,7 @@ import { useProject } from '@/features/feed/api';
 import { likesLabel } from '@/features/feed/components/activity-card-copy';
 import { collectProjectPhotos } from '@/features/feed/components/collect-project-photos';
 import { PhotoCarousel } from '@/features/feed/components/photo-carousel';
+import { PROFILE_POST_ITEM_HEIGHT } from '../profile-feed-layout';
 
 type Props = {
   username: string;
@@ -46,7 +47,7 @@ export function ProfileProjectPost({ username, person, project }: Props) {
   const caption = notes || data.pattern_name || data.name;
 
   return (
-    <View className="mb-6 bg-black">
+    <View style={{ height: PROFILE_POST_ITEM_HEIGHT }} className="bg-black">
       <Link href={`/user/${displayName}` as any} asChild>
         <Pressable className="flex-row items-center gap-3 p-3">
           {avatar
@@ -72,7 +73,7 @@ export function ProfileProjectPost({ username, person, project }: Props) {
 
       <PhotoCarousel photos={photos} />
 
-      <View className="gap-1 px-3 pt-2 pb-1">
+      <View className="flex-1 gap-1 px-3 pt-2 pb-3">
         {likes
           ? (
               <Text className="text-sm font-semibold text-white">{likes}</Text>
@@ -80,7 +81,7 @@ export function ProfileProjectPost({ username, person, project }: Props) {
           : null}
         {caption
           ? (
-              <Text className="text-sm text-white">
+              <Text className="text-sm text-white" numberOfLines={3}>
                 <Text className="font-semibold">{displayName}</Text>
                 {' '}
                 {caption}
@@ -89,7 +90,7 @@ export function ProfileProjectPost({ username, person, project }: Props) {
           : null}
         {data.pattern_name && caption !== data.pattern_name
           ? (
-              <Text className="text-sm text-fog-400">
+              <Text className="text-sm text-fog-400" numberOfLines={1}>
                 {data.pattern_name}
               </Text>
             )
