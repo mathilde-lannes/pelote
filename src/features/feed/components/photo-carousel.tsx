@@ -1,11 +1,11 @@
+import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import type { RavelryPhoto } from '@/lib/ravelry/types';
 import { Image } from 'expo-image';
 import * as React from 'react';
 import {
   Dimensions,
   FlatList,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
+
   View,
 } from 'react-native';
 
@@ -67,30 +67,34 @@ export function PhotoCarousel({ photos }: { photos: RavelryPhoto[] }) {
     [index, uris.length],
   );
 
-  if (!uris.length)
-    return null;
-
+  // Always reserve media height so parent lists don't jump when photos load.
   return (
-    <View style={{ width: SCREEN_WIDTH, aspectRatio: ASPECT }}>
-      <FlatList
-        data={uris}
-        horizontal
-        pagingEnabled
-        bounces={false}
-        showsHorizontalScrollIndicator={false}
-        keyExtractor={(uri, i) => `${uri}-${i}`}
-        onScroll={onScroll}
-        scrollEventThrottle={16}
-        renderItem={({ item }) => (
-          <Image
-            source={{ uri: item }}
-            style={{ width: SCREEN_WIDTH, height: '100%' }}
-            contentFit="cover"
-          />
-        )}
-      />
-      <Counter index={index} count={uris.length} />
-      <Dots count={uris.length} index={index} />
+    <View style={{ width: SCREEN_WIDTH, aspectRatio: ASPECT }} className="bg-ink-200">
+      {uris.length
+        ? (
+            <>
+              <FlatList
+                data={uris}
+                horizontal
+                pagingEnabled
+                bounces={false}
+                showsHorizontalScrollIndicator={false}
+                keyExtractor={(uri, i) => `${uri}-${i}`}
+                onScroll={onScroll}
+                scrollEventThrottle={16}
+                renderItem={({ item }) => (
+                  <Image
+                    source={{ uri: item }}
+                    style={{ width: SCREEN_WIDTH, height: '100%' }}
+                    contentFit="cover"
+                  />
+                )}
+              />
+              <Counter index={index} count={uris.length} />
+              <Dots count={uris.length} index={index} />
+            </>
+          )
+        : null}
     </View>
   );
 }

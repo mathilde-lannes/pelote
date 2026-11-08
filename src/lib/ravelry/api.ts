@@ -269,9 +269,9 @@ export async function fetchProjectsList(
 ): Promise<{ projects: RavelryProject[]; page: number; pageSize: number }> {
   const page = options?.page ?? 1;
   const pageSize = options?.pageSize ?? 24;
-  // Documented notebook path (MCP / API clients): people/{username}/projects/list.json
+  // Documented: GET projects/{username}/list.json (same family as projects/{user}/{id}.json)
   const { data } = await client.get(
-    `people/${encodeURIComponent(username)}/projects/list.json`,
+    `projects/${encodeURIComponent(username)}/list.json`,
     { params: { page, page_size: pageSize } },
   );
   const list = data.projects ?? [];

@@ -37,7 +37,7 @@ function ProfileHeader({
   const initial = username.slice(0, 1).toUpperCase() || '?';
 
   return (
-    <View className="border-b border-ink-300 px-4 pb-5 pt-2">
+    <View className="border-b border-ink-300 px-4 pt-2 pb-5">
       <View className="flex-row items-center gap-5">
         {avatarUrl
           ? (
@@ -72,7 +72,7 @@ function ProfileHeader({
       </View>
       {about
         ? (
-            <Text className="mt-4 text-sm leading-5 text-fog-300">
+            <Text className="mt-4 text-sm/5 text-fog-300">
               {about}
             </Text>
           )
@@ -89,7 +89,8 @@ function ProjectTile({
   project: RavelryProject;
 }) {
   const uri = bestPhotoUrl(project.first_photo ?? project.photos?.[0]);
-  const href = `/project/${username}/${project.id}`;
+  // Instagram-style: open this user's vertical project feed at the tapped post.
+  const href = `/user/${username}/feed/${project.id}`;
 
   return (
     <Link href={href as any} asChild>

@@ -84,13 +84,7 @@ export default function RootLayout() {
         />
         <Stack.Screen
           name="user/[username]"
-          options={{
-            title: 'Profile',
-            headerBackTitle: 'Back',
-            headerStyle: { backgroundColor: '#000000' },
-            headerTintColor: '#ffffff',
-            headerShadowVisible: false,
-          }}
+          options={{ headerShown: false }}
         />
       </Stack>
     </Providers>
