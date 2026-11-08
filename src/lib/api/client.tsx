@@ -1,4 +1,5 @@
-import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
+import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios from 'axios';
 import Env from 'env';
 
 import { signOut, useAuthStore } from '@/features/auth/use-auth-store';
@@ -43,6 +44,23 @@ async function refreshBearer(): Promise<string | null> {
   }
 }
 
+/** Ravelry often returns 403 (not 401) when the Bearer token is expired/invalid. */
+function isInvalidOAuthToken(error: AxiosError): boolean {
+  const status = error.response?.status;
+  if (status === 401)
+    return true;
+  if (status !== 403)
+    return false;
+  const data = error.response?.data;
+  const text
+    = typeof data === 'string'
+      ? data
+      : data == null
+        ? ''
+        : JSON.stringify(data);
+  return /oauth|token is not valid|invalid.?token|expired/i.test(text);
+}
+
 client.interceptors.response.use(
   response => response,
   async (error: AxiosError) => {
@@ -50,7 +68,16 @@ client.interceptors.response.use(
       _retry?: boolean;
     };
 
-    if (error.response?.status === 401 && original && !original._retry) {
+    if (__DEV__ && error.response) {
+      const method = (original?.method ?? 'get').toUpperCase();
+      const url = `${original?.baseURL ?? ''}${original?.url ?? ''}`;
+      console.warn(
+        `[api] ${error.response.status} ${method} ${url}`,
+        error.response.data ?? '',
+      );
+    }
+
+    if (isInvalidOAuthToken(error) && original && !original._retry) {
       original._retry = true;
 
       refreshPromise ??= refreshBearer().finally(() => {
