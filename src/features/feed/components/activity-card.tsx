@@ -2,6 +2,7 @@ import type { FriendActivity } from '@/lib/ravelry/types';
 import { Image } from 'expo-image';
 import { Link } from 'expo-router';
 
+import { ExpandableText } from '@/components/expandable-text';
 import { Pressable, Text, View } from '@/components/ui';
 import { bestPhotoUrl } from '@/lib/ravelry/api';
 import { formatRelative } from '../format-relative';
@@ -25,7 +26,7 @@ function CardHeader({
   return (
     <View className="flex-row items-center gap-3 p-3">
       <Link href={profileHref as any} asChild>
-        <Pressable className="flex-row items-center gap-3 flex-1">
+        <Pressable className="flex-1 flex-row items-center gap-3">
           {avatar
             ? (
                 <Image
@@ -134,11 +135,11 @@ export function ActivityCard({ item }: { item: FriendActivity }) {
           : null}
         {caption
           ? (
-              <Text className="text-sm text-white">
-                <Text className="font-semibold">{item.person.username}</Text>
-                {' '}
-                {caption}
-              </Text>
+              <ExpandableText
+                text={caption}
+                prefix={item.person.username}
+                numberOfLines={2}
+              />
             )
           : null}
         {item.project?.pattern_name

@@ -2,10 +2,11 @@ import { useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import { ActivityIndicator, ScrollView } from 'react-native';
 
+import { ExpandableText } from '@/components/expandable-text';
 import { FocusAwareStatusBar, Text, View } from '@/components/ui';
+import { useProject } from './api';
 import { collectProjectPhotos } from './components/collect-project-photos';
 import { PhotoCarousel } from './components/photo-carousel';
-import { useProject } from './api';
 
 export function ProjectDetailScreen() {
   const params = useLocalSearchParams<{
@@ -90,9 +91,14 @@ export function ProjectDetailScreen() {
         </View>
         {data.notes_html
           ? (
-              <Text className="mt-5 text-base/6 text-fog-300">
-                {data.notes_html.replace(/<[^>]+>/g, ' ').trim()}
-              </Text>
+              <View className="mt-5">
+                <ExpandableText
+                  text={data.notes_html.replace(/<[^>]+>/g, ' ').trim()}
+                  numberOfLines={2}
+                  className="text-base/6 text-fog-300"
+                  moreClassName="mt-1 text-sm text-fog-500"
+                />
+              </View>
             )
           : null}
       </View>

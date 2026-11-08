@@ -11,7 +11,10 @@ import {
 import { FocusAwareStatusBar, Text, View } from '@/components/ui';
 import { usePerson, usePersonProjects } from './api';
 import { ProfileProjectPost } from './components/profile-project-post';
-import { PROFILE_POST_ITEM_HEIGHT } from './profile-feed-layout';
+import {
+  profilePostItemHeight,
+  profilePostOffset,
+} from './profile-feed-layout';
 
 function FeedStatus({ message }: { message: string }) {
   return (
@@ -43,11 +46,11 @@ function useProfileFeedScroll(
 
   const getItemLayout = React.useCallback(
     (_: ArrayLike<RavelryProject> | null | undefined, index: number) => ({
-      length: PROFILE_POST_ITEM_HEIGHT,
-      offset: PROFILE_POST_ITEM_HEIGHT * index,
+      length: profilePostItemHeight(projects[index]!),
+      offset: profilePostOffset(projects, index),
       index,
     }),
-    [],
+    [projects],
   );
 
   const scrollToStart = React.useCallback(() => {
@@ -65,13 +68,13 @@ function useProfileFeedScroll(
     (info: { index: number }) => {
       setTimeout(() => {
         listRef.current?.scrollToOffset({
-          offset: info.index * PROFILE_POST_ITEM_HEIGHT,
+          offset: profilePostOffset(projects, info.index),
           animated: false,
         });
         didScroll.current = true;
       }, 16);
     },
-    [],
+    [projects],
   );
 
   return {
