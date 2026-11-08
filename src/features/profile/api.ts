@@ -9,6 +9,27 @@ import {
 
 export type { RavelryPerson, RavelryProject };
 
+function projectRecencyMs(project: RavelryProject): number {
+  for (const value of [project.started, project.completed]) {
+    if (typeof value !== 'string' || !value.trim())
+      continue;
+    const time = new Date(value).getTime();
+    if (Number.isFinite(time))
+      return time;
+  }
+  return 0;
+}
+
+/** Newest projects first (by started, then completed; id as tie-break). */
+export function sortProjectsByRecent(projects: RavelryProject[]): RavelryProject[] {
+  return [...projects].sort((a, b) => {
+    const delta = projectRecencyMs(b) - projectRecencyMs(a);
+    if (delta !== 0)
+      return delta;
+    return b.id - a.id;
+  });
+}
+
 export const usePerson = createQuery<
   RavelryPerson,
   { username: string },
@@ -29,6 +50,6 @@ export const usePersonProjects = createQuery<
       page: 1,
       pageSize: 48,
     });
-    return page.projects;
+    return sortProjectsByRecent(page.projects);
   },
 });
