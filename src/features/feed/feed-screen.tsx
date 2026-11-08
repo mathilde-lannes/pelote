@@ -16,14 +16,35 @@ import { useAuthStore } from '@/features/auth/use-auth-store';
 import { isHomeFeedActivity, useFriendsActivity } from './api';
 import { ActivityCard } from './components/activity-card';
 
+function FeedFooter({ loading }: { loading: boolean }) {
+  if (!loading)
+    return null;
+  return (
+    <View className="items-center py-4">
+      <ActivityIndicator color="#ffffff" />
+    </View>
+  );
+}
+
 export function FeedScreen() {
   const router = useRouter();
   const user = useAuthStore.use.user();
-  const { data, isPending, isError, refetch, isRefetching }
-    = useFriendsActivity({ enabled: Boolean(user) });
+  const {
+    data,
+    isPending,
+    isError,
+    refetch,
+    isRefetching,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useFriendsActivity({ enabled: Boolean(user) });
 
   const photoFirst = React.useMemo(
-    () => (data ?? []).filter(isHomeFeedActivity),
+    () =>
+      (data?.pages ?? [])
+        .flatMap(page => page.activities)
+        .filter(isHomeFeedActivity),
     [data],
   );
 
@@ -31,6 +52,11 @@ export function FeedScreen() {
     ({ item }: { item: FriendActivity }) => <ActivityCard item={item} />,
     [],
   );
+
+  const onEndReached = React.useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage)
+      fetchNextPage();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   if (!user || isPending) {
     return (
@@ -89,9 +115,11 @@ export function FeedScreen() {
           data={photoFirst}
           renderItem={renderItem}
           keyExtractor={item => item.id}
+          onEndReached={onEndReached}
+          onEndReachedThreshold={0.5}
           refreshControl={(
             <RefreshControl
-              refreshing={isRefetching}
+              refreshing={isRefetching && !isFetchingNextPage}
               onRefresh={() => refetch()}
               tintColor="#ffffff"
             />
@@ -101,6 +129,7 @@ export function FeedScreen() {
               <PeloteWordmark size="sm" />
             </View>
           )}
+          ListFooterComponent={<FeedFooter loading={isFetchingNextPage} />}
         />
       </View>
     </SafeAreaView>

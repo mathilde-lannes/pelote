@@ -148,7 +148,12 @@ function normalizeActivity(raw: any, index: number): FriendActivity {
     id: String(raw.id ?? `${person.username}-${index}-${createdAt || index}`),
     type: resolveActivityType({ ...payload, ...raw }),
     created_at: createdAt,
-    title: raw.title ?? raw.description ?? payload.title ?? null,
+    title:
+      raw.title
+      ?? raw.descriptive_title
+      ?? raw.description
+      ?? payload.title
+      ?? null,
     body: raw.body ?? raw.comment ?? payload.body ?? null,
     person,
     project,
@@ -168,13 +173,34 @@ export async function fetchCurrentUser(): Promise<RavelryPerson> {
   return normalizePerson(data.user);
 }
 
+export type FriendsActivityPage = {
+  activities: FriendActivity[];
+  page: number;
+  pageSize: number;
+};
+
 export async function fetchFriendsActivity(
   username: string,
-): Promise<FriendActivity[]> {
+  options?: {
+    activityTypeKeys?: string[];
+    page?: number;
+    pageSize?: number;
+  },
+): Promise<FriendsActivityPage> {
+  const page = options?.page ?? 1;
+  const pageSize = options?.pageSize ?? 50;
   // Documented response root is `activity` (singular).
   const { data } = await client.get(
     `people/${encodeURIComponent(username)}/friends/activity.json`,
-    { params: { page_size: 50 } },
+    {
+      params: {
+        page,
+        page_size: pageSize,
+        ...(options?.activityTypeKeys?.length
+          ? { activity_type_keys: options.activityTypeKeys.join(' ') }
+          : {}),
+      },
+    },
   );
 
   const list
@@ -182,7 +208,11 @@ export async function fetchFriendsActivity(
       ?? data.activities
       ?? data.friend_activities
       ?? [];
-  return (Array.isArray(list) ? list : []).map(normalizeActivity);
+  return {
+    activities: (Array.isArray(list) ? list : []).map(normalizeActivity),
+    page,
+    pageSize,
+  };
 }
 
 export async function fetchProject(

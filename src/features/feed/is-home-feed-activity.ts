@@ -1,10 +1,16 @@
 import type { FriendActivity, RavelryPhoto } from '@/lib/ravelry/types';
 
-/** Activity types that belong on the default Home photo feed. */
+/**
+ * Normalized types for Home (after resolveActivityType).
+ * Ravelry `activity_type_keys` accepted set:
+ *   added-project-photo, added-stash-photo, queued-pattern,
+ *   added-favorite, added-handspun-photo
+ * Home uses the first three only; favorite / handspun stay off.
+ */
 const HOME_FEED_TYPES = new Set([
-  'project_photo',
-  'stash_photo',
-  'handspun_photo',
+  'project_photo', // added-project-photo
+  'stash_photo', // added-stash-photo
+  'queued', // queued-pattern
 ]);
 
 function hasUsablePhoto(photo?: RavelryPhoto | null): boolean {
@@ -20,11 +26,13 @@ function hasUsablePhoto(photo?: RavelryPhoto | null): boolean {
 }
 
 /**
- * Default Home = friends’ own photo posts only.
- * Favourites / queue / comments / forum stay off (map to likes / For you later).
+ * Default Home = project/stash photos and queued patterns.
+ * Favourites / handspun stay off (map to likes / For you later).
  */
 export function isHomeFeedActivity(item: FriendActivity): boolean {
   if (!HOME_FEED_TYPES.has(String(item.type)))
     return false;
+  if (item.type === 'queued')
+    return true;
   return hasUsablePhoto(item.photo ?? item.project?.first_photo);
 }

@@ -16,12 +16,32 @@ describe('resolveActivityType', () => {
     expect(resolveActivityType({ type: 'project_added' })).toBe(
       'project_photo',
     );
+    expect(resolveActivityType({ type: 'added-project-photo' })).toBe(
+      'project_photo',
+    );
+    expect(resolveActivityType({ type: 'added-stash-photo' })).toBe(
+      'stash_photo',
+    );
+    expect(resolveActivityType({ type: 'queued-pattern' })).toBe('queued');
+    expect(resolveActivityType({ type: 'added-favorite' })).toBe('favorite');
+    expect(resolveActivityType({ type: 'added-handspun-photo' })).toBe(
+      'handspun_photo',
+    );
     expect(resolveActivityType({ type: 'pattern_favorited' })).toBe(
       'favorite',
     );
     expect(
       resolveActivityType({ title: 'Favorited a pattern' }),
     ).toBe('favorite');
+  });
+
+  it('reads Ravelry activity_type_key', () => {
+    expect(
+      resolveActivityType({ activity_type_key: 'added-project-photo' }),
+    ).toBe('project_photo');
+    expect(
+      resolveActivityType({ activity_type_key: 'queued-pattern' }),
+    ).toBe('queued');
   });
 });
 
@@ -36,5 +56,11 @@ describe('normalizeCreatedAt', () => {
     const iso = '2024-01-15T12:00:00.000Z';
     expect(normalizeCreatedAt({ created_at: iso })).toBe(iso);
     expect(normalizeCreatedAt({ created: iso })).toBe(iso);
+  });
+
+  it('parses Ravelry slash dates with numeric offsets', () => {
+    expect(
+      normalizeCreatedAt({ created_at: '2026/10/13 12:24:07 -0400' }),
+    ).toBe('2026-10-13T16:24:07.000Z');
   });
 });
