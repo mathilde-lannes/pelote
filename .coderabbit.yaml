@@ -1,0 +1,13 @@
+# https://docs.coderabbit.ai/getting-started/yaml-configuration
+language: en-US
+reviews:
+  profile: chill
+  high_level_summary: true
+  request_changes_workflow: false
+  poem: false
+  review_status: true
+  auto_review:
+    enabled: true
+    drafts: false
+chat:
+  auto_reply: true
