@@ -20,44 +20,49 @@ function CardHeader({
   relative: string;
   verb: string | null;
 }) {
-  const avatar = item.person.small_photo_url;
+  const avatar = item.person.small_photo_url ?? item.person.photo_url;
+  const profileHref = `/user/${item.person.username}`;
   return (
     <View className="flex-row items-center gap-3 p-3">
-      {avatar
-        ? (
-            <Image
-              source={{ uri: avatar }}
-              style={{ width: 32, height: 32, borderRadius: 16 }}
-              contentFit="cover"
-            />
-          )
-        : (
-            <View className="size-8 items-center justify-center rounded-full bg-ink-300">
-              <Text className="text-sm font-semibold text-white">
-                {item.person.username.slice(0, 1).toUpperCase()}
-              </Text>
-            </View>
-          )}
-      <View className="flex-1">
-        <Text className="text-sm font-semibold text-white">
-          {item.person.username}
-          {verb
+      <Link href={profileHref as any} asChild>
+        <Pressable className="flex-row items-center gap-3 flex-1">
+          {avatar
             ? (
-                <Text className="font-normal text-fog-400">
-                  {' '}
-                  {verb}
-                </Text>
+                <Image
+                  source={{ uri: avatar }}
+                  style={{ width: 32, height: 32, borderRadius: 16 }}
+                  contentFit="cover"
+                />
               )
-            : null}
-        </Text>
-        {relative
-          ? (
-              <Text className="text-xs text-fog-500">
-                {relative}
-              </Text>
-            )
-          : null}
-      </View>
+            : (
+                <View className="size-8 items-center justify-center rounded-full bg-ink-300">
+                  <Text className="text-sm font-semibold text-white">
+                    {item.person.username.slice(0, 1).toUpperCase()}
+                  </Text>
+                </View>
+              )}
+          <View className="flex-1">
+            <Text className="text-sm font-semibold text-white">
+              {item.person.username}
+              {verb
+                ? (
+                    <Text className="font-normal text-fog-400">
+                      {' '}
+                      {verb}
+                    </Text>
+                  )
+                : null}
+            </Text>
+            {relative
+              ? (
+                  <Text className="text-xs text-fog-500">
+                    {relative}
+                  </Text>
+                )
+              : null}
+          </View>
+        </Pressable>
+      </Link>
     </View>
   );
 }

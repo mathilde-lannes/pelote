@@ -31,14 +31,53 @@ function normalizePhoto(raw: any): RavelryPhoto | null {
   };
 }
 
+/** Collect avatar URLs from the many shapes Ravelry uses on people/friends. */
+function pickPersonPhotos(raw: any): {
+  small_photo_url: string | null;
+  photo_url: string | null;
+} {
+  const small
+    = (typeof raw?.small_photo_url === 'string' && raw.small_photo_url)
+      || (typeof raw?.tiny_photo_url === 'string' && raw.tiny_photo_url)
+      || (typeof raw?.profile_image_url === 'string' && raw.profile_image_url)
+      || null;
+  const large
+    = (typeof raw?.photo_url === 'string' && raw.photo_url)
+      || (typeof raw?.large_photo_url === 'string' && raw.large_photo_url)
+      || (typeof raw?.big_photo_url === 'string' && raw.big_photo_url)
+      || null;
+  return {
+    small_photo_url: small ?? large,
+    photo_url: large ?? small,
+  };
+}
+
 function normalizePerson(raw: any): RavelryPerson {
+  const photos = pickPersonPhotos(raw);
   return {
     id: raw?.id ?? 0,
     username: String(raw?.username ?? ''),
     first_name: raw?.first_name ?? null,
-    small_photo_url: raw?.small_photo_url ?? raw?.tiny_photo_url ?? null,
-    photo_url: raw?.photo_url ?? null,
+    small_photo_url: photos.small_photo_url,
+    photo_url: photos.photo_url,
     about_me: raw?.about_me ?? null,
+  };
+}
+
+function mergePersonPhotos(...sources: any[]): {
+  small_photo_url: string | null;
+  photo_url: string | null;
+} {
+  let small: string | null = null;
+  let large: string | null = null;
+  for (const source of sources) {
+    const photos = pickPersonPhotos(source);
+    small ??= photos.small_photo_url;
+    large ??= photos.photo_url;
+  }
+  return {
+    small_photo_url: small ?? large,
+    photo_url: large ?? small,
   };
 }
 
@@ -53,13 +92,13 @@ function personFromFriendship(item: any): FriendEntry | null {
     const id = item.friend_id ?? item.friend_user_id;
     if (id == null)
       return null;
+    const photos = mergePersonPhotos(item);
     return {
       ...normalizePerson({
         id,
         username: item.friend,
-        small_photo_url: item.small_photo_url ?? item.tiny_photo_url,
-        photo_url: item.photo_url,
         first_name: item.first_name,
+        ...photos,
       }),
       friendship_id: friendshipId,
     };
@@ -75,21 +114,65 @@ function personFromFriendship(item: any): FriendEntry | null {
   if (!username || id == null)
     return null;
 
+  const photos = mergePersonPhotos(
+    typeof raw === 'object' && raw ? raw : null,
+    item,
+  );
+
   return {
     ...normalizePerson({
       ...(typeof raw === 'object' && raw ? raw : {}),
       id,
       username,
-      small_photo_url:
-        raw?.small_photo_url
-        ?? raw?.tiny_photo_url
-        ?? item?.small_photo_url
-        ?? null,
-      photo_url: raw?.photo_url ?? item?.photo_url ?? null,
       first_name: raw?.first_name ?? item?.first_name ?? null,
+      ...photos,
     }),
     friendship_id: friendshipId,
   };
+}
+
+async function enrichFriendPhotos(
+  friends: FriendEntry[],
+): Promise<FriendEntry[]> {
+  const missing = friends.filter(
+    friend => !friend.small_photo_url && !friend.photo_url,
+  );
+  if (!missing.length)
+    return friends;
+
+  const byUsername = new Map<string, RavelryPerson>();
+  await Promise.all(
+    missing.map(async (friend) => {
+      try {
+        const person = await fetchPerson(friend.username);
+        byUsername.set(friend.username.toLowerCase(), person);
+      }
+      catch {
+        // Best-effort: keep initial avatar if people/{username} fails.
+      }
+    }),
+  );
+
+  return friends.map((friend) => {
+    const enriched = byUsername.get(friend.username.toLowerCase());
+    if (!enriched)
+      return friend;
+    return {
+      ...friend,
+      small_photo_url:
+        friend.small_photo_url
+        ?? enriched.small_photo_url
+        ?? enriched.photo_url
+        ?? null,
+      photo_url:
+        friend.photo_url
+        ?? enriched.photo_url
+        ?? enriched.small_photo_url
+        ?? null,
+      first_name: friend.first_name ?? enriched.first_name ?? null,
+      about_me: friend.about_me ?? enriched.about_me ?? null,
+    };
+  });
 }
 
 function normalizeProject(raw: any): RavelryProject {
@@ -173,6 +256,32 @@ export async function fetchCurrentUser(): Promise<RavelryPerson> {
   return normalizePerson(data.user);
 }
 
+export async function fetchPerson(username: string): Promise<RavelryPerson> {
+  const { data } = await client.get(
+    `people/${encodeURIComponent(username)}.json`,
+  );
+  return normalizePerson(data.user ?? data);
+}
+
+export async function fetchProjectsList(
+  username: string,
+  options?: { page?: number; pageSize?: number },
+): Promise<{ projects: RavelryProject[]; page: number; pageSize: number }> {
+  const page = options?.page ?? 1;
+  const pageSize = options?.pageSize ?? 24;
+  // Documented notebook path (MCP / API clients): people/{username}/projects/list.json
+  const { data } = await client.get(
+    `people/${encodeURIComponent(username)}/projects/list.json`,
+    { params: { page, page_size: pageSize } },
+  );
+  const list = data.projects ?? [];
+  return {
+    projects: (Array.isArray(list) ? list : []).map(normalizeProject),
+    page,
+    pageSize,
+  };
+}
+
 export type FriendsActivityPage = {
   activities: FriendActivity[];
   page: number;
@@ -235,7 +344,8 @@ export async function fetchFriends(
   const friends = (data.friendships ?? data.friends ?? [])
     .map(personFromFriendship)
     .filter((entry: FriendEntry | null): entry is FriendEntry => entry != null);
-  return { friends };
+  // friendships/list often omits avatars — fill from people/{username}.json
+  return { friends: await enrichFriendPhotos(friends) };
 }
 
 export async function searchPeople(

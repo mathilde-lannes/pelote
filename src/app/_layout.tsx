@@ -82,6 +82,16 @@ export default function RootLayout() {
             headerBackTitle: 'Feed',
           }}
         />
+        <Stack.Screen
+          name="user/[username]"
+          options={{
+            title: 'Profile',
+            headerBackTitle: 'Back',
+            headerStyle: { backgroundColor: '#000000' },
+            headerTintColor: '#ffffff',
+            headerShadowVisible: false,
+          }}
+        />
       </Stack>
     </Providers>
   );
