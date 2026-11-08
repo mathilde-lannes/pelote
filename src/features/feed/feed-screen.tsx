@@ -18,7 +18,6 @@ import { ActivityCard } from './components/activity-card';
 
 export function FeedScreen() {
   const router = useRouter();
-  const isDemo = useAuthStore.use.isDemo();
   const user = useAuthStore.use.user();
   const { data, isPending, isError, refetch, isRefetching }
     = useFriendsActivity({ enabled: Boolean(user) });
@@ -85,15 +84,6 @@ export function FeedScreen() {
   return (
     <SafeAreaView className="flex-1 bg-black" edges={['top']}>
       <FocusAwareStatusBar />
-      {isDemo
-        ? (
-            <View className="border-b border-ink-300 bg-ink-100 px-3 py-1.5">
-              <Text className="text-center text-xs font-medium text-fog-400">
-                DEMO MODE — mock friends activity
-              </Text>
-            </View>
-          )
-        : null}
       <View className="flex-1">
         <FlashList
           data={photoFirst}

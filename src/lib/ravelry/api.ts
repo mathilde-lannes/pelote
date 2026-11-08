@@ -8,7 +8,6 @@ import type {
   RavelryPhoto,
   RavelryProject,
 } from './types';
-import { useAuthStore } from '@/features/auth/use-auth-store';
 
 import { client } from '@/lib/api';
 import {
@@ -16,22 +15,8 @@ import {
   normalizeFavoritesCount,
   resolveActivityType,
 } from './activity-utils';
-import {
-  addMockFriend,
-  getLocalMockFriends,
-  getMockActivities,
-  getMockFriends,
-  getMockProject,
-  mockCurrentUser,
-  removeMockFriend,
-  searchMockPeople,
-} from './mock-data';
 
 export { normalizeCreatedAt, resolveActivityType } from './activity-utils';
-
-function isDemo() {
-  return useAuthStore.getState().isDemo;
-}
 
 function normalizePhoto(raw: any): RavelryPhoto | null {
   if (!raw)
@@ -129,13 +114,27 @@ function normalizeProject(raw: any): RavelryProject {
 }
 
 function normalizeActivity(raw: any, index: number): FriendActivity {
-  const person = normalizePerson(raw.user ?? raw.person ?? {});
-  const project = raw.project ? normalizeProject(raw.project) : null;
+  // Ravelry often nests type-specific fields under `data`.
+  const payload
+    = raw?.data && typeof raw.data === 'object' && !Array.isArray(raw.data)
+      ? raw.data
+      : {};
+  const person = normalizePerson(
+    raw.user ?? raw.person ?? payload.user ?? payload.person ?? {},
+  );
+  const projectRaw = raw.project ?? payload.project ?? null;
+  const project = projectRaw ? normalizeProject(projectRaw) : null;
   const photo = normalizePhoto(
-    raw.photo ?? raw.project_photo ?? project?.first_photo,
+    raw.photo
+    ?? raw.project_photo
+    ?? payload.photo
+    ?? payload.project_photo
+    ?? project?.first_photo,
   );
   const createdAt = normalizeCreatedAt(raw);
-  const patternFavorites = normalizeFavoritesCount(raw.pattern ?? raw);
+  const patternFavorites = normalizeFavoritesCount(
+    raw.pattern ?? payload.pattern ?? raw,
+  );
 
   if (
     project
@@ -147,22 +146,24 @@ function normalizeActivity(raw: any, index: number): FriendActivity {
 
   return {
     id: String(raw.id ?? `${person.username}-${index}-${createdAt || index}`),
-    type: resolveActivityType(raw),
+    type: resolveActivityType({ ...payload, ...raw }),
     created_at: createdAt,
-    title: raw.title ?? raw.description ?? null,
-    body: raw.body ?? raw.comment ?? null,
+    title: raw.title ?? raw.description ?? payload.title ?? null,
+    body: raw.body ?? raw.comment ?? payload.body ?? null,
     person,
     project,
     photo,
     pattern_name:
-      raw.pattern_name ?? project?.pattern_name ?? raw.pattern?.name ?? null,
+      raw.pattern_name
+      ?? project?.pattern_name
+      ?? raw.pattern?.name
+      ?? payload.pattern_name
+      ?? payload.pattern?.name
+      ?? null,
   };
 }
 
 export async function fetchCurrentUser(): Promise<RavelryPerson> {
-  if (isDemo())
-    return mockCurrentUser;
-
   const { data } = await client.get<CurrentUserResponse>('current_user.json');
   return normalizePerson(data.user);
 }
@@ -170,14 +171,17 @@ export async function fetchCurrentUser(): Promise<RavelryPerson> {
 export async function fetchFriendsActivity(
   username: string,
 ): Promise<FriendActivity[]> {
-  if (isDemo())
-    return getMockActivities();
-
+  // Documented response root is `activity` (singular).
   const { data } = await client.get(
     `people/${encodeURIComponent(username)}/friends/activity.json`,
+    { params: { page_size: 50 } },
   );
 
-  const list = data.activities ?? data.friend_activities ?? data ?? [];
+  const list
+    = data.activity
+      ?? data.activities
+      ?? data.friend_activities
+      ?? [];
   return (Array.isArray(list) ? list : []).map(normalizeActivity);
 }
 
@@ -185,13 +189,6 @@ export async function fetchProject(
   username: string,
   id: number,
 ): Promise<RavelryProject> {
-  if (isDemo()) {
-    const project = getMockProject(username, id);
-    if (!project)
-      throw new Error('Project not found');
-    return project;
-  }
-
   const { data } = await client.get(
     `projects/${encodeURIComponent(username)}/${id}.json`,
   );
@@ -201,9 +198,6 @@ export async function fetchProject(
 export async function fetchFriends(
   username: string,
 ): Promise<FriendsListResponse> {
-  if (isDemo())
-    return { friends: getLocalMockFriends() };
-
   // Documented: GET people/{username}/friends/list.json → { friendships: [...] }
   const { data } = await client.get(
     `people/${encodeURIComponent(username)}/friends/list.json`,
@@ -217,9 +211,6 @@ export async function fetchFriends(
 export async function searchPeople(
   query: string,
 ): Promise<PeopleSearchResponse> {
-  if (isDemo())
-    return searchMockPeople(query);
-
   const q = query.trim();
   if (!q)
     return { people: [] };
@@ -279,14 +270,6 @@ export async function addFriend(
   friendUsername: string,
   person?: RavelryPerson,
 ): Promise<void> {
-  if (isDemo()) {
-    if (person)
-      addMockFriend(person);
-    else
-      addMockFriend({ id: Date.now(), username: friendUsername });
-    return;
-  }
-
   let friendUserId = person?.id;
   if (friendUserId == null) {
     const { data } = await client.get(
@@ -308,13 +291,7 @@ export async function addFriend(
 export async function removeFriend(
   username: string,
   friendshipId: number,
-  friendUsername?: string,
 ): Promise<void> {
-  if (isDemo()) {
-    removeMockFriend(friendUsername ?? String(friendshipId));
-    return;
-  }
-
   // Documented: POST people/{username}/friends/{friendship_id}/destroy.json
   await client.post(
     `people/${encodeURIComponent(username)}/friends/${friendshipId}/destroy.json`,
@@ -335,6 +312,3 @@ export function bestPhotoUrl(
     ?? null
   );
 }
-
-// Keep getMockFriends referenced for onboarding empty checks in demo
-void getMockFriends;

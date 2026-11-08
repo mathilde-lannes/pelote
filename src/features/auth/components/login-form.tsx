@@ -7,7 +7,6 @@ import { Button, SafeAreaView, Text, View } from '@/components/ui';
 
 export type LoginFormProps = {
   onOAuth?: () => void;
-  onDemo?: () => void;
   loading?: boolean;
   error?: string | null;
   oauthAvailable?: boolean;
@@ -15,15 +14,10 @@ export type LoginFormProps = {
 
 export function LoginForm({
   onOAuth,
-  onDemo,
   loading = false,
   error,
   oauthAvailable = false,
 }: LoginFormProps) {
-  const demoEnabled
-    = Env.EXPO_PUBLIC_ENABLE_DEMO_MODE
-      || Env.EXPO_PUBLIC_APP_ENV === 'development';
-
   return (
     <SafeAreaView className="flex-1 justify-center bg-black px-6" edges={['top', 'bottom']}>
       <View className="mb-10 items-center">
@@ -67,30 +61,11 @@ export function LoginForm({
                 onPress={onOAuth}
                 disabled={!oauthAvailable || loading}
               />
-
-              {demoEnabled
-                ? (
-                    <View className="mt-2">
-                      <View className="mb-2 rounded-lg border border-ink-300 bg-ink-100 px-3 py-2">
-                        <Text className="text-center text-xs font-medium text-fog-400">
-                          DEMO MODE — labeled mock data, not live Ravelry
-                        </Text>
-                      </View>
-                      <Button
-                        testID="demo-login-button"
-                        label="Browse demo feed"
-                        variant="secondary"
-                        onPress={onDemo}
-                      />
-                    </View>
-                  )
-                : null}
             </View>
           )}
 
       <Text className="mt-8 text-center text-xs/5 text-fog-500">
-        Production and store builds require multi-user OAuth2 only. Register a
-        Ravelry app with redirect
+        Register a Ravelry app with redirect
         {' '}
         {Env.EXPO_PUBLIC_SCHEME}
         ://

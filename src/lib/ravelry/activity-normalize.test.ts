@@ -13,6 +13,12 @@ describe('resolveActivityType', () => {
     expect(resolveActivityType({ activity_type: 'project-photo' })).toBe(
       'project_photo',
     );
+    expect(resolveActivityType({ type: 'project_added' })).toBe(
+      'project_photo',
+    );
+    expect(resolveActivityType({ type: 'pattern_favorited' })).toBe(
+      'favorite',
+    );
     expect(
       resolveActivityType({ title: 'Favorited a pattern' }),
     ).toBe('favorite');

@@ -48,13 +48,13 @@ export const useAddFriend = createMutation<
 
 export const useRemoveFriend = createMutation<
   void,
-  { friendshipId: number; friendUsername?: string },
+  { friendshipId: number },
   AxiosError
 >({
-  mutationFn: async ({ friendshipId, friendUsername }) => {
+  mutationFn: async ({ friendshipId }) => {
     const username = useAuthStore.getState().user?.username;
     if (!username)
       throw new Error('Not signed in');
-    await removeFriend(username, friendshipId, friendUsername);
+    await removeFriend(username, friendshipId);
   },
 });

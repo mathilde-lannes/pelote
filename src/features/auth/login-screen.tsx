@@ -4,7 +4,6 @@ import { showMessage } from 'react-native-flash-message';
 
 import { FocusAwareStatusBar } from '@/components/ui';
 import { fetchCurrentUser } from '@/lib/ravelry/api';
-import { mockCurrentUser } from '@/lib/ravelry/mock-data';
 import {
   AUTH_ENDPOINT,
   createRavelryAuthRequest,
@@ -21,15 +20,10 @@ export function LoginScreen() {
   const [error, setError] = React.useState<string | null>(null);
   const oauthAvailable = hasOAuthCredentials();
 
-  const finishLogin = React.useCallback(async (demo: boolean) => {
+  const finishLogin = React.useCallback(async () => {
     try {
-      if (demo) {
-        setAuthUser(mockCurrentUser);
-      }
-      else {
-        const user = await fetchCurrentUser();
-        setAuthUser(user);
-      }
+      const user = await fetchCurrentUser();
+      setAuthUser(user);
       router.replace('/');
     }
     catch (e) {
@@ -37,21 +31,6 @@ export function LoginScreen() {
       setError('Signed in, but could not load your Ravelry profile.');
     }
   }, [router]);
-
-  const onDemo = React.useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      await signIn(
-        { access: 'demo-access', refresh: 'demo-refresh' },
-        { demo: true },
-      );
-      await finishLogin(true);
-    }
-    finally {
-      setLoading(false);
-    }
-  }, [finishLogin, signIn]);
 
   const onOAuth = React.useCallback(async () => {
     if (!oauthAvailable) {
@@ -78,8 +57,8 @@ export function LoginScreen() {
       }
 
       const tokens = await exchangeCodeForTokens(request, result);
-      await signIn(tokens, { demo: false });
-      await finishLogin(false);
+      await signIn(tokens);
+      await finishLogin();
       showMessage({ message: 'Signed in with Ravelry', type: 'success' });
     }
     catch (e) {
@@ -96,7 +75,6 @@ export function LoginScreen() {
       <FocusAwareStatusBar />
       <LoginForm
         onOAuth={onOAuth}
-        onDemo={onDemo}
         loading={loading}
         error={error}
         oauthAvailable={oauthAvailable}

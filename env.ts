@@ -12,7 +12,6 @@ const envSchema = z.object({
   EXPO_PUBLIC_API_URL: z.string().url(),
   EXPO_PUBLIC_RAVELRY_CLIENT_ID: z.string().optional(),
   EXPO_PUBLIC_RAVELRY_REDIRECT_PATH: z.string(),
-  EXPO_PUBLIC_ENABLE_DEMO_MODE: z.boolean(),
   EXPO_PUBLIC_ASSOCIATED_DOMAIN: z.string().url().optional(),
 
   // Build-time only — injected into app.config `extra` (local .env or EAS Secrets).
@@ -46,7 +45,6 @@ const NAME = 'Pelote';
 const STRICT_ENV_VALIDATION = process.env.STRICT_ENV_VALIDATION === '1';
 
 const clientId = process.env.EXPO_PUBLIC_RAVELRY_CLIENT_ID ?? '';
-const hasOAuthClient = clientId.length > 0;
 
 const _env: z.infer<typeof envSchema> = {
   EXPO_PUBLIC_APP_ENV,
@@ -60,9 +58,6 @@ const _env: z.infer<typeof envSchema> = {
   EXPO_PUBLIC_RAVELRY_CLIENT_ID: clientId || undefined,
   EXPO_PUBLIC_RAVELRY_REDIRECT_PATH:
     process.env.EXPO_PUBLIC_RAVELRY_REDIRECT_PATH ?? 'oauth',
-  EXPO_PUBLIC_ENABLE_DEMO_MODE:
-    process.env.EXPO_PUBLIC_ENABLE_DEMO_MODE === 'true'
-    || (!hasOAuthClient && EXPO_PUBLIC_APP_ENV === 'development'),
   EXPO_PUBLIC_ASSOCIATED_DOMAIN: process.env.EXPO_PUBLIC_ASSOCIATED_DOMAIN,
   RAVELRY_CLIENT_SECRET: process.env.RAVELRY_CLIENT_SECRET,
 };

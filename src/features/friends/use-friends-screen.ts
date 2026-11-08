@@ -92,7 +92,6 @@ export function useFriendsScreen() {
     try {
       await removeFriend.mutateAsync({
         friendshipId: entry.friendship_id,
-        friendUsername: username,
       });
       showMessage({ message: `Removed ${username}`, type: 'info' });
       await invalidate();

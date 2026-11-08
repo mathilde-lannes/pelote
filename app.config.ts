@@ -129,7 +129,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ravelryClientSecret: process.env.RAVELRY_CLIENT_SECRET ?? '',
     ravelryOAuth: {
       hasClientId: Boolean(Env.EXPO_PUBLIC_RAVELRY_CLIENT_ID),
-      demoMode: Env.EXPO_PUBLIC_ENABLE_DEMO_MODE,
     },
   },
 });

@@ -6,18 +6,18 @@ import { LoginForm } from './login-form';
 afterEach(cleanup);
 
 describe('LoginForm', () => {
-  it('renders Pelote wordmark and demo CTA', async () => {
-    setup(<LoginForm oauthAvailable={false} />);
+  it('renders Pelote wordmark and Ravelry sign-in', async () => {
+    setup(<LoginForm oauthAvailable />);
     expect(await screen.findByText('Pelote')).toBeOnTheScreen();
-    expect(screen.getByTestId('demo-login-button')).toBeOnTheScreen();
+    expect(screen.getByTestId('oauth-login-button')).toBeOnTheScreen();
   });
 
-  it('calls onDemo when demo button pressed', async () => {
-    const onDemo = jest.fn();
+  it('calls onOAuth when the Ravelry button is pressed', async () => {
+    const onOAuth = jest.fn();
     const { user } = setup(
-      <LoginForm oauthAvailable={false} onDemo={onDemo} />,
+      <LoginForm oauthAvailable onOAuth={onOAuth} />,
     );
-    await user.press(screen.getByTestId('demo-login-button'));
-    expect(onDemo).toHaveBeenCalledTimes(1);
+    await user.press(screen.getByTestId('oauth-login-button'));
+    expect(onOAuth).toHaveBeenCalledTimes(1);
   });
 });

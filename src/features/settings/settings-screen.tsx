@@ -15,7 +15,6 @@ import { SettingsItem } from './components/settings-item';
 export function SettingsScreen() {
   const signOut = useAuth.use.signOut();
   const user = useAuth.use.user();
-  const isDemo = useAuth.use.isDemo();
 
   return (
     <SafeAreaView className="flex-1 bg-black" edges={['top']}>
@@ -27,16 +26,6 @@ export function SettingsScreen() {
             Settings
           </Text>
 
-          {isDemo
-            ? (
-                <View className="mt-4 rounded-lg border border-ink-300 bg-ink-100 px-3 py-2">
-                  <Text className="text-center text-xs font-medium text-fog-400">
-                    DEMO MODE — signed in with mock data
-                  </Text>
-                </View>
-              )
-            : null}
-
           <SettingsContainer title="Account">
             <SettingsItem
               text="Ravelry user"
@@ -44,7 +33,7 @@ export function SettingsScreen() {
             />
             <SettingsItem
               text="Auth"
-              value={isDemo ? 'Demo (mock)' : 'OAuth2'}
+              value="OAuth2"
             />
           </SettingsContainer>
 

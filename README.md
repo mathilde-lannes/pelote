@@ -12,17 +12,13 @@ Expo (Router) · TypeScript · Uniwind / Tailwind (Obytes template) · TanStack 
 
 ```bash
 pnpm install
-cp .env.example .env   # demo mode works with blank OAuth client id
+cp .env.example .env
 pnpm start
 ```
 
 Then press `i` / `a` for simulator, or scan the QR with Expo Go / a dev client.
 
-### Demo mode
-
-With `EXPO_PUBLIC_ENABLE_DEMO_MODE=true` (default when no client id is set in development), the login screen offers **Browse demo feed**. Demo data is clearly labeled and never hits the Ravelry API.
-
-### Real OAuth
+### OAuth
 
 1. Create an app in the [Ravelry developer portal](https://www.ravelry.com/pro/developer).
 2. Set redirect URI to your AuthSession callback, e.g. `pelote://oauth` (scheme `pelote`, path `oauth`).
@@ -37,7 +33,6 @@ With `EXPO_PUBLIC_ENABLE_DEMO_MODE=true` (default when no client id is set in de
 | `EAS_PROJECT_ID` / `EXPO_ACCOUNT_OWNER` | EAS / CI env | Replace placeholders before first store build |
 
 ```bash
-EXPO_PUBLIC_ENABLE_DEMO_MODE=false
 EXPO_PUBLIC_RAVELRY_CLIENT_ID=your_client_id
 RAVELRY_CLIENT_SECRET=your_client_secret
 # Secret is baked into the binary — Metro restart is not enough:
@@ -58,7 +53,6 @@ Checklist before the first store / TestFlight build:
 3. **EAS Secrets / environment variables** (project → Secrets / Environment)
    - `RAVELRY_CLIENT_SECRET` — required; read by `app.config.ts` into `extra.ravelryClientSecret` during the EAS build.
    - `EXPO_PUBLIC_RAVELRY_CLIENT_ID` — public client id.
-   - `EXPO_PUBLIC_ENABLE_DEMO_MODE=false` for production (also set in `eas.json` production profile).
 4. **CI**
    - GitHub Actions secret `EXPO_TOKEN` for EAS builds on merge to `main`.
 5. **Build**
@@ -99,4 +93,4 @@ Note: with on-device token exchange, the client secret is present inside the app
 
 - No personal Basic API key in the product path
 - Secrets stay in env / EAS — never committed
-- Production path is OAuth-only; demo is development/demo labeled only
+- Auth is multi-user OAuth2 only

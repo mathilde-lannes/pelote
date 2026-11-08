@@ -14,9 +14,8 @@ export const client = axios.create({
 
 client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = useAuthStore.getState().token;
-  const isDemo = useAuthStore.getState().isDemo;
 
-  if (token?.access && !isDemo) {
+  if (token?.access) {
     config.headers.Authorization = `Bearer ${token.access}`;
   }
 

@@ -16,7 +16,6 @@ import { hydrateAuth, setAuthUser, useAuthStore } from '@/features/auth/use-auth
 import { APIProvider } from '@/lib/api';
 import { loadSelectedTheme } from '@/lib/hooks/use-selected-theme';
 import { fetchCurrentUser } from '@/lib/ravelry/api';
-import { mockCurrentUser } from '@/lib/ravelry/mock-data';
 // Import  global CSS file
 import '../global.css';
 
@@ -38,7 +37,6 @@ SplashScreen.setOptions({
 export default function RootLayout() {
   const hasHiddenSplash = React.useRef(false);
   const status = useAuthStore.use.status();
-  const isDemo = useAuthStore.use.isDemo();
   const user = useAuthStore.use.user();
 
   React.useEffect(() => {
@@ -48,7 +46,7 @@ export default function RootLayout() {
     let cancelled = false;
     (async () => {
       try {
-        const next = isDemo ? mockCurrentUser : await fetchCurrentUser();
+        const next = await fetchCurrentUser();
         if (!cancelled)
           setAuthUser(next);
       }
@@ -60,7 +58,7 @@ export default function RootLayout() {
     return () => {
       cancelled = true;
     };
-  }, [status, isDemo, user]);
+  }, [status, user]);
 
   const onLayoutRootView = React.useCallback(() => {
     if (hasHiddenSplash.current) {

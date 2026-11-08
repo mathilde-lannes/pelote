@@ -46,7 +46,6 @@ Root Files:
 | HTTP client + 401 refresh | `src/lib/api/client.tsx` |
 | OAuth authorize / token / refresh | `src/lib/ravelry/oauth.ts` |
 | Typed Ravelry helpers | `src/lib/ravelry/api.ts` |
-| Demo / mock data | `src/lib/ravelry/mock-data.ts` |
 | Base URL | `EXPO_PUBLIC_API_URL` → `https://api.ravelry.com/` |
 
 **Known product constraints (verify against docs when changing):**
