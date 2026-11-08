@@ -101,7 +101,7 @@ export function ProfileFeedScreen() {
   });
 
   const projects = React.useMemo(
-    () => projectsQuery.data ?? [],
+    () => projectsQuery.data?.projects ?? [],
     [projectsQuery.data],
   );
 

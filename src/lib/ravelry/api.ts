@@ -263,10 +263,20 @@ export async function fetchPerson(username: string): Promise<RavelryPerson> {
   return normalizePerson(data.user ?? data);
 }
 
+export type ProjectsListPage = {
+  projects: RavelryProject[];
+  page: number;
+  pageSize: number;
+  /** From Ravelry `paginator.page_count` / `last_page`. */
+  pageCount: number;
+  /** From Ravelry `paginator.results` when present. */
+  totalResults: number | null;
+};
+
 export async function fetchProjectsList(
   username: string,
   options?: { page?: number; pageSize?: number },
-): Promise<{ projects: RavelryProject[]; page: number; pageSize: number }> {
+): Promise<ProjectsListPage> {
   const page = options?.page ?? 1;
   const pageSize = options?.pageSize ?? 24;
   // Documented: GET projects/{username}/list.json (same family as projects/{user}/{id}.json)
@@ -275,10 +285,22 @@ export async function fetchProjectsList(
     { params: { page, page_size: pageSize } },
   );
   const list = data.projects ?? [];
+  const projects = (Array.isArray(list) ? list : []).map(normalizeProject);
+  const paginator = data.paginator ?? {};
+  const pageCountRaw = paginator.page_count ?? paginator.last_page ?? 1;
+  const pageCount = Number(pageCountRaw);
+  const totalRaw = paginator.results;
+  const totalResults
+    = typeof totalRaw === 'number' && Number.isFinite(totalRaw)
+      ? totalRaw
+      : null;
+
   return {
-    projects: (Array.isArray(list) ? list : []).map(normalizeProject),
+    projects,
     page,
     pageSize,
+    pageCount: Number.isFinite(pageCount) && pageCount > 0 ? pageCount : 1,
+    totalResults,
   };
 }
 

@@ -129,7 +129,8 @@ export function ProfileScreen() {
   });
 
   const person = personQuery.data;
-  const projects = projectsQuery.data ?? [];
+  const projects = projectsQuery.data?.projects ?? [];
+  const projectCount = projectsQuery.data?.totalCount ?? null;
   const avatarUrl
     = person?.photo_url
       ?? person?.small_photo_url
@@ -188,7 +189,7 @@ export function ProfileScreen() {
             avatarUrl={avatarUrl}
             about={about}
             projectCount={
-              projectsQuery.isPending ? null : projects.length
+              projectsQuery.isPending ? null : projectCount
             }
           />
         )}

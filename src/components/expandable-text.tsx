@@ -42,6 +42,13 @@ function ExpandableTextInner({
   const [expanded, setExpanded] = React.useState(false);
   const [canExpand, setCanExpand] = React.useState(false);
 
+  // Remount resets expanded to false; keep the parent's layout state in sync.
+  React.useEffect(() => {
+    return () => {
+      onExpandedChange?.(false);
+    };
+  }, [onExpandedChange]);
+
   const onMeasureLayout = React.useCallback(
     (event: NativeSyntheticEvent<TextLayoutEventData>) => {
       setCanExpand(event.nativeEvent.lines.length > numberOfLines);
@@ -50,12 +57,10 @@ function ExpandableTextInner({
   );
 
   const toggle = React.useCallback(() => {
-    setExpanded((prev) => {
-      const next = !prev;
-      onExpandedChange?.(next);
-      return next;
-    });
-  }, [onExpandedChange]);
+    const next = !expanded;
+    setExpanded(next);
+    onExpandedChange?.(next);
+  }, [expanded, onExpandedChange]);
 
   if (!body && !prefix)
     return null;
