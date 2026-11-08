@@ -16,8 +16,20 @@ type Props = {
 
 /**
  * Instagram-style caption: collapsed to N lines with a “more” toggle.
+ * Remounts when the caption text changes so expand state resets without
+ * calling setState inside an effect.
  */
-export function ExpandableText({
+export function ExpandableText(props: Props) {
+  const body = props.text.trim();
+  return (
+    <ExpandableTextInner
+      key={`${props.prefix ?? ''}\0${body}`}
+      {...props}
+    />
+  );
+}
+
+function ExpandableTextInner({
   text,
   prefix,
   numberOfLines = 2,
@@ -29,11 +41,6 @@ export function ExpandableText({
   const body = text.trim();
   const [expanded, setExpanded] = React.useState(false);
   const [canExpand, setCanExpand] = React.useState(false);
-
-  React.useEffect(() => {
-    setExpanded(false);
-    setCanExpand(false);
-  }, [body, prefix]);
 
   const onMeasureLayout = React.useCallback(
     (event: NativeSyntheticEvent<TextLayoutEventData>) => {

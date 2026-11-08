@@ -28,7 +28,7 @@ export function FriendRow({ item, isFriend, onAdd, onRemove }: Props) {
         onPress={openProfile}
         accessibilityRole="button"
         accessibilityLabel={`Open ${username} profile`}
-        className="flex-row items-center gap-3 flex-1"
+        className="flex-1 flex-row items-center gap-3"
       >
         {avatarUrl
           ? (
