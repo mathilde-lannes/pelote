@@ -1,6 +1,9 @@
-import { Stack } from 'expo-router';
+import { HeaderBackButton } from '@react-navigation/elements';
+import { Stack, useRouter } from 'expo-router';
 
 export default function UserProfileLayout() {
+  const router = useRouter();
+
   return (
     <Stack
       screenOptions={{
@@ -14,7 +17,19 @@ export default function UserProfileLayout() {
         name="index"
         options={{
           title: 'Profile',
-          headerBackTitle: 'Back',
+          // Nested index has no prior screen in this stack; pop the root navigator.
+          headerLeft: props => (
+            <HeaderBackButton
+              {...props}
+              tintColor="#ffffff"
+              onPress={() => {
+                if (router.canGoBack())
+                  router.back();
+                else
+                  router.replace('/');
+              }}
+            />
+          ),
         }}
       />
       <Stack.Screen
