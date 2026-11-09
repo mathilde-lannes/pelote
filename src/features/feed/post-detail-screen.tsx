@@ -1,11 +1,12 @@
-import { Image } from 'expo-image';
 import { useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import { ActivityIndicator, ScrollView } from 'react-native';
 
+import { ExpandableText } from '@/components/expandable-text';
 import { FocusAwareStatusBar, Text, View } from '@/components/ui';
-import { bestPhotoUrl } from '@/lib/ravelry/api';
 import { useProject } from './api';
+import { collectProjectPhotos } from './components/collect-project-photos';
+import { PhotoCarousel } from './components/photo-carousel';
 
 export function ProjectDetailScreen() {
   const params = useLocalSearchParams<{
@@ -19,6 +20,11 @@ export function ProjectDetailScreen() {
       id: String(params.id ?? ''),
     },
   });
+
+  const photos = React.useMemo(
+    () => collectProjectPhotos(data?.first_photo, data?.photos),
+    [data?.first_photo, data?.photos],
+  );
 
   if (isPending) {
     return (
@@ -40,20 +46,10 @@ export function ProjectDetailScreen() {
     );
   }
 
-  const hero = bestPhotoUrl(data.first_photo ?? data.photos?.[0]);
-
   return (
     <ScrollView className="flex-1 bg-black">
       <FocusAwareStatusBar />
-      {hero
-        ? (
-            <Image
-              source={{ uri: hero }}
-              style={{ width: '100%', aspectRatio: 4 / 5 }}
-              contentFit="cover"
-            />
-          )
-        : null}
+      <PhotoCarousel photos={photos} />
       <View className="px-4 py-5">
         <Text className="text-2xl font-semibold text-white">
           {data.name}
@@ -95,9 +91,14 @@ export function ProjectDetailScreen() {
         </View>
         {data.notes_html
           ? (
-              <Text className="mt-5 text-base/6 text-fog-300">
-                {data.notes_html.replace(/<[^>]+>/g, ' ').trim()}
-              </Text>
+              <View className="mt-5">
+                <ExpandableText
+                  text={data.notes_html.replace(/<[^>]+>/g, ' ').trim()}
+                  numberOfLines={2}
+                  className="text-base/6 text-fog-300"
+                  moreClassName="mt-1 text-sm text-fog-500"
+                />
+              </View>
             )
           : null}
       </View>

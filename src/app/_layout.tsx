@@ -82,6 +82,10 @@ export default function RootLayout() {
             headerBackTitle: 'Feed',
           }}
         />
+        <Stack.Screen
+          name="user/[username]"
+          options={{ headerShown: false }}
+        />
       </Stack>
     </Providers>
   );
