@@ -1,3 +1,1 @@
-# redirect all /docs requests to the root domain
-
-/docs/\* /:splat 301
+# Kept for hosts that honor _redirects; GitHub Pages uses Astro `base` instead.

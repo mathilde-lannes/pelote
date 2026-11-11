@@ -99,6 +99,8 @@ pnpm build:production:ios       # EAS production build
 - ✅ **DO** use MMKV storage for sensitive data (not AsyncStorage)
 - ✅ **DO** use EAS Build for production: `pnpm build:production:ios`
 - ✅ **DO** prefix client-readable env vars with `EXPO_PUBLIC_*` (never the OAuth client secret)
+- ✅ **DO** write YAML (GitHub Actions, config) with **plain-style scalars** — unquoted strings whenever YAML allows (`docs/**`, `.github/workflows/foo.yml`, `true`). Quote only when required (e.g. values that would be misparsed, or strings that must stay strings vs booleans/null).
 - ❌ **DO NOT** invent Ravelry endpoints or params that are not in the official docs
 - ❌ **DO NOT** use personal Basic API keys in the product path
 - ❌ **DO NOT** modify `android/` or `ios/` directly (use Expo config plugins)
+- ❌ **DO NOT** wrap YAML scalars in quotes when plain style works (`'docs/**'` → `docs/**`)

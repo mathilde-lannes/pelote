@@ -1,0 +1,201 @@
+---
+const base = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+const specsHref = `${base}specs/auth/`;
+const faviconHref = `${base}favicon.svg`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pelote — Friends’ projects, photo-first</title>
+    <meta
+      name="description"
+      content="Pelote is an Instagram-style Ravelry companion: a dark photo feed of friends’ knitting and crochet projects."
+    />
+    <meta name="theme-color" content="#000000" />
+    <link rel="icon" type="image/svg+xml" href={faviconHref} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Fira+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <main>
+      <header class="hero">
+        <p class="brand">Pelote</p>
+        <h1>Friends’ knitting, photo-first</h1>
+        <p class="lede">
+          Browse full-bleed project photos from people and designers you follow —
+          an Instagram-style feed powered by your Ravelry social graph.
+        </p>
+        <div class="stores" aria-label="Store availability">
+          <span class="badge">App Store — Coming soon</span>
+          <span class="badge">Google Play — Coming soon</span>
+        </div>
+      </header>
+
+      <section class="features" aria-label="What Pelote does">
+        <article>
+          <h2>Home feed</h2>
+          <p>
+            Scroll friends’ project and stash photos, plus queued patterns, in a
+            dark photo-first feed.
+          </p>
+        </article>
+        <article>
+          <h2>Friend profiles</h2>
+          <p>
+            Open a maker’s grid of public projects and swipe through their
+            vertical project feed.
+          </p>
+        </article>
+        <article>
+          <h2>Sign in with Ravelry</h2>
+          <p>
+            Multi-user OAuth2 only. Pelote never ships a personal Ravelry Basic
+            API key.
+          </p>
+        </article>
+      </section>
+
+      <footer>
+        <a href={specsHref}>Read the functional specs</a>
+        <p class="credit">Connects to Ravelry · Not affiliated with Ravelry</p>
+      </footer>
+    </main>
+  </body>
+</html>
+
+<style is:global>
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: 'Fira Sans', system-ui, sans-serif;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -10%, #262626 0%, transparent 55%),
+      #000;
+    color: #f5f5f5;
+  }
+
+  main {
+    max-width: 40rem;
+    margin: 0 auto;
+    padding: 4.5rem 1.5rem 3rem;
+  }
+
+  .hero {
+    text-align: center;
+  }
+
+  .brand {
+    margin: 0 0 1.5rem;
+    font-family: 'Fira Code', ui-monospace, monospace;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #a8a8a8;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: 'Fira Code', ui-monospace, monospace;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(1.75rem, 5vw, 2.35rem);
+    font-weight: 600;
+    line-height: 1.2;
+    color: #fff;
+  }
+
+  .lede {
+    margin: 1.25rem auto 0;
+    max-width: 32rem;
+    font-size: 1rem;
+    line-height: 1.65;
+    color: #a8a8a8;
+  }
+
+  .stores {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 2rem;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 0.65rem 1rem;
+    border: 1px solid #363636;
+    background: #121212;
+    color: #dbdbdb;
+    font-size: 0.8125rem;
+  }
+
+  .features {
+    display: grid;
+    gap: 1.75rem;
+    margin-top: 4rem;
+    padding-top: 2.5rem;
+    border-top: 1px solid #262626;
+  }
+
+  .features h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .features p {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: #a8a8a8;
+  }
+
+  footer {
+    margin-top: 3.5rem;
+    padding-top: 2rem;
+    border-top: 1px solid #262626;
+    text-align: center;
+  }
+
+  footer a {
+    color: #f5f5f5;
+    text-underline-offset: 0.2em;
+  }
+
+  footer a:hover {
+    color: #fff;
+  }
+
+  .credit {
+    margin: 1rem 0 0;
+    font-size: 0.75rem;
+    color: #737373;
+  }
+</style>
