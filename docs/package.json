@@ -1,7 +1,8 @@
 {
-  "name": "ossified-orbit",
+  "name": "pelote-docs",
   "type": "module",
   "version": "0.0.1",
+  "private": true,
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
@@ -13,10 +14,7 @@
     "@astrojs/starlight": "^0.37.6",
     "@expressive-code/plugin-collapsible-sections": "^0.33.4",
     "@expressive-code/plugin-line-numbers": "^0.33.4",
-    "@fontsource/ibm-plex-mono": "^5.0.8",
-    "@fontsource/ibm-plex-serif": "^5.0.8",
     "astro": "^5.17.1",
-    "hast-util-to-html": "^9.0.0",
-    "starlight-llms-txt": "^0.4.0"
+    "hast-util-to-html": "^9.0.0"
   }
 }
