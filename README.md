@@ -56,8 +56,10 @@ Checklist before the first store / TestFlight build:
 4. **CI**
    - GitHub Actions secret `EXPO_TOKEN` for EAS builds on merge to `main`.
 5. **Build**
-   - Local: `pnpm build:production:ios` / `pnpm build:production:android`
-   - Or run **New App Version** (bumps `package.json`, which is the runtime version) and let the GitHub release trigger `eas-build-prod.yml`
+   - Runtime version is always `package.json` `version` (`runtimeVersion.policy: appVersion`). Commit a bump there before any native production build so that version stays available for later `eas update`s.
+   - Local cloud: `pnpm build:production:ios` / `pnpm build:production:android`
+   - Local machine: `pnpm build:production:ios:local` / `pnpm build:production:android:local` — these run `check:runtime-app-version` first and fail if the version matches the parent commit
+   - Or run **New App Version** (bumps `package.json`) and let the GitHub release trigger `eas-build-prod.yml`
    - Or run **EAS Production Build** manually. If that commit did not already change the app version, the workflow bumps it before the native build
 6. **Submit**
    - Use EAS Submit / App Store Connect / Play Console as usual after the build finishes.
@@ -73,6 +75,8 @@ Note: with on-device token exchange, the client secret is present inside the app
 | `pnpm lint` / `pnpm type-check` / `pnpm test` | Quality gates |
 | `pnpm build:preview:android` | EAS preview APK |
 | `pnpm build:production:ios` | EAS production iOS |
+| `pnpm check:runtime-app-version` | Fail if `package.json` version was not bumped vs the parent commit |
+| `pnpm build:production:ios:local` | Local production iOS build after the runtime-version check |
 
 ## CI/CD
 

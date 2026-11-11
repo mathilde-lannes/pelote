@@ -1,7 +1,20 @@
 import {
   incrementPackageVersionSource,
   needsRuntimeAppVersionBump,
+  readPackageVersion,
 } from '@/lib/runtime-app-version';
+
+describe('readPackageVersion', () => {
+  it('reads the version string from package.json source', () => {
+    expect(readPackageVersion('{"version":"0.1.0"}\n')).toBe('0.1.0');
+  });
+
+  it('rejects a missing version string', () => {
+    expect(() => readPackageVersion('{"name":"pelote"}\n')).toThrow(
+      'package.json version must be a string',
+    );
+  });
+});
 
 describe('needsRuntimeAppVersionBump', () => {
   it('requires a bump when this commit still has the parent app version', () => {

@@ -1,3 +1,14 @@
+export function readPackageVersion(source: string): string {
+  const version = JSON.parse(source).version;
+  if (typeof version !== 'string') {
+    throw new TypeError(
+      'Cannot read runtime app version. package.json version must be a string.',
+    );
+  }
+
+  return version;
+}
+
 export function needsRuntimeAppVersionBump(
   currentVersion: string,
   parentVersion: string | null,
@@ -9,13 +20,7 @@ export function incrementPackageVersionSource(source: string): {
   source: string;
   version: string;
 } {
-  const current = JSON.parse(source).version;
-  if (typeof current !== 'string') {
-    throw new TypeError(
-      'Cannot increment runtime app version. package.json version must be a string.',
-    );
-  }
-
+  const current = readPackageVersion(source);
   const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(current);
   if (!match) {
     throw new Error(
