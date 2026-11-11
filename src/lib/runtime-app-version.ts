@@ -1,3 +1,4 @@
+/** Parse and return the `version` string from package.json source text. */
 export function readPackageVersion(source: string): string {
   const version = JSON.parse(source).version;
   if (typeof version !== 'string') {
@@ -9,6 +10,11 @@ export function readPackageVersion(source: string): string {
   return version;
 }
 
+/**
+ * Whether a production/native build should require bumping package.json
+ * version. When `parentVersion` is null (root commit / explicit skip), no bump
+ * is required.
+ */
 export function needsRuntimeAppVersionBump(
   currentVersion: string,
   parentVersion: string | null,
@@ -16,6 +22,7 @@ export function needsRuntimeAppVersionBump(
   return parentVersion != null && currentVersion === parentVersion;
 }
 
+/** Bump the patch segment of package.json `version` and return updated source. */
 export function incrementPackageVersionSource(source: string): {
   source: string;
   version: string;

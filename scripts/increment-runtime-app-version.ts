@@ -7,6 +7,25 @@ import {
   readPackageVersion,
 } from '../src/lib/runtime-app-version';
 
+/** True when HEAD has no parents (initial commit). Throws on Git errors. */
+function isRootCommit(): boolean {
+  const head = execFileSync('git', ['rev-parse', 'HEAD'], {
+    encoding: 'utf8',
+  }).trim();
+  const roots = execFileSync('git', ['rev-list', '--max-parents=0', 'HEAD'], {
+    encoding: 'utf8',
+  })
+    .trim()
+    .split('\n')
+    .filter(Boolean);
+
+  return roots.includes(head);
+}
+
+/**
+ * Read package.json `version` from HEAD^. Returns null only for a true root
+ * commit. Any other missing parent or Git failure throws.
+ */
 function readParentVersionFromGit(): string | null {
   try {
     execFileSync('git', ['rev-parse', '--verify', '--quiet', 'HEAD^'], {
@@ -14,7 +33,12 @@ function readParentVersionFromGit(): string | null {
     });
   }
   catch {
-    return null;
+    if (isRootCommit())
+      return null;
+
+    throw new Error(
+      'Unable to resolve HEAD^ for the runtime version check. Ensure Git history includes the parent commit.',
+    );
   }
 
   const parentPackageJson = execFileSync(
@@ -26,6 +50,7 @@ function readParentVersionFromGit(): string | null {
   return readPackageVersion(parentPackageJson);
 }
 
+/** Exit 1 when the app version still matches the parent; otherwise print it. */
 function runCheck(currentVersion: string, parentVersion: string | null): never {
   if (needsRuntimeAppVersionBump(currentVersion, parentVersion)) {
     process.stderr.write(

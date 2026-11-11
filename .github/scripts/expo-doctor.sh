@@ -4,10 +4,13 @@ set -euo pipefail
 
 mkdir -p .expo
 
-# Pin a known-good doctor release. expo-doctor@>=1.21 crashes under npx with
+# Pin a Doctor release that exits non-zero when config loading fails
+# (fixed in 1.21.3+). Avoid 1.21.7+: it crashes under npx with
 # "Cannot find module '@expo/env'" even on supported Node versions.
-output=$(npx --yes expo-doctor@1.13.1 2>&1)
+set +e
+output=$(npx --yes expo-doctor@1.21.6 2>&1)
 exit_code=$?
+set -e
 
 # Output file location
 output_file=".expo/expo-doctor.md"

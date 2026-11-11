@@ -1,6 +1,7 @@
 const EAS_PROJECT_ID_PATTERN
   = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** Parse a raw EAS project id; blank/undefined → undefined, invalid → throw. */
 export function parseEasProjectId(
   raw: string | undefined,
 ): string | undefined {
@@ -17,6 +18,7 @@ export function parseEasProjectId(
   return projectId;
 }
 
+/** Require a parsed EAS project id when updates are enabled for `appEnv`. */
 export function requireEasProjectIdForUpdates(
   projectId: string | undefined,
   appEnv: string,
