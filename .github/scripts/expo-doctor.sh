@@ -1,7 +1,12 @@
 #!/bin/bash
 
-# Run expo-doctor and capture output and exit code
-output=$(npx expo-doctor@latest 2>&1)
+set -euo pipefail
+
+mkdir -p .expo
+
+# Pin a known-good doctor release. expo-doctor@>=1.21 crashes under npx with
+# "Cannot find module '@expo/env'" even on supported Node versions.
+output=$(npx --yes expo-doctor@1.13.1 2>&1)
 exit_code=$?
 
 # Output file location
