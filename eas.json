@@ -9,11 +9,11 @@
       "distribution": "store",
       "environment": "production",
       "ios": {
-        "image": "latest"
+        "image": "sdk-54"
       },
       "android": {
         "buildType": "app-bundle",
-        "image": "latest"
+        "image": "sdk-54"
       },
       "env": {
         "EXPO_PUBLIC_APP_ENV": "production",
@@ -25,11 +25,11 @@
       "autoIncrement": true,
       "distribution": "store",
       "ios": {
-        "image": "latest"
+        "image": "sdk-54"
       },
       "android": {
         "buildType": "apk",
-        "image": "latest"
+        "image": "sdk-54"
       },
       "environment": "preview",
       "env": {
@@ -42,10 +42,10 @@
       "distribution": "internal",
       "environment": "development",
       "ios": {
-        "image": "latest"
+        "image": "sdk-54"
       },
       "android": {
-        "image": "latest"
+        "image": "sdk-54"
       },
       "env": {
         "EXPO_PUBLIC_APP_ENV": "development",
@@ -56,10 +56,10 @@
       "environment": "development",
       "ios": {
         "simulator": true,
-        "image": "latest"
+        "image": "sdk-54"
       },
       "android": {
-        "image": "latest"
+        "image": "sdk-54"
       },
       "env": {
         "EXPO_PUBLIC_APP_ENV": "development",
@@ -68,7 +68,16 @@
     }
   },
   "submit": {
-    "preview": {},
-    "production": {}
+    "preview": {
+      "ios": {
+        "bundleIdentifier": "com.pelote.preview"
+      }
+    },
+    "production": {
+      "ios": {
+        "bundleIdentifier": "com.pelote",
+        "ascAppId": "6832739925"
+      }
+    }
   }
 }

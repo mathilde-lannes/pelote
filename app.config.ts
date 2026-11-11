@@ -42,7 +42,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   icon: './assets/icon.png',
   userInterfaceStyle: 'dark',
   newArchEnabled: true,
+  runtimeVersion: {
+    policy: 'appVersion',
+  },
   updates: {
+    url: `https://u.expo.dev/${EAS_PROJECT_ID}`,
     fallbackToCacheTimeout: 0,
   },
   assetBundlePatterns: ['**/*'],
