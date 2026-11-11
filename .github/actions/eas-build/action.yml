@@ -9,6 +9,8 @@
 #        `APP_ENV`, which is used to generate an APK for a specific environment (development, staging, production). We use staging by default.
 #        `AUTO_SUBMIT`, false by default, set to true if you want to automatically submit your build to stores.
 #        `EXPO_TOKEN`, required, access token for your Expo account. https://expo.dev/settings/access-tokens
+#        `EAS_PROJECT_ID`, required, Expo project UUID used by app.config during config evaluation.
+#        `EXPO_ACCOUNT_OWNER`, optional, Expo account owner (defaults to pelote).
 #        `VERSION`, required, version of the app to build. used as the build message.
 #        `ANDROID`, true by default, set to true if you don't want to trigger build for Android.
 #        `IOS`, false by default, set to true if you  want to trigger build for IOS.
@@ -19,6 +21,7 @@
 #        with:
 #          APP_ENV: staging
 #          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+#          EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
 #          VERSION: ${{ github.event.release.tag_name }}
 #          IOS: false
 
@@ -49,6 +52,13 @@ inputs:
     description: EXPO_TOKEN
     required: true
     default: 'false'
+  EAS_PROJECT_ID:
+    description: Expo project UUID for app.config updates URL / extra.eas.projectId
+    required: true
+  EXPO_ACCOUNT_OWNER:
+    description: Expo account owner for app.config owner
+    required: false
+    default: pelote
 
 runs:
   using: composite
@@ -61,6 +71,14 @@ runs:
         fi
       shell: bash
 
+    - name: 💯 Check for EAS_PROJECT_ID
+      run: |
+        if [ -z "${{ inputs.EAS_PROJECT_ID }}" ]; then
+          echo "You must provide EAS_PROJECT_ID (GitHub Actions secret/variable and the matching EAS environment variable). app.config evaluates it before EAS can resolve the project."
+          exit 1
+        fi
+      shell: bash
+
     - name: 📦 Setup Expo and EAS
       uses: expo/expo-github-action@v8
       with:
@@ -69,10 +87,16 @@ runs:
 
     - name: 📱 Run Android Build
       if: ${{ inputs.ANDROID == 'true' }}
+      env:
+        EAS_PROJECT_ID: ${{ inputs.EAS_PROJECT_ID }}
+        EXPO_ACCOUNT_OWNER: ${{ inputs.EXPO_ACCOUNT_OWNER }}
       run: pnpm build:${{ inputs.APP_ENV }}:android --non-interactive  --no-wait --message "Build  ${{ inputs.APP_ENV }} ${{ inputs.VERSION }}"
       shell: bash
 
     - name: 📱 Run IOS Build
       if: ${{ inputs.IOS == 'true' }}
+      env:
+        EAS_PROJECT_ID: ${{ inputs.EAS_PROJECT_ID }}
+        EXPO_ACCOUNT_OWNER: ${{ inputs.EXPO_ACCOUNT_OWNER }}
       run: pnpm build:${{ inputs.APP_ENV }}:ios --non-interactive  --no-wait --message "Build ${{ inputs.APP_ENV }} ${{ inputs.VERSION }}"
       shell: bash

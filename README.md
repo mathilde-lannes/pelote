@@ -30,7 +30,7 @@ Then press `i` / `a` for simulator, or scan the QR with Expo Go / a dev client.
 | `EXPO_PUBLIC_RAVELRY_CLIENT_ID` | `.env` / EAS env | Public client id |
 | `RAVELRY_CLIENT_SECRET` | `.env` / EAS Secret | Never commit; copied into `app.config` `extra` at **native/EAS build** time |
 | `EXPO_TOKEN` | GitHub Actions secret | EAS CI builds |
-| `EAS_PROJECT_ID` / `EXPO_ACCOUNT_OWNER` | EAS / CI env | Expo project UUID and account owner. Preview and production builds fail if the project id is missing or not a UUID |
+| `EAS_PROJECT_ID` / `EXPO_ACCOUNT_OWNER` | `.env`, GitHub Actions secret, and EAS environment | Same Expo project UUID (and account owner) must be present for local CI config evaluation and for the remote EAS build environment. Preview and production builds fail if the project id is missing or not a UUID |
 
 ```bash
 EXPO_PUBLIC_RAVELRY_CLIENT_ID=your_client_id
@@ -50,11 +50,13 @@ Checklist before the first store / TestFlight build:
 2. **Ravelry OAuth**
    - Production redirect URI must match the store app scheme, e.g. `pelote://oauth`.
    - Set scope `offline`.
-3. **EAS Secrets / environment variables** (project → Secrets / Environment)
+3. **EAS Secrets / environment variables** (project → Secrets / Environment for preview and production)
+   - `EAS_PROJECT_ID` — required; `app.config.ts` reads it during config evaluation on the EAS worker (before updates URL / `extra.eas.projectId` are set).
+   - `EXPO_ACCOUNT_OWNER` — Expo account owner (defaults to `pelote` in CI if unset).
    - `RAVELRY_CLIENT_SECRET` — required; read by `app.config.ts` into `extra.ravelryClientSecret` during the EAS build.
    - `EXPO_PUBLIC_RAVELRY_CLIENT_ID` — public client id.
 4. **CI**
-   - GitHub Actions secret `EXPO_TOKEN` for EAS builds on merge to `main`.
+   - GitHub Actions secrets `EXPO_TOKEN` and `EAS_PROJECT_ID` for EAS builds. Use the same project UUID as in the EAS environment so the runner can evaluate `app.config` before the EAS command starts.
 5. **Build**
    - Runtime version is always `package.json` `version` (`runtimeVersion.policy: appVersion`). Commit a bump there before any native production build so that version stays available for later `eas update`s.
    - Local cloud: `pnpm build:production:ios` / `pnpm build:production:android`
