@@ -1,12 +1,19 @@
-# Triggers a production EAS build on merge/push to main (and manual dispatch).
+# Production native builds use runtimeVersion.policy "appVersion"
+# (package.json version). eas.json autoIncrement only bumps the iOS build
+# number or Android version code, so this workflow increments the app version
+# before building when the commit did not already do that.
+# A GitHub release from New App Version already contains that bump.
 # Requires GitHub secret EXPO_TOKEN and EAS secrets for Ravelry OAuth.
 
 name: EAS Production Build (Android & iOS)
 
 on:
-  push:
-    branches: [main, master]
+  release:
+    types: [published]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   Build:
@@ -24,14 +31,53 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
+          token: ${{ secrets.GH_TOKEN || github.token }}
 
       - name: 📦 Setup Node + PNPM + install deps
         uses: ./.github/actions/setup-node-pnpm-install
+
+      - name: Read parent app version
+        id: parent_version
+        run: |
+          set -euo pipefail
+          if git rev-parse --verify --quiet 'HEAD^' >/dev/null; then
+            PARENT=$(git show 'HEAD^:package.json' | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>process.stdout.write(JSON.parse(s).version))')
+            echo "version=${PARENT}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Increment runtime app version
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          set -euo pipefail
+          BEFORE=$(node -p "require('./package.json').version")
+          NEXT=$(NODE_NO_WARNINGS=1 pnpm exec tsx scripts/increment-runtime-app-version.ts bump "${{ steps.parent_version.outputs.version }}" | tail -n 1)
+          if [ "$NEXT" != "$BEFORE" ]; then
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git config user.name "github-actions[bot]"
+            git add package.json
+            SKIP_BRANCH_PROTECTION=true git commit -m "chore: release ${NEXT}"
+            git push origin "HEAD:refs/heads/${GITHUB_REF_NAME}"
+          fi
+
+      - name: Require incremented runtime app version
+        id: runtime_version
+        run: |
+          set -euo pipefail
+          PARENT=""
+          if git rev-parse --verify --quiet 'HEAD^' >/dev/null; then
+            PARENT=$(git show 'HEAD^:package.json' | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>process.stdout.write(JSON.parse(s).version))')
+          fi
+          VERSION=$(NODE_NO_WARNINGS=1 pnpm exec tsx scripts/increment-runtime-app-version.ts check "$PARENT" | tail -n 1)
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: ⏱️ EAS Build
         uses: ./.github/actions/eas-build
         with:
           APP_ENV: production
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          VERSION: ${{ steps.runtime_version.outputs.version }}
           ANDROID: 'true'
           IOS: 'true'
