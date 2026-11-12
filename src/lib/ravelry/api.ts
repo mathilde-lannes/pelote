@@ -3,7 +3,9 @@ import type {
   FriendActivity,
   FriendEntry,
   FriendsListResponse,
+  PatternHighlight,
   PeopleSearchResponse,
+  RavelryPattern,
   RavelryPerson,
   RavelryPhoto,
   RavelryProject,
@@ -15,6 +17,14 @@ import {
   normalizeFavoritesCount,
   resolveActivityType,
 } from './activity-utils';
+import {
+  HIGHLIGHT_DAYS,
+  mergeHighlightPatterns,
+  normalizeHighlights,
+  normalizePattern,
+  patternFromShowPayload,
+  patternsFromListPayload,
+} from './highlights';
 
 export { normalizeCreatedAt, resolveActivityType } from './activity-utils';
 
@@ -458,6 +468,46 @@ export async function removeFriend(
   await client.post(
     `people/${encodeURIComponent(username)}/friends/${friendshipId}/destroy.json`,
   );
+}
+
+const PATTERN_ID_CHUNK = 50;
+
+async function fetchFullPatterns(ids: number[]): Promise<RavelryPattern[]> {
+  const chunks: number[][] = [];
+  for (let index = 0; index < ids.length; index += PATTERN_ID_CHUNK)
+    chunks.push(ids.slice(index, index + PATTERN_ID_CHUNK));
+
+  const pages = await Promise.all(chunks.map(async (chunk) => {
+    // Documented: space-delimited ids, sent as +. Axios must not encode + as %2B.
+    const { data } = await client.get(`patterns.json?ids=${chunk.join('+')}`);
+    return patternsFromListPayload(data).flatMap((raw) => {
+      const pattern = normalizePattern(raw);
+      return pattern ? [pattern] : [];
+    });
+  }));
+  return pages.flat();
+}
+
+export async function fetchPatternHighlights(): Promise<PatternHighlight[]> {
+  // days is required; 90 is the documented maximum.
+  // Highlights include pattern rows with first_photo_id, not photo URLs.
+  const { data } = await client.get('patterns/highlights.json', {
+    params: { days: HIGHLIGHT_DAYS },
+  });
+  const highlights = normalizeHighlights(data);
+  if (!highlights.length)
+    return highlights;
+  const ids = [...new Set(highlights.map(item => item.pattern.id))];
+  const full = await fetchFullPatterns(ids);
+  return mergeHighlightPatterns(highlights, full);
+}
+
+export async function fetchPattern(id: number): Promise<RavelryPattern> {
+  const { data } = await client.get(`patterns/${id}.json`);
+  const pattern = patternFromShowPayload(data, id);
+  if (!pattern)
+    throw new Error('Pattern missing from response');
+  return pattern;
 }
 
 export function bestPhotoUrl(

@@ -3,6 +3,7 @@ import * as React from 'react';
 
 import { colors } from '@/components/ui';
 import {
+  Explore as ExploreIcon,
   Feed as FeedIcon,
   People as PeopleIcon,
   Settings as SettingsIcon,
@@ -46,6 +47,15 @@ export default function TabLayout() {
           headerShown: false,
           tabBarIcon: ({ color }) => <FeedIcon color={color} />,
           tabBarButtonTestID: 'feed-tab',
+        }}
+      />
+      <Tabs.Screen
+        name="explore"
+        options={{
+          title: 'Explore',
+          headerShown: false,
+          tabBarIcon: ({ color }) => <ExploreIcon color={color} />,
+          tabBarButtonTestID: 'explore-tab',
         }}
       />
       <Tabs.Screen

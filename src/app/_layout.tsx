@@ -83,6 +83,13 @@ export default function RootLayout() {
           }}
         />
         <Stack.Screen
+          name="pattern/[id]"
+          options={{
+            title: 'Pattern',
+            headerBackTitle: 'Explore',
+          }}
+        />
+        <Stack.Screen
           name="user/[username]"
           options={{ headerShown: false }}
         />

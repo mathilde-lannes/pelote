@@ -76,3 +76,29 @@ export type FriendsListResponse = {
 export type CurrentUserResponse = {
   user: RavelryPerson;
 };
+
+export type RavelryPatternAuthor = {
+  id: number;
+  name: string;
+  permalink?: string | null;
+  users: RavelryPerson[];
+};
+
+/** Pattern#full fields used by highlights and pattern detail. */
+export type RavelryPattern = {
+  id: number;
+  name: string;
+  permalink?: string | null;
+  favorites_count?: number | null;
+  free?: boolean | null;
+  notes_html?: string | null;
+  photos: RavelryPhoto[];
+  pattern_author?: RavelryPatternAuthor | null;
+};
+
+/** One row from `GET /patterns/highlights.json` → `timeline_entries`. */
+export type PatternHighlight = {
+  id: string;
+  timeline_date: string | null;
+  pattern: RavelryPattern;
+};
