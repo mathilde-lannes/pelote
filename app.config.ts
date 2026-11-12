@@ -2,17 +2,40 @@ import type { ConfigContext, ExpoConfig } from '@expo/config';
 
 import type { AppIconBadgeConfig } from 'app-icon-badge/types';
 
+// tsx must register before other local .ts imports, and dotenv must run before env.ts.
+/* eslint-disable perfectionist/sort-imports */
 import 'tsx/cjs';
 import 'dotenv/config';
-
-// adding lint exception as we need to import tsx/cjs before env.ts is imported
-// eslint-disable-next-line perfectionist/sort-imports
 import Env from './env';
+import {
+  parseEasProjectId,
+  requireEasProjectIdForUpdates,
+} from './src/lib/eas-project-id';
+/* eslint-enable perfectionist/sort-imports */
 
-// Replace with your Expo account + EAS project id before first EAS build.
+// Replace with your Expo account before the first EAS build.
 const EXPO_ACCOUNT_OWNER = process.env.EXPO_ACCOUNT_OWNER ?? 'pelote';
-const EAS_PROJECT_ID
-  = process.env.EAS_PROJECT_ID ?? '00000000-0000-4000-8000-000000000000';
+const parsedEasProjectId = parseEasProjectId(process.env.EAS_PROJECT_ID);
+const updatesEnabled
+  = Env.EXPO_PUBLIC_APP_ENV === 'preview'
+    || Env.EXPO_PUBLIC_APP_ENV === 'production';
+const easProjectId = updatesEnabled
+  ? requireEasProjectIdForUpdates(
+      parsedEasProjectId,
+      Env.EXPO_PUBLIC_APP_ENV,
+    )
+  : parsedEasProjectId;
+const updatesConfig = easProjectId
+  ? {
+      updates: {
+        url: `https://u.expo.dev/${easProjectId}`,
+        fallbackToCacheTimeout: 0,
+      },
+    }
+  : {};
+const easProjectExtra = easProjectId
+  ? { eas: { projectId: easProjectId } }
+  : {};
 
 const appIconBadgeConfig: AppIconBadgeConfig = {
   enabled: Env.EXPO_PUBLIC_APP_ENV !== 'production',
@@ -42,9 +65,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   icon: './assets/icon.png',
   userInterfaceStyle: 'dark',
   newArchEnabled: true,
-  updates: {
-    fallbackToCacheTimeout: 0,
+  runtimeVersion: {
+    policy: 'appVersion',
   },
+  ...updatesConfig,
   assetBundlePatterns: ['**/*'],
   ios: {
     supportsTablet: true,
@@ -122,9 +146,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ['react-native-edge-to-edge'],
   ],
   extra: {
-    eas: {
-      projectId: EAS_PROJECT_ID,
-    },
+    ...easProjectExtra,
     // From local .env or EAS Secrets — baked into the binary at native/EAS build time.
     ravelryClientSecret: process.env.RAVELRY_CLIENT_SECRET ?? '',
     ravelryOAuth: {

@@ -1,5 +1,7 @@
 # Staging/preview EAS build — manual or on GitHub release.
-# Requires GitHub secret EXPO_TOKEN.
+# Requires GitHub secrets EXPO_TOKEN and EAS_PROJECT_ID (same UUID must also
+# exist in the EAS preview environment so remote app.config evaluation works).
+# Optional: EXPO_ACCOUNT_OWNER.
 
 name: EAS Preview Build (Android & iOS)
 
@@ -33,6 +35,8 @@ jobs:
         with:
           APP_ENV: preview
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
+          EXPO_ACCOUNT_OWNER: ${{ secrets.EXPO_ACCOUNT_OWNER || 'pelote' }}
           VERSION: ${{ github.event.release.tag_name || github.sha }}
           ANDROID: 'true'
           IOS: 'false'

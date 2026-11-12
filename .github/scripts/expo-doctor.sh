@@ -1,8 +1,16 @@
 #!/bin/bash
 
-# Run expo-doctor and capture output and exit code
-output=$(npx expo-doctor@latest 2>&1)
+set -euo pipefail
+
+mkdir -p .expo
+
+# Pin a Doctor release that exits non-zero when config loading fails
+# (fixed in 1.21.3+). Avoid 1.21.7+: it crashes under npx with
+# "Cannot find module '@expo/env'" even on supported Node versions.
+set +e
+output=$(npx --yes expo-doctor@1.21.6 2>&1)
 exit_code=$?
+set -e
 
 # Output file location
 output_file=".expo/expo-doctor.md"

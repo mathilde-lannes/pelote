@@ -18,10 +18,18 @@ on:
     paths:
       - package.json
       - pnpm-lock.yaml
+      - .nvmrc
+      - .github/workflows/expo-doctor.yml
+      - .github/actions/setup-node-pnpm-install/action.yml
+      - .github/scripts/expo-doctor.sh
   pull_request:
     paths:
       - package.json
       - pnpm-lock.yaml
+      - .nvmrc
+      - .github/workflows/expo-doctor.yml
+      - .github/actions/setup-node-pnpm-install/action.yml
+      - .github/scripts/expo-doctor.sh
 
 permissions:
   contents: read
@@ -44,13 +52,11 @@ jobs:
       - name: 📦 Setup Node + PNPM + install deps
         uses: ./.github/actions/setup-node-pnpm-install
 
-      - name: Run prebuild
-        run: pnpm run prebuild
-
+      # expo-doctor checks JS deps/config; generating ios/android is unnecessary
+      # and hits a known Linux app-icon-badge / jimp Android prebuild failure.
       - name: 🚑 Run Doctor Checks
         run: |
           chmod +x .github/scripts/expo-doctor.sh
-          rm -rf ios android
           .github/scripts/expo-doctor.sh
 
       - name: Add doctor report as comment on PR
@@ -59,3 +65,4 @@ jobs:
         with:
           header: expo-doctor
           path: .expo/expo-doctor.md
+          ignore_empty: true
