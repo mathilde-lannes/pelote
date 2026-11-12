@@ -22,6 +22,17 @@ function isRootCommit(): boolean {
   return roots.includes(head);
 }
 
+/** Read package.json `version` from a Git tree-ish (e.g. HEAD, HEAD^). */
+function readVersionFromGit(treeIsh: string): string {
+  const packageJson = execFileSync(
+    'git',
+    ['show', `${treeIsh}:package.json`],
+    { encoding: 'utf8' },
+  );
+
+  return readPackageVersion(packageJson);
+}
+
 /**
  * Read package.json `version` from HEAD^. Returns null only for a true root
  * commit. Any other missing parent or Git failure throws.
@@ -41,13 +52,23 @@ function readParentVersionFromGit(): string | null {
     );
   }
 
-  const parentPackageJson = execFileSync(
-    'git',
-    ['show', 'HEAD^:package.json'],
-    { encoding: 'utf8' },
-  );
+  return readVersionFromGit('HEAD^');
+}
 
-  return readPackageVersion(parentPackageJson);
+/**
+ * Fail when the working-tree version differs from HEAD so uncommitted bumps
+ * cannot satisfy the production build gate.
+ */
+function assertWorkingTreeVersionMatchesHead(
+  workingTreeVersion: string,
+): void {
+  const headVersion = readVersionFromGit('HEAD');
+  if (workingTreeVersion !== headVersion) {
+    process.stderr.write(
+      `package.json version is ${workingTreeVersion}, but HEAD has ${headVersion}. Commit the version bump before building.\n`,
+    );
+    process.exit(1);
+  }
 }
 
 /** Exit 1 when the app version still matches the parent; otherwise print it. */
@@ -74,6 +95,7 @@ if (command === 'check') {
 }
 
 if (command === 'check-git') {
+  assertWorkingTreeVersionMatchesHead(currentVersion);
   runCheck(currentVersion, readParentVersionFromGit());
 }
 
