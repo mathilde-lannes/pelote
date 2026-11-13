@@ -10,7 +10,7 @@ import {
   View,
 } from '@/components/ui';
 import { useAuthStore } from '@/features/auth/use-auth-store';
-import { usePatternHighlights } from './api';
+import { refreshPatternHighlights, usePatternHighlights } from './api';
 import { ExploreBlock } from './components/explore-block';
 import { chunkHighlights, exploreCellSize } from './explore-layout';
 
@@ -56,6 +56,16 @@ function ExploreStatus({
   );
 }
 
+function ExploreFooter({ loading }: { loading: boolean }) {
+  if (!loading)
+    return null;
+  return (
+    <View className="items-center py-4">
+      <ActivityIndicator color="#ffffff" />
+    </View>
+  );
+}
+
 export function ExploreScreen() {
   const user = useAuthStore.use.user();
   const { width } = useWindowDimensions();
@@ -66,12 +76,18 @@ export function ExploreScreen() {
     isError,
     refetch,
     isRefetching,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
   } = usePatternHighlights({ enabled: Boolean(user) });
 
-  const highlights = data ?? [];
-  const blocks = React.useMemo(
-    () => chunkHighlights(data ?? []),
+  const highlights = React.useMemo(
+    () => (data?.pages ?? []).flatMap(page => page.highlights),
     [data],
+  );
+  const blocks = React.useMemo(
+    () => chunkHighlights(highlights),
+    [highlights],
   );
 
   const renderBlock = React.useCallback(
@@ -80,6 +96,11 @@ export function ExploreScreen() {
     ),
     [cell, width],
   );
+
+  const onEndReached = React.useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage)
+      fetchNextPage();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   if (!user || (isPending && !highlights.length)) {
     return (
@@ -99,7 +120,7 @@ export function ExploreScreen() {
         title="Couldn’t load highlights"
         body="Check your connection and try again."
         onRetry={() => {
-          refetch();
+          refreshPatternHighlights(refetch);
         }}
       />
     );
@@ -122,16 +143,19 @@ export function ExploreScreen() {
         keyExtractor={block => block.map(item => item.id).join('-')}
         renderItem={renderBlock}
         extraData={cell}
+        onEndReached={onEndReached}
+        onEndReachedThreshold={0.5}
         refreshControl={(
           <RefreshControl
-            refreshing={isRefetching}
+            refreshing={isRefetching && !isFetchingNextPage}
             onRefresh={() => {
-              refetch();
+              refreshPatternHighlights(refetch);
             }}
             tintColor="#ffffff"
           />
         )}
         ListHeaderComponent={<ExploreHeader />}
+        ListFooterComponent={<ExploreFooter loading={isFetchingNextPage} />}
       />
     </SafeAreaView>
   );

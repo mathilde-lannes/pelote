@@ -81,7 +81,10 @@ export function PatternFeedScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const startId = String(params.id ?? '').trim();
   const highlightsQuery = usePatternHighlights();
-  const highlights = highlightsQuery.data ?? [];
+  const highlights = React.useMemo(
+    () => (highlightsQuery.data?.pages ?? []).flatMap(page => page.highlights),
+    [highlightsQuery.data],
+  );
   const {
     listRef,
     startIndex,
@@ -120,9 +123,23 @@ export function PatternFeedScreen() {
           Math.max(startIndex + 3, 5),
         )}
         windowSize={7}
+        onEndReached={() => {
+          if (highlightsQuery.hasNextPage && !highlightsQuery.isFetchingNextPage)
+            highlightsQuery.fetchNextPage();
+        }}
+        onEndReachedThreshold={0.5}
         onLayout={scrollToStart}
         onScrollToIndexFailed={onScrollToIndexFailed}
         renderItem={({ item }) => <PatternPost item={item} />}
+        ListFooterComponent={
+          highlightsQuery.isFetchingNextPage
+            ? (
+                <View className="items-center py-4">
+                  <ActivityIndicator color="#ffffff" />
+                </View>
+              )
+            : null
+        }
         ListEmptyComponent={(
           <Text className="mt-10 text-center text-sm text-fog-400">
             No pattern highlights yet.

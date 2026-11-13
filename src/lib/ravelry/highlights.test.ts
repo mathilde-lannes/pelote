@@ -4,6 +4,7 @@ import {
   normalizePattern,
   patternFromShowPayload,
   patternsFromListPayload,
+  sliceHighlightPage,
 } from './highlights';
 
 const sweater = {
@@ -68,6 +69,23 @@ describe('normalizeHighlights', () => {
     expect(highlights[0]?.pattern.photos[0]?.square_url).toBe(
       'https://images.ravelrycache.com/sq.jpg',
     );
+  });
+
+  it('pages highlights without dropping the rest of the timeline', () => {
+    const highlights = [1, 2, 3].map(id => ({
+      id: String(id),
+      timeline_date: null,
+      pattern: {
+        id,
+        name: `P${id}`,
+        photos: [],
+        pattern_author: null,
+      },
+    }));
+    const page = sliceHighlightPage(highlights, 2, 2);
+    expect(page.highlights.map(item => item.pattern.id)).toEqual([3]);
+    expect(page.total).toBe(3);
+    expect(page.page * page.pageSize >= page.total).toBe(true);
   });
 
   it('drops entries that are not patterns', () => {

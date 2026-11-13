@@ -9,6 +9,27 @@ import type {
 /** Documented maximum for `days` on GET /patterns/highlights.json. */
 export const HIGHLIGHT_DAYS = 90;
 
+/**
+ * Photo page size. Highlights itself is not paginated; each page is one
+ * `GET /patterns.json?ids=` call.
+ */
+export const HIGHLIGHT_PAGE_SIZE = 12;
+
+export function sliceHighlightPage(
+  highlights: PatternHighlight[],
+  page: number,
+  pageSize = HIGHLIGHT_PAGE_SIZE,
+) {
+  const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
+  const start = (safePage - 1) * pageSize;
+  return {
+    highlights: highlights.slice(start, start + pageSize),
+    page: safePage,
+    pageSize,
+    total: highlights.length,
+  };
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }

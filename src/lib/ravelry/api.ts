@@ -24,6 +24,7 @@ import {
   normalizePattern,
   patternFromShowPayload,
   patternsFromListPayload,
+  sliceHighlightPage,
 } from './highlights';
 
 export { normalizeCreatedAt, resolveActivityType } from './activity-utils';
@@ -488,18 +489,45 @@ async function fetchFullPatterns(ids: number[]): Promise<RavelryPattern[]> {
   return pages.flat();
 }
 
-export async function fetchPatternHighlights(): Promise<PatternHighlight[]> {
-  // days is required; 90 is the documented maximum.
-  // Highlights include pattern rows with first_photo_id, not photo URLs.
-  const { data } = await client.get('patterns/highlights.json', {
-    params: { days: HIGHLIGHT_DAYS },
-  });
-  const highlights = normalizeHighlights(data);
-  if (!highlights.length)
-    return highlights;
-  const ids = [...new Set(highlights.map(item => item.pattern.id))];
-  const full = await fetchFullPatterns(ids);
-  return mergeHighlightPatterns(highlights, full);
+export type PatternHighlightsPage = {
+  highlights: PatternHighlight[];
+  page: number;
+  pageSize: number;
+  total: number;
+};
+
+let highlightTimeline: Promise<PatternHighlight[]> | null = null;
+
+/** Drop the cached highlights timeline so the next page load hits the API. */
+export function invalidatePatternHighlightTimeline() {
+  highlightTimeline = null;
+}
+
+function loadHighlightTimeline(): Promise<PatternHighlight[]> {
+  if (!highlightTimeline) {
+    highlightTimeline = client
+      .get('patterns/highlights.json', { params: { days: HIGHLIGHT_DAYS } })
+      .then(({ data }) => normalizeHighlights(data))
+      .catch((error: unknown) => {
+        highlightTimeline = null;
+        throw error;
+      });
+  }
+  return highlightTimeline;
+}
+
+export async function fetchPatternHighlightsPage(
+  page = 1,
+): Promise<PatternHighlightsPage> {
+  // highlights.json only accepts `days`. Page the photo lookup instead.
+  const timeline = await loadHighlightTimeline();
+  const sliced = sliceHighlightPage(timeline, page);
+  const ids = [...new Set(sliced.highlights.map(item => item.pattern.id))];
+  const full = ids.length ? await fetchFullPatterns(ids) : [];
+  return {
+    ...sliced,
+    highlights: mergeHighlightPatterns(sliced.highlights, full),
+  };
 }
 
 export async function fetchPattern(id: number): Promise<RavelryPattern> {
