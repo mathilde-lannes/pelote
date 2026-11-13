@@ -1,5 +1,5 @@
-import { PatternScreen } from '@/features/explore/pattern-screen';
+import { PatternFeedScreen } from '@/features/explore/pattern-feed-screen';
 
 export default function PatternRoute() {
-  return <PatternScreen />;
+  return <PatternFeedScreen />;
 }

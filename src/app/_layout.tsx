@@ -85,7 +85,7 @@ export default function RootLayout() {
         <Stack.Screen
           name="pattern/[id]"
           options={{
-            title: 'Pattern',
+            title: 'Patterns',
             headerBackTitle: 'Explore',
           }}
         />
