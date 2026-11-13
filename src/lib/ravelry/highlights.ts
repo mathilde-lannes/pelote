@@ -13,7 +13,7 @@ export const HIGHLIGHT_DAYS = 90;
  * Photo page size. Highlights itself is not paginated; each page is one
  * `GET /patterns.json?ids=` call.
  */
-export const HIGHLIGHT_PAGE_SIZE = 12;
+export const HIGHLIGHT_PAGE_SIZE = 15;
 
 export function sliceHighlightPage(
   highlights: PatternHighlight[],

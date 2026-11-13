@@ -22,7 +22,7 @@ export const usePatternHighlights = createInfiniteQuery<
   void,
   AxiosError
 >({
-  queryKey: ['pattern-highlights', 'page-12'],
+  queryKey: ['pattern-highlights', 'page-15'],
   fetcher: (_variables, { pageParam }) =>
     fetchPatternHighlightsPage(pageParam as number),
   getNextPageParam: lastPage =>

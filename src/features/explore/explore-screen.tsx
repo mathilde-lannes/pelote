@@ -11,8 +11,10 @@ import {
 } from '@/components/ui';
 import { useAuthStore } from '@/features/auth/use-auth-store';
 import { refreshPatternHighlights, usePatternHighlights } from './api';
-import { ExploreBlock } from './components/explore-block';
-import { chunkHighlights, exploreCellSize } from './explore-layout';
+import { HighlightTile } from './components/highlight-tile';
+
+const EXPLORE_GAP = 2;
+const EXPLORE_COLUMNS = 3;
 
 function ExploreHeader() {
   return (
@@ -69,7 +71,7 @@ function ExploreFooter({ loading }: { loading: boolean }) {
 export function ExploreScreen() {
   const user = useAuthStore.use.user();
   const { width } = useWindowDimensions();
-  const cell = exploreCellSize(width);
+  const cell = (width - EXPLORE_GAP * (EXPLORE_COLUMNS - 1)) / EXPLORE_COLUMNS;
   const {
     data,
     isPending,
@@ -85,16 +87,12 @@ export function ExploreScreen() {
     () => (data?.pages ?? []).flatMap(page => page.highlights),
     [data],
   );
-  const blocks = React.useMemo(
-    () => chunkHighlights(highlights),
-    [highlights],
-  );
 
-  const renderBlock = React.useCallback(
-    ({ item }: { item: PatternHighlight[] }) => (
-      <ExploreBlock items={item} cell={cell} width={width} />
+  const renderTile = React.useCallback(
+    ({ item }: { item: PatternHighlight }) => (
+      <HighlightTile item={item} size={cell} />
     ),
-    [cell, width],
+    [cell],
   );
 
   const onEndReached = React.useCallback(() => {
@@ -139,10 +137,12 @@ export function ExploreScreen() {
     <SafeAreaView className="flex-1 bg-black" edges={['top']}>
       <FocusAwareStatusBar />
       <FlatList
-        data={blocks}
-        keyExtractor={block => block.map(item => item.id).join('-')}
-        renderItem={renderBlock}
-        extraData={cell}
+        data={highlights}
+        keyExtractor={item => item.id}
+        numColumns={EXPLORE_COLUMNS}
+        columnWrapperStyle={{ gap: EXPLORE_GAP }}
+        contentContainerStyle={{ gap: EXPLORE_GAP }}
+        renderItem={renderTile}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.5}
         refreshControl={(
