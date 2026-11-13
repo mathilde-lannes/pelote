@@ -55,6 +55,15 @@ export default defineConfig({
             { label: 'Settings', link: '/specs/settings/' },
           ],
         },
+        {
+          label: 'References',
+          items: [
+            {
+              label: 'Instagram ↔ Ravelry',
+              link: '/references/instagram-ravelry-parallel/',
+            },
+          ],
+        },
       ],
       customCss: ['./src/styles/custom.css'],
       lastUpdated: true,
