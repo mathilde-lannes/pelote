@@ -1,3 +1,4 @@
+import type { SvgProps } from 'react-native-svg';
 import { Redirect, Tabs } from 'expo-router';
 import * as React from 'react';
 
@@ -11,6 +12,12 @@ import {
 } from '@/components/ui/icons';
 import { useAuthStore as useAuth } from '@/features/auth/use-auth-store';
 import { useIsFirstTime } from '@/lib/hooks/use-is-first-time';
+
+function tabIcon(Icon: React.ComponentType<SvgProps>) {
+  return ({ color, focused }: { color: string; focused: boolean }) => (
+    <Icon color={color} strokeWidth={focused ? 3 : 2} />
+  );
+}
 
 export default function TabLayout() {
   const status = useAuth.use.status();
@@ -46,7 +53,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           headerShown: false,
-          tabBarIcon: ({ color }) => <HomeIcon color={color} />,
+          tabBarIcon: tabIcon(HomeIcon),
           tabBarButtonTestID: 'home-tab',
         }}
       />
@@ -55,7 +62,7 @@ export default function TabLayout() {
         options={{
           title: 'Library',
           headerShown: false,
-          tabBarIcon: ({ color }) => <LibraryIcon color={color} />,
+          tabBarIcon: tabIcon(LibraryIcon),
           tabBarButtonTestID: 'library-tab',
         }}
       />
@@ -64,7 +71,7 @@ export default function TabLayout() {
         options={{
           title: 'Messages',
           headerShown: false,
-          tabBarIcon: ({ color }) => <MessageIcon color={color} />,
+          tabBarIcon: tabIcon(MessageIcon),
           tabBarButtonTestID: 'messages-tab',
         }}
       />
@@ -73,7 +80,7 @@ export default function TabLayout() {
         options={{
           title: 'Search',
           headerShown: false,
-          tabBarIcon: ({ color }) => <SearchIcon color={color} />,
+          tabBarIcon: tabIcon(SearchIcon),
           tabBarButtonTestID: 'search-tab',
         }}
       />
@@ -82,7 +89,7 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           headerShown: false,
-          tabBarIcon: ({ color }) => <ProfileIcon color={color} />,
+          tabBarIcon: tabIcon(ProfileIcon),
           tabBarButtonTestID: 'profile-tab',
         }}
       />
