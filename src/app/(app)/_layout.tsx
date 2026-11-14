@@ -49,13 +49,20 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="(home)"
         options={{
           title: 'Home',
           headerShown: false,
           tabBarIcon: tabIcon(HomeIcon),
           tabBarButtonTestID: 'home-tab',
         }}
+        listeners={({ navigation }) => ({
+          // One tap from anywhere returns to the For You / Friends feed.
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('(home)', { screen: 'index' });
+          },
+        })}
       />
       <Tabs.Screen
         name="library"

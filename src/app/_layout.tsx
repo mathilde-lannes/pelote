@@ -79,20 +79,6 @@ export default function RootLayout() {
         <Stack.Screen name="(app)" options={{ headerShown: false }} />
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="project/[username]/[id]"
-          options={{
-            title: 'Project',
-          }}
-        />
-        <Stack.Screen
-          name="pattern/[id]"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="user/[username]"
-          options={{ headerShown: false }}
-        />
       </Stack>
     </Providers>
   );
