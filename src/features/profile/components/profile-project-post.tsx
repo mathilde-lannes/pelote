@@ -1,20 +1,16 @@
 import type { RavelryPerson, RavelryProject } from '@/lib/ravelry/types';
 import { Image } from 'expo-image';
-import { Link } from 'expo-router';
 import * as React from 'react';
+import { Dimensions, View } from 'react-native';
 
-import { ExpandableText } from '@/components/expandable-text';
-import { Pressable, Text, View } from '@/components/ui';
 import { useProject } from '@/features/feed/api';
-import { likesLabel } from '@/features/feed/components/activity-card-copy';
+import { Post } from '@/features/feed/components/post';
+import { POST_ITEM_HEIGHT } from '@/features/feed/components/post-layout';
 import { collectProjectPhotos } from '@/features/feed/components/collect-project-photos';
-import { PhotoCarousel } from '@/features/feed/components/photo-carousel';
 import { formatRelative } from '@/features/feed/format-relative';
-import {
-  PROFILE_POST_ITEM_HEIGHT,
-  PROFILE_POST_MEDIA_HEIGHT,
-  profilePostChromeHeight,
-} from '../profile-feed-layout';
+import { bestPhotoUrl } from '@/lib/ravelry/api';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
 
 type Props = {
   username: string;
@@ -22,15 +18,10 @@ type Props = {
   project: RavelryProject;
 };
 
-function stripHtml(html: string): string {
-  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-}
-
 function projectDateLabel(project: RavelryProject): string {
   for (const value of [project.started, project.completed]) {
     if (typeof value !== 'string' || !value.trim())
       continue;
-    // formatRelative expects parseable dates; normalize slashes when needed.
     const normalized = value.includes('/')
       ? value.replace(/\//g, '-')
       : value;
@@ -45,8 +36,41 @@ function projectDateLabel(project: RavelryProject): string {
   return '';
 }
 
+function ProfileProjectPostPlaceholder({
+  project,
+}: {
+  project: RavelryProject;
+}) {
+  const uri = bestPhotoUrl(project.first_photo ?? project.photos?.[0]);
+  return (
+    <View style={{ height: POST_ITEM_HEIGHT }} className="bg-black">
+      <View className="flex-row items-center gap-2.5 px-4 py-3">
+        <View className="size-8 rounded-full bg-ink-400" />
+        <View className="min-w-0 flex-1 gap-1.5">
+          <View className="h-3.5 w-28 rounded bg-ink-300" />
+          <View className="h-3 w-40 rounded bg-ink-200" />
+        </View>
+      </View>
+      <View
+        style={{ width: SCREEN_WIDTH, height: SCREEN_WIDTH }}
+        className="bg-ink-200"
+      >
+        {uri
+          ? (
+              <Image
+                source={{ uri }}
+                style={{ width: '100%', height: '100%' }}
+                contentFit="cover"
+              />
+            )
+          : null}
+      </View>
+      <View style={{ height: 22 }} />
+    </View>
+  );
+}
+
 export function ProfileProjectPost({ username, person, project }: Props) {
-  const [captionExpanded, setCaptionExpanded] = React.useState(false);
   // Enrich photos when allowed; list payload is enough if show returns 403.
   const detailQuery = useProject({
     variables: { username, id: String(project.id) },
@@ -57,93 +81,39 @@ export function ProfileProjectPost({ username, person, project }: Props) {
       return failureCount < 2;
     },
   });
+
+  const ready = Boolean(detailQuery.data) || detailQuery.isError || !detailQuery.isPending;
   const data = detailQuery.data ?? project;
   const photos = React.useMemo(
     () => collectProjectPhotos(data.first_photo, data.photos),
     [data.first_photo, data.photos],
   );
 
+  const displayName = person?.username || username;
   const avatar
     = person?.small_photo_url
       ?? person?.photo_url
       ?? null;
-  const displayName = person?.username || username;
-  const likes = likesLabel(data.favorites_count);
-  const description = data.notes_html ? stripHtml(data.notes_html) : '';
-  const relative = projectDateLabel(data);
-  const rowHeight
-    = PROFILE_POST_MEDIA_HEIGHT + profilePostChromeHeight(Boolean(description));
 
+  if (!ready && !photos.length)
+    return <ProfileProjectPostPlaceholder project={project} />;
+
+  // Prefer list photos immediately so the grid→feed open doesn't flash empty.
+  // Full details still enrich notes / favorites when the show call returns.
   return (
-    <View
-      style={
-        captionExpanded
-          ? { minHeight: Math.max(rowHeight, PROFILE_POST_ITEM_HEIGHT) }
-          : { height: rowHeight }
-      }
-      className="bg-black"
-    >
-      <Link href={`/user/${displayName}` as any} asChild>
-        <Pressable className="flex-row items-center gap-3 p-3">
-          {avatar
-            ? (
-                <Image
-                  source={{ uri: avatar }}
-                  style={{ width: 32, height: 32, borderRadius: 16 }}
-                  contentFit="cover"
-                />
-              )
-            : (
-                <View className="size-8 items-center justify-center rounded-full bg-ink-300">
-                  <Text className="text-sm font-semibold text-white">
-                    {displayName.slice(0, 1).toUpperCase()}
-                  </Text>
-                </View>
-              )}
-          <View className="flex-1">
-            <Text className="text-sm font-semibold text-white">
-              {displayName}
-            </Text>
-            {relative
-              ? (
-                  <Text className="text-xs text-fog-500">
-                    {relative}
-                  </Text>
-                )
-              : null}
-          </View>
-        </Pressable>
-      </Link>
-
-      <PhotoCarousel photos={photos} />
-
-      <View className="gap-1 px-3 pt-2 pb-3">
-        {likes
-          ? (
-              <Text className="text-sm font-semibold text-white">{likes}</Text>
-            )
-          : null}
-        <Text className="text-sm text-white" numberOfLines={1}>
-          <Text className="font-semibold">{displayName}</Text>
-          {data.name
-            ? (
-                <Text className="font-normal text-fog-300">
-                  {' '}
-                  {data.name}
-                </Text>
-              )
-            : null}
-        </Text>
-        {description
-          ? (
-              <ExpandableText
-                text={description}
-                numberOfLines={2}
-                onExpandedChange={setCaptionExpanded}
-              />
-            )
-          : null}
-      </View>
+    <View style={{ minHeight: POST_ITEM_HEIGHT }} className="bg-black">
+      <Post
+        variant="project"
+        authorName={displayName}
+        authorAvatar={avatar}
+        authorHref={`/user/${displayName}`}
+        projectName={data.name}
+        patternName={data.pattern_name}
+        photos={photos}
+        notesHtml={data.notes_html}
+        relative={projectDateLabel(data)}
+        favoritesCount={data.favorites_count}
+      />
     </View>
   );
 }

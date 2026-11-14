@@ -8,8 +8,9 @@ import * as React from 'react';
 import { Dimensions, View } from 'react-native';
 
 import { usePattern } from '@/features/explore/api';
-import { ForYouPost } from '@/features/feed/for-you/for-you-post';
-import { FOR_YOU_POST_ITEM_HEIGHT } from '@/features/feed/for-you/for-you-post-layout';
+import { Post } from '@/features/feed/components/post';
+import { POST_ITEM_HEIGHT } from '@/features/feed/components/post-layout';
+import { designerProfileHref } from '@/features/profile/designer-profile-href';
 import { bestPhotoUrl } from '@/lib/ravelry/api';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -21,13 +22,13 @@ type Props = {
 };
 
 /**
- * Hold the For You frame steady while Pattern#show loads — search rows are thin
+ * Hold the Post frame steady while Pattern#show loads — search rows are thin
  * (one photo, no notes) and swapping into full details used to resize the post.
  */
 function DesignerPatternPostPlaceholder({ pattern }: { pattern: RavelryPattern }) {
   const uri = bestPhotoUrl(pattern.photos[0]);
   return (
-    <View style={{ height: FOR_YOU_POST_ITEM_HEIGHT }} className="bg-black">
+    <View style={{ height: POST_ITEM_HEIGHT }} className="bg-black">
       <View className="flex-row items-center gap-2.5 px-4 py-3">
         <View className="size-8 rounded-full bg-ink-400" />
         <View className="min-w-0 flex-1 gap-1.5">
@@ -66,7 +67,6 @@ export function DesignerPatternPost({ username, person, pattern }: Props) {
   });
 
   const item = React.useMemo<PatternHighlight | null>(() => {
-    // Wait for full pattern so we don't paint thin search data then resize.
     const data = detailQuery.data;
     if (!data) {
       if (detailQuery.isError)
@@ -113,9 +113,28 @@ export function DesignerPatternPost({ username, person, pattern }: Props) {
   if (!item)
     return <DesignerPatternPostPlaceholder pattern={pattern} />;
 
+  const p = item.pattern;
+  const author = p.pattern_author;
+  const user = author?.users[0];
+  const designer = author?.name || user?.username || p.name;
+
   return (
-    <View style={{ minHeight: FOR_YOU_POST_ITEM_HEIGHT }} className="bg-black">
-      <ForYouPost item={item} />
+    <View style={{ minHeight: POST_ITEM_HEIGHT }} className="bg-black">
+      <Post
+        variant="pattern"
+        authorName={designer}
+        authorAvatar={user?.small_photo_url ?? user?.photo_url ?? null}
+        authorHref={designerProfileHref(author) ?? `/user/${username}`}
+        patternId={p.id}
+        patternName={p.name}
+        photos={p.photos}
+        notesHtml={p.notes_html}
+        timelineDate={item.timeline_date}
+        favoritesCount={p.favorites_count}
+        projectsCount={p.projects_count}
+        commentsCount={p.comments_count}
+        packsCount={p.packs_count}
+      />
     </View>
   );
 }
