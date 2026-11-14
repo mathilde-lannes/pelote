@@ -19,6 +19,19 @@ function tabIcon(Icon: React.ComponentType<SvgProps>) {
   );
 }
 
+/** True when the tab’s nested stack is on its root screen (or has no state yet). */
+function isTabAtRoot(
+  navigation: { getState: () => { routes: { key: string; state?: { index?: number; routes: { name: string }[] } }[] } },
+  routeKey: string,
+) {
+  const tabRoute = navigation.getState().routes.find(r => r.key === routeKey);
+  const nested = tabRoute?.state;
+  if (!nested)
+    return true;
+  const active = nested.routes[nested.index ?? 0];
+  return !active || active.name === 'index';
+}
+
 export default function TabLayout() {
   const status = useAuth.use.status();
   const [isFirstTime] = useIsFirstTime();
@@ -56,9 +69,11 @@ export default function TabLayout() {
           tabBarIcon: tabIcon(HomeIcon),
           tabBarButtonTestID: 'home-tab',
         }}
-        listeners={({ navigation }) => ({
-          // One tap from anywhere returns to the For You / Friends feed.
+        listeners={({ navigation, route }) => ({
+          // Nested: return to feed. Already on feed: let useScrollToTop run.
           tabPress: (e) => {
+            if (navigation.isFocused() && isTabAtRoot(navigation, route.key))
+              return;
             e.preventDefault();
             navigation.navigate('(home)', { screen: 'index' });
           },
@@ -90,6 +105,14 @@ export default function TabLayout() {
           tabBarIcon: tabIcon(SearchIcon),
           tabBarButtonTestID: 'search-tab',
         }}
+        listeners={({ navigation, route }) => ({
+          tabPress: (e) => {
+            if (navigation.isFocused() && isTabAtRoot(navigation, route.key))
+              return;
+            e.preventDefault();
+            navigation.navigate('search', { screen: 'index' });
+          },
+        })}
       />
       <Tabs.Screen
         name="profile"

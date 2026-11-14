@@ -1,4 +1,5 @@
 import type { RavelryPattern } from './api';
+import { useScrollToTop } from '@react-navigation/native';
 import * as React from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, useWindowDimensions } from 'react-native';
 
@@ -71,6 +72,8 @@ function ExploreFooter({ loading }: { loading: boolean }) {
 
 export function ExploreScreen() {
   const user = useAuthStore.use.user();
+  const listRef = React.useRef<FlatList<RavelryPattern>>(null);
+  useScrollToTop(listRef);
   const { width } = useWindowDimensions();
   const cell = (width - EXPLORE_GAP * (EXPLORE_COLUMNS - 1)) / EXPLORE_COLUMNS;
   const {
@@ -129,6 +132,7 @@ export function ExploreScreen() {
     <SafeAreaView className="flex-1 bg-black" edges={['top']}>
       <FocusAwareStatusBar />
       <FlatList
+        ref={listRef}
         data={patterns}
         keyExtractor={item => String(item.id)}
         numColumns={EXPLORE_COLUMNS}

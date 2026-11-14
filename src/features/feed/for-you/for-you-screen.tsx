@@ -1,6 +1,8 @@
 import type { FeedMode } from '../feed-mode';
 import type { PatternHighlight } from '@/lib/ravelry/types';
+import type { FlashListRef } from '@shopify/flash-list';
 import { FlashList } from '@shopify/flash-list';
+import { useScrollToTop } from '@react-navigation/native';
 import * as React from 'react';
 import { ActivityIndicator, RefreshControl } from 'react-native';
 
@@ -37,6 +39,8 @@ type Props = {
 
 export function ForYouScreen({ feedMode, onFeedModeChange }: Props) {
   const user = useAuthStore.use.user();
+  const listRef = React.useRef<FlashListRef<PatternHighlight>>(null);
+  useScrollToTop(listRef);
   const {
     data,
     isPending,
@@ -118,6 +122,7 @@ export function ForYouScreen({ feedMode, onFeedModeChange }: Props) {
     <SafeAreaView className="flex-1 bg-black" edges={['top']}>
       <FocusAwareStatusBar />
       <FlashList
+        ref={listRef}
         data={highlights}
         renderItem={renderItem}
         keyExtractor={item => item.id}

@@ -1,6 +1,8 @@
 import type { FriendActivity } from '../api';
 import type { FeedMode } from '../feed-mode';
+import type { FlashListRef } from '@shopify/flash-list';
 import { FlashList } from '@shopify/flash-list';
+import { useScrollToTop } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import * as React from 'react';
 
@@ -69,6 +71,8 @@ export function FriendsActivityScreen({
 }: Props) {
   const router = useRouter();
   const user = useAuthStore.use.user();
+  const listRef = React.useRef<FlashListRef<FriendActivity>>(null);
+  useScrollToTop(listRef);
   const {
     data,
     isPending,
@@ -143,6 +147,7 @@ export function FriendsActivityScreen({
       <FocusAwareStatusBar />
       <View className="flex-1">
         <FlashList
+          ref={listRef}
           data={photoFirst}
           renderItem={renderItem}
           keyExtractor={item => item.id}
