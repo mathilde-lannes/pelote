@@ -284,13 +284,7 @@ export function ExploreScreen() {
           refresh();
         }}
         onSubmit={() => commitSearch(draft)}
-        onClear={() => {
-          setDraft('');
-          if (activeSearch)
-            setCommittedQuery('');
-        }}
-        onCancel={onCancel}
-        showCancel={isFocused || activeSearch}
+        onClear={onCancel}
       />
       {body}
     </SafeAreaView>

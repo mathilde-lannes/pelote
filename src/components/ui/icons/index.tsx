@@ -21,6 +21,7 @@ export * from './rate';
 export * from './search';
 export * from './settings';
 export * from './share';
+export * from './sliders-horizontal';
 export * from './style';
 export * from './support';
 export * from './website';
