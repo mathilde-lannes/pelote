@@ -188,11 +188,49 @@ function ProjectTile({
   );
 }
 
-function DesignTile({ pattern }: { pattern: RavelryPattern }) {
+function designFeedHref({
+  username,
+  patternId,
+  designerPermalink,
+  designerId,
+}: {
+  username: string;
+  patternId: number;
+  designerPermalink?: string;
+  designerId?: number;
+}): string {
+  const params = new URLSearchParams();
+  if (designerPermalink)
+    params.set('designer', designerPermalink);
+  if (designerId != null && designerId > 0)
+    params.set('designer_id', String(designerId));
+  const query = params.toString();
+  return query
+    ? `/user/${username}/designs/${patternId}?${query}`
+    : `/user/${username}/designs/${patternId}`;
+}
+
+function DesignTile({
+  username,
+  pattern,
+  designerPermalink,
+  designerId,
+}: {
+  username: string;
+  pattern: RavelryPattern;
+  designerPermalink?: string;
+  designerId?: number;
+}) {
   const uri = bestPhotoUrl(pattern.photos[0]);
+  const href = designFeedHref({
+    username,
+    patternId: pattern.id,
+    designerPermalink,
+    designerId,
+  });
 
   return (
-    <Link href={`/pattern/${pattern.id}` as never} asChild>
+    <Link href={href as never} asChild>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={pattern.name}
@@ -376,7 +414,14 @@ export function ProfileScreen() {
                 designsQuery.isPending,
                 'No published designs yet.',
               )}
-              renderItem={({ item }) => <DesignTile pattern={item} />}
+              renderItem={({ item }) => (
+                <DesignTile
+                  username={displayName}
+                  pattern={item}
+                  designerPermalink={designerPermalink || undefined}
+                  designerId={designerId}
+                />
+              )}
             />
           )
         : (

@@ -1,9 +1,10 @@
 import type { AxiosError } from 'axios';
 import type { PatternHighlightsPage } from '@/lib/ravelry/api';
 import type { PatternHighlight, RavelryPattern } from '@/lib/ravelry/types';
-import { createInfiniteQuery } from 'react-query-kit';
+import { createInfiniteQuery, createQuery } from 'react-query-kit';
 
 import {
+  fetchPattern,
   fetchPatternHighlightsPage,
   invalidatePatternHighlightTimeline,
 } from '@/lib/ravelry/api';
@@ -30,4 +31,13 @@ export const usePatternHighlights = createInfiniteQuery<
       ? lastPage.page + 1
       : undefined,
   initialPageParam: 1,
+});
+
+export const usePattern = createQuery<
+  RavelryPattern,
+  { id: number },
+  AxiosError
+>({
+  queryKey: ['pattern'],
+  fetcher: variables => fetchPattern(variables.id),
 });

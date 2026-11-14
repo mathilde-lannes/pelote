@@ -39,6 +39,13 @@ export default function UserProfileLayout() {
           headerBackTitle: 'Profile',
         }}
       />
+      <Stack.Screen
+        name="designs/[id]"
+        options={{
+          title: 'Designs',
+          headerBackTitle: 'Profile',
+        }}
+      />
     </Stack>
   );
 }
