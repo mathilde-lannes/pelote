@@ -2,10 +2,11 @@ import type { FlatList as FlatListType } from 'react-native';
 import type { RavelryPattern } from './api';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import * as React from 'react';
-import { ActivityIndicator, FlatList } from 'react-native';
+import { FlatList } from 'react-native';
 
 import { FocusAwareStatusBar, Text, View } from '@/components/ui';
 import { usePattern } from '@/features/explore/api';
+import { FeedSkeletonScreen } from '@/features/feed/components/post-skeleton';
 import { useDesignerPatterns, usePerson } from './api';
 import { DesignerPatternPost } from './components/designer-pattern-post';
 import {
@@ -151,14 +152,8 @@ export function DesignerPatternsFeedScreen() {
   if (!username)
     return <FeedStatus message="Missing username" />;
 
-  if (designsQuery.isPending && !patterns.length) {
-    return (
-      <View className="flex-1 items-center justify-center bg-black">
-        <FocusAwareStatusBar />
-        <ActivityIndicator color="#ffffff" size="large" />
-      </View>
-    );
-  }
+  if (designsQuery.isPending && !patterns.length)
+    return <FeedSkeletonScreen />;
 
   if (designsQuery.isError && !patterns.length)
     return <FeedStatus message="Couldn’t load designs." />;
@@ -173,11 +168,10 @@ export function DesignerPatternsFeedScreen() {
         key={`${username}:${startId}`}
         getItemLayout={getItemLayout}
         initialScrollIndex={startIndex > 0 ? startIndex : undefined}
-        initialNumToRender={Math.min(
-          patterns.length,
-          Math.max(startIndex + 3, 5),
-        )}
-        windowSize={7}
+        initialNumToRender={3}
+        maxToRenderPerBatch={2}
+        windowSize={5}
+        updateCellsBatchingPeriod={50}
         onLayout={scrollToStart}
         onScrollToIndexFailed={onScrollToIndexFailed}
         renderItem={({ item }) => (

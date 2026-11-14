@@ -2,13 +2,10 @@ import type { FlatList as FlatListType } from 'react-native';
 import type { RavelryProject } from './api';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import * as React from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-
-} from 'react-native';
+import { FlatList } from 'react-native';
 
 import { FocusAwareStatusBar, Text, View } from '@/components/ui';
+import { FeedSkeletonScreen } from '@/features/feed/components/post-skeleton';
 import { usePerson, usePersonProjects } from './api';
 import { ProfileProjectPost } from './components/profile-project-post';
 import {
@@ -127,14 +124,8 @@ export function ProfileFeedScreen() {
   if (!username)
     return <FeedStatus message="Missing username" />;
 
-  if (projectsQuery.isPending && !projects.length) {
-    return (
-      <View className="flex-1 items-center justify-center bg-black">
-        <FocusAwareStatusBar />
-        <ActivityIndicator color="#ffffff" size="large" />
-      </View>
-    );
-  }
+  if (projectsQuery.isPending && !projects.length)
+    return <FeedSkeletonScreen />;
 
   if (projectsQuery.isError && !projects.length)
     return <FeedStatus message="Couldn’t load projects." />;
@@ -149,11 +140,10 @@ export function ProfileFeedScreen() {
         key={`${username}:${startId}`}
         getItemLayout={getItemLayout}
         initialScrollIndex={startIndex > 0 ? startIndex : undefined}
-        initialNumToRender={Math.min(
-          projects.length,
-          Math.max(startIndex + 3, 5),
-        )}
-        windowSize={7}
+        initialNumToRender={3}
+        maxToRenderPerBatch={2}
+        windowSize={5}
+        updateCellsBatchingPeriod={50}
         onLayout={scrollToStart}
         onScrollToIndexFailed={onScrollToIndexFailed}
         renderItem={({ item }) => (

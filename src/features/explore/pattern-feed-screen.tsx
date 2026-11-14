@@ -5,7 +5,9 @@ import * as React from 'react';
 import { ActivityIndicator, FlatList, View } from 'react-native';
 
 import { FocusAwareStatusBar, Text } from '@/components/ui';
+import { FeedSkeletonScreen } from '@/features/feed/components/post-skeleton';
 import { POST_ITEM_HEIGHT } from '@/features/feed/components/post-layout';
+import { bestPhotoUrl } from '@/lib/ravelry/api';
 import {
   usePattern,
   usePatternHighlights,
@@ -139,24 +141,17 @@ export function PatternFeedScreen() {
     [items],
   );
 
-  // Paint already scrolled — avoids flash at index 0 then jump.
-  const contentOffset = React.useMemo(
-    () => (startIndex > 0
-      ? { x: 0, y: patternPostOffset(items, startIndex) }
-      : undefined),
-    [items, startIndex],
-  );
+  const skeletonPhoto = React.useMemo(() => {
+    const match = items.find(item => String(item.pattern.id) === startId)
+      ?? items[0];
+    return bestPhotoUrl(match?.pattern.photos[0] ?? null);
+  }, [items, startId]);
 
   if (!startId)
     return <FeedStatus message="Missing pattern" />;
 
   if (listPending || (listSource === 'single' && patternQuery.isPending)) {
-    return (
-      <View className="flex-1 items-center justify-center bg-black">
-        <FocusAwareStatusBar />
-        <ActivityIndicator color="#ffffff" size="large" />
-      </View>
-    );
+    return <FeedSkeletonScreen photoUri={skeletonPhoto} />;
   }
 
   if (!fromSearch && highlightsQuery.isError && !highlights.length)
@@ -180,12 +175,13 @@ export function PatternFeedScreen() {
         keyExtractor={item => item.id}
         key={`${pathname}:${startId}`}
         getItemLayout={getItemLayout}
-        contentOffset={contentOffset}
-        initialNumToRender={Math.min(
-          items.length,
-          Math.max(startIndex + 3, 5),
-        )}
-        windowSize={7}
+        initialScrollIndex={startIndex > 0 ? startIndex : undefined}
+        // Keep the first paint light — virtualize around startIndex instead of
+        // mounting every row up to the tapped pattern (that froze the UI).
+        initialNumToRender={3}
+        maxToRenderPerBatch={2}
+        windowSize={5}
+        updateCellsBatchingPeriod={50}
         onEndReached={() => {
           if (
             listQuery

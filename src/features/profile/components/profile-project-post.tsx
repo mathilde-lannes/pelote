@@ -1,7 +1,6 @@
 import type { RavelryPerson, RavelryProject } from '@/lib/ravelry/types';
-import { Image } from 'expo-image';
 import * as React from 'react';
-import { Dimensions, View } from 'react-native';
+import { View } from 'react-native';
 
 import { usePathname } from 'expo-router';
 
@@ -9,6 +8,7 @@ import { usePattern } from '@/features/explore/api';
 import { useProject } from '@/features/feed/api';
 import { Post } from '@/features/feed/components/post';
 import { POST_ITEM_HEIGHT } from '@/features/feed/components/post-layout';
+import { PostSkeleton } from '@/features/feed/components/post-skeleton';
 import { collectProjectPhotos } from '@/features/feed/components/collect-project-photos';
 import { formatRelative } from '@/features/feed/format-relative';
 import {
@@ -16,8 +16,6 @@ import {
   userProfileHref,
 } from '@/features/profile/designer-profile-href';
 import { bestPhotoUrl } from '@/lib/ravelry/api';
-
-const SCREEN_WIDTH = Dimensions.get('window').width;
 
 type Props = {
   username: string;
@@ -47,40 +45,6 @@ function projectDateLabel(project: RavelryProject): string {
       return relative;
   }
   return '';
-}
-
-function ProfileProjectPostPlaceholder({
-  project,
-}: {
-  project: RavelryProject;
-}) {
-  const uri = bestPhotoUrl(project.first_photo ?? project.photos?.[0]);
-  return (
-    <View style={{ height: POST_ITEM_HEIGHT }} className="bg-black">
-      <View className="flex-row items-center gap-2.5 px-4 py-3">
-        <View className="size-8 rounded-full bg-ink-400" />
-        <View className="min-w-0 flex-1 gap-1.5">
-          <View className="h-3.5 w-28 rounded bg-ink-300" />
-          <View className="h-3 w-40 rounded bg-ink-200" />
-        </View>
-      </View>
-      <View
-        style={{ width: SCREEN_WIDTH, height: SCREEN_WIDTH }}
-        className="bg-ink-200"
-      >
-        {uri
-          ? (
-              <Image
-                source={{ uri }}
-                style={{ width: '100%', height: '100%' }}
-                contentFit="cover"
-              />
-            )
-          : null}
-      </View>
-      <View style={{ height: 22 }} />
-    </View>
-  );
 }
 
 export function ProfileProjectPost({ username, person, project }: Props) {
@@ -134,8 +98,13 @@ export function ProfileProjectPost({ username, person, project }: Props) {
       ? designerDesignsFeedHref(author, patternId, pathname)
       : null;
 
-  if (!ready && !photos.length)
-    return <ProfileProjectPostPlaceholder project={project} />;
+  if (!ready && !photos.length) {
+    return (
+      <PostSkeleton
+        photoUri={bestPhotoUrl(project.first_photo ?? project.photos?.[0] ?? null)}
+      />
+    );
+  }
 
   // Prefer list photos immediately so the grid→feed open doesn't flash empty.
   // Full details still enrich notes / favorites when the show call returns.
