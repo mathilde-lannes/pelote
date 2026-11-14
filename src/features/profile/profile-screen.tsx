@@ -294,7 +294,7 @@ export function ProfileScreen() {
   const hasDesigns = designs.length > 0 || (designCount != null && designCount > 0);
   const showTabSwitch = hasDesigns && projects.length > 0;
 
-  const [tab, setTab] = React.useState<ProfileTab>('projects');
+  const [tab, setTab] = React.useState<ProfileTab>('designs');
   const tabInitialized = React.useRef(false);
 
   React.useEffect(() => {
@@ -303,13 +303,11 @@ export function ProfileScreen() {
     if (projectsQuery.isPending || designsQuery.isPending)
       return;
     tabInitialized.current = true;
-    // Designers (e.g. For You taps) often have designs but few/no public projects.
-    if (projects.length === 0 && hasDesigns)
-      setTab('designs');
+    // Prefer designs when available; otherwise fall back to projects.
+    setTab(hasDesigns ? 'designs' : 'projects');
   }, [
     designsQuery.isPending,
     hasDesigns,
-    projects.length,
     projectsQuery.isPending,
   ]);
 
