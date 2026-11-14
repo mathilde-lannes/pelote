@@ -15,7 +15,7 @@ A signed-in Ravelry user who has (or will add) friends and designers.
 
 ## Happy path
 
-1. Open the Feed tab.
+1. Open the Home tab.
 2. Pelote loads friends’ activity and keeps only Home-eligible items with usable photos (or queued patterns).
 3. The user scrolls a vertical list of activity cards, pulls to refresh, and loads more pages as they near the end.
 4. Tapping into related UI (avatar / project) can open profiles or project detail routes.
@@ -34,7 +34,7 @@ A signed-in Ravelry user who has (or will add) friends and designers.
 | --- | --- |
 | Loading (or no user yet) | Spinner and “Loading friends’ activity…” |
 | Request failed | “Couldn’t load your feed” with Retry |
-| No Home-eligible items | Wordmark + copy to add friends; button to Friends tab |
+| No Home-eligible items | Wordmark + copy to add friends; button opens Friends screen |
 | Fetching next page | Footer spinner |
 
 ## Out of scope

@@ -15,7 +15,7 @@ A signed-in Ravelry user.
 
 ## Happy path
 
-1. Open the Friends tab (“Friends & designers”).
+1. Open Friends (“Friends & designers”) from the Home empty state (or `/friends`).
 2. See the current friends list from Ravelry.
 3. Type a Ravelry username or designer name; after a short debounce, search results appear.
 4. Add a person → friendship is created on Ravelry; friends list and feed queries refresh.

@@ -86,7 +86,7 @@ export default function RootLayout() {
           name="pattern/[id]"
           options={{
             title: 'Patterns',
-            headerBackTitle: 'Explore',
+            headerBackTitle: 'Search',
           }}
         />
         <Stack.Screen

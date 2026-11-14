@@ -1,6 +1,6 @@
 import type { RavelryProject } from './api';
 import { Image } from 'expo-image';
-import { Link, useLocalSearchParams } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import * as React from 'react';
 import {
   ActivityIndicator,
@@ -15,6 +15,8 @@ import {
   Text,
   View,
 } from '@/components/ui';
+import { Settings as SettingsIcon } from '@/components/ui/icons';
+import { useAuthStore } from '@/features/auth/use-auth-store';
 import { bestPhotoUrl } from '@/lib/ravelry/api';
 import { usePerson, usePersonProjects } from './api';
 
@@ -28,12 +30,15 @@ function ProfileHeader({
   avatarUrl,
   about,
   projectCount,
+  showSettings,
 }: {
   username: string;
   avatarUrl: string | null;
   about: string | null;
   projectCount: number | null;
+  showSettings: boolean;
 }) {
+  const router = useRouter();
   const initial = username.slice(0, 1).toUpperCase() || '?';
 
   return (
@@ -54,10 +59,25 @@ function ProfileHeader({
                 </Text>
               </View>
             )}
-        <View className="flex-1">
-          <Text className="text-xl font-semibold text-white">
-            {username}
-          </Text>
+        <View className="min-w-0 flex-1">
+          <View className="flex-row items-start justify-between gap-3">
+            <Text className="flex-1 text-xl font-semibold text-white">
+              {username}
+            </Text>
+            {showSettings
+              ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Settings"
+                    hitSlop={8}
+                    onPress={() => router.push('/settings')}
+                    testID="profile-settings"
+                  >
+                    <SettingsIcon color="#ffffff" />
+                  </Pressable>
+                )
+              : null}
+          </View>
           <View className="mt-3 flex-row gap-6">
             <View>
               <Text className="text-base font-semibold text-white">
@@ -117,7 +137,14 @@ function ProjectTile({
 
 export function ProfileScreen() {
   const params = useLocalSearchParams<{ username: string }>();
-  const username = String(params.username ?? '').trim();
+  const authUser = useAuthStore.use.user();
+  const paramUsername = String(params.username ?? '').trim();
+  const username = paramUsername || authUser?.username?.trim() || '';
+  const isTabProfile = !paramUsername;
+  const isOwnProfile
+    = Boolean(username)
+      && Boolean(authUser?.username)
+      && username.toLowerCase() === authUser!.username.toLowerCase();
 
   const personQuery = usePerson({
     variables: { username },
@@ -175,7 +202,10 @@ export function ProfileScreen() {
   const displayName = person?.username || username;
 
   return (
-    <SafeAreaView className="flex-1 bg-black" edges={['bottom']}>
+    <SafeAreaView
+      className="flex-1 bg-black"
+      edges={isTabProfile ? ['top'] : ['bottom']}
+    >
       <FocusAwareStatusBar />
       <FlatList
         data={projects}
@@ -191,6 +221,7 @@ export function ProfileScreen() {
             projectCount={
               projectsQuery.isPending ? null : projectCount
             }
+            showSettings={isOwnProfile}
           />
         )}
         ListEmptyComponent={

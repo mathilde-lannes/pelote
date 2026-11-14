@@ -3,10 +3,11 @@ import * as React from 'react';
 
 import { colors } from '@/components/ui';
 import {
-  Explore as ExploreIcon,
-  Feed as FeedIcon,
-  People as PeopleIcon,
-  Settings as SettingsIcon,
+  Home as HomeIcon,
+  Library as LibraryIcon,
+  Message as MessageIcon,
+  Profile as ProfileIcon,
+  Search as SearchIcon,
 } from '@/components/ui/icons';
 import { useAuthStore as useAuth } from '@/features/auth/use-auth-store';
 import { useIsFirstTime } from '@/lib/hooks/use-is-first-time';
@@ -43,37 +44,60 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Feed',
+          title: 'Home',
           headerShown: false,
-          tabBarIcon: ({ color }) => <FeedIcon color={color} />,
-          tabBarButtonTestID: 'feed-tab',
+          tabBarIcon: ({ color }) => <HomeIcon color={color} />,
+          tabBarButtonTestID: 'home-tab',
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="library"
         options={{
-          title: 'Explore',
+          title: 'Library',
           headerShown: false,
-          tabBarIcon: ({ color }) => <ExploreIcon color={color} />,
-          tabBarButtonTestID: 'explore-tab',
+          tabBarIcon: ({ color }) => <LibraryIcon color={color} />,
+          tabBarButtonTestID: 'library-tab',
+        }}
+      />
+      <Tabs.Screen
+        name="messages"
+        options={{
+          title: 'Messages',
+          headerShown: false,
+          tabBarIcon: ({ color }) => <MessageIcon color={color} />,
+          tabBarButtonTestID: 'messages-tab',
+        }}
+      />
+      <Tabs.Screen
+        name="search"
+        options={{
+          title: 'Search',
+          headerShown: false,
+          tabBarIcon: ({ color }) => <SearchIcon color={color} />,
+          tabBarButtonTestID: 'search-tab',
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          headerShown: false,
+          tabBarIcon: ({ color }) => <ProfileIcon color={color} />,
+          tabBarButtonTestID: 'profile-tab',
         }}
       />
       <Tabs.Screen
         name="friends"
         options={{
-          title: 'Friends',
+          href: null,
           headerShown: false,
-          tabBarIcon: ({ color }) => <PeopleIcon color={color} />,
-          tabBarButtonTestID: 'friends-tab',
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Settings',
+          href: null,
           headerShown: false,
-          tabBarIcon: ({ color }) => <SettingsIcon color={color} />,
-          tabBarButtonTestID: 'settings-tab',
         }}
       />
     </Tabs>
