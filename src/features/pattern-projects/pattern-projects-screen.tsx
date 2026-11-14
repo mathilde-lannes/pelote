@@ -1,6 +1,6 @@
 import type { RavelryProject } from './api';
 import { Image } from 'expo-image';
-import { Link, useLocalSearchParams } from 'expo-router';
+import { Link, useLocalSearchParams, usePathname } from 'expo-router';
 import * as React from 'react';
 import {
   ActivityIndicator,
@@ -16,6 +16,7 @@ import {
   View,
 } from '@/components/ui';
 import { usePattern } from '@/features/explore/api';
+import { patternProjectFeedHref } from '@/features/explore/pattern-href';
 import { formatCompactCount } from '@/features/feed/format-compact-count';
 import { bestPhotoUrl } from '@/lib/ravelry/api';
 import { usePatternProjects } from './api';
@@ -104,8 +105,9 @@ function ProjectTile({
   patternId: number;
   project: RavelryProject;
 }) {
+  const pathname = usePathname();
   const uri = bestPhotoUrl(project.first_photo ?? project.photos?.[0]);
-  const href = `/pattern/${patternId}/projects/${project.id}`;
+  const href = patternProjectFeedHref(patternId, project.id, pathname);
 
   return (
     <Link href={href as never} asChild>

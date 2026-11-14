@@ -5,7 +5,11 @@ import * as React from 'react';
 import { ActivityIndicator, FlatList } from 'react-native';
 
 import { FocusAwareStatusBar, Text, View } from '@/components/ui';
-import { usePattern, usePatternHighlights } from './api';
+import {
+  usePattern,
+  usePatternHighlights,
+  useRecentlyPopularPatterns,
+} from './api';
 import { PatternPost } from './components/pattern-post';
 import { patternPostItemHeight, patternPostOffset } from './pattern-feed-layout';
 
@@ -90,18 +94,28 @@ export function PatternFeedScreen() {
   const startId = String(params.id ?? '').trim();
   const patternId = Number(startId);
   const highlightsQuery = usePatternHighlights();
+  const popularQuery = useRecentlyPopularPatterns();
   const highlights = React.useMemo(
     () => (highlightsQuery.data?.pages ?? []).flatMap(page => page.highlights),
     [highlightsQuery.data],
+  );
+  const popular = React.useMemo(
+    () => (popularQuery.data?.pages ?? []).flatMap(page =>
+      page.patterns.map(toHighlight),
+    ),
+    [popularQuery.data],
   );
   const inHighlights = React.useMemo(
     () => highlights.some(item => String(item.pattern.id) === startId),
     [highlights, startId],
   );
+  const inPopular = React.useMemo(
+    () => popular.some(item => String(item.pattern.id) === startId),
+    [popular, startId],
+  );
 
-  // Designer grids (and other non-highlight entry points) open patterns that are
-  // not in the highlights timeline — fetch that pattern directly instead of
-  // falling through to the top of For You / highlights.
+  // Designer grids (and other non-list entry points) open patterns that are
+  // not in highlights or recently popular — fetch that pattern directly.
   const patternQuery = usePattern({
     variables: { id: patternId },
     enabled:
@@ -109,16 +123,33 @@ export function PatternFeedScreen() {
       && Number.isFinite(patternId)
       && patternId > 0
       && !highlightsQuery.isPending
-      && !inHighlights,
+      && !popularQuery.isPending
+      && !inHighlights
+      && !inPopular,
   });
 
   const items = React.useMemo(() => {
     if (inHighlights)
       return highlights;
+    if (inPopular)
+      return popular;
     if (patternQuery.data)
       return [toHighlight(patternQuery.data)];
     return [];
-  }, [highlights, inHighlights, patternQuery.data]);
+  }, [highlights, inHighlights, inPopular, patternQuery.data, popular]);
+
+  const listSource
+    = inHighlights
+      ? 'highlights'
+      : inPopular
+        ? 'popular'
+        : 'single';
+  const listQuery
+    = listSource === 'highlights'
+      ? highlightsQuery
+      : listSource === 'popular'
+        ? popularQuery
+        : null;
 
   const {
     listRef,
@@ -133,7 +164,8 @@ export function PatternFeedScreen() {
 
   if (
     (highlightsQuery.isPending && !highlights.length)
-    || (!inHighlights && patternQuery.isPending)
+    || (popularQuery.isPending && !popular.length && !inHighlights)
+    || (listSource === 'single' && patternQuery.isPending)
   ) {
     return (
       <View className="flex-1 items-center justify-center bg-black">
@@ -146,7 +178,10 @@ export function PatternFeedScreen() {
   if (inHighlights && highlightsQuery.isError && !highlights.length)
     return <FeedStatus message="Couldn’t load highlights." />;
 
-  if (!inHighlights && patternQuery.isError)
+  if (inPopular && popularQuery.isError && !popular.length)
+    return <FeedStatus message="Couldn’t load popular patterns." />;
+
+  if (listSource === 'single' && patternQuery.isError)
     return <FeedStatus message="Couldn’t load this pattern." />;
 
   if (!items.length)
@@ -162,7 +197,7 @@ export function PatternFeedScreen() {
         key={startId}
         getItemLayout={getItemLayout}
         initialScrollIndex={
-          inHighlights && startIndex > 0 ? startIndex : undefined
+          listSource !== 'single' && startIndex > 0 ? startIndex : undefined
         }
         initialNumToRender={Math.min(
           items.length,
@@ -171,11 +206,11 @@ export function PatternFeedScreen() {
         windowSize={7}
         onEndReached={() => {
           if (
-            inHighlights
-            && highlightsQuery.hasNextPage
-            && !highlightsQuery.isFetchingNextPage
+            listQuery
+            && listQuery.hasNextPage
+            && !listQuery.isFetchingNextPage
           ) {
-            highlightsQuery.fetchNextPage();
+            listQuery.fetchNextPage();
           }
         }}
         onEndReachedThreshold={0.5}
@@ -183,7 +218,7 @@ export function PatternFeedScreen() {
         onScrollToIndexFailed={onScrollToIndexFailed}
         renderItem={({ item }) => <PatternPost item={item} />}
         ListFooterComponent={
-          inHighlights && highlightsQuery.isFetchingNextPage
+          listQuery?.isFetchingNextPage
             ? (
                 <View className="items-center py-4">
                   <ActivityIndicator color="#ffffff" />

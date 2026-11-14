@@ -1,6 +1,6 @@
 import type { RavelryPattern, RavelryProject } from './api';
 import { Image } from 'expo-image';
-import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import { Link, useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import * as React from 'react';
 import {
   ActivityIndicator,
@@ -23,7 +23,10 @@ import {
   usePerson,
   usePersonProjects,
 } from './api';
-import { designerDesignsFeedHref } from './designer-profile-href';
+import {
+  designerDesignsFeedHref,
+  userProjectFeedHref,
+} from './designer-profile-href';
 
 const GRID_GAP = 2;
 const COLS = 3;
@@ -163,11 +166,12 @@ function ProjectTile({
   username: string;
   project: RavelryProject;
 }) {
+  const pathname = usePathname();
   const uri = bestPhotoUrl(project.first_photo ?? project.photos?.[0]);
-  const href = `/user/${username}/feed/${project.id}`;
+  const href = userProjectFeedHref(username, project.id, pathname);
 
   return (
-    <Link href={href as any} asChild>
+    <Link href={href as never} asChild>
       <Pressable style={{ width: TILE, height: TILE }}>
         {uri
           ? (
@@ -200,6 +204,7 @@ function DesignTile({
   designerPermalink?: string;
   designerId?: number;
 }) {
+  const pathname = usePathname();
   const uri = bestPhotoUrl(pattern.photos[0]);
   const href
     = designerDesignsFeedHref(
@@ -212,8 +217,9 @@ function DesignTile({
           : [{ id: 0, username, small_photo_url: null, photo_url: null }],
       },
       pattern.id,
+      pathname,
     )
-    ?? `/user/${username}/designs/${pattern.id}`;
+    ?? `${pathname?.startsWith('/search') ? '/search/user' : '/user'}/${username}/designs/${pattern.id}`;
 
   return (
     <Link href={href as never} asChild>

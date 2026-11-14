@@ -4,13 +4,17 @@ import type {
   RavelryPerson,
 } from '@/lib/ravelry/types';
 import { Image } from 'expo-image';
+import { usePathname } from 'expo-router';
 import * as React from 'react';
 import { Dimensions, View } from 'react-native';
 
 import { usePattern } from '@/features/explore/api';
 import { Post } from '@/features/feed/components/post';
 import { POST_ITEM_HEIGHT } from '@/features/feed/components/post-layout';
-import { designerProfileHref } from '@/features/profile/designer-profile-href';
+import {
+  designerProfileHref,
+  userProfileHref,
+} from '@/features/profile/designer-profile-href';
 import { bestPhotoUrl } from '@/lib/ravelry/api';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -56,6 +60,7 @@ function DesignerPatternPostPlaceholder({ pattern }: { pattern: RavelryPattern }
 }
 
 export function DesignerPatternPost({ username, person, pattern }: Props) {
+  const pathname = usePathname();
   const detailQuery = usePattern({
     variables: { id: pattern.id },
     retry: (failureCount, error) => {
@@ -124,7 +129,10 @@ export function DesignerPatternPost({ username, person, pattern }: Props) {
         variant="pattern"
         authorName={designer}
         authorAvatar={user?.small_photo_url ?? user?.photo_url ?? null}
-        authorHref={designerProfileHref(author) ?? `/user/${username}`}
+        authorHref={
+          designerProfileHref(author, pathname)
+          ?? userProfileHref(username, pathname)
+        }
         patternId={p.id}
         patternName={p.name}
         photos={p.photos}

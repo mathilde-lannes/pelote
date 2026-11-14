@@ -3,13 +3,18 @@ import { Image } from 'expo-image';
 import * as React from 'react';
 import { Dimensions, View } from 'react-native';
 
+import { usePathname } from 'expo-router';
+
 import { usePattern } from '@/features/explore/api';
 import { useProject } from '@/features/feed/api';
 import { Post } from '@/features/feed/components/post';
 import { POST_ITEM_HEIGHT } from '@/features/feed/components/post-layout';
 import { collectProjectPhotos } from '@/features/feed/components/collect-project-photos';
 import { formatRelative } from '@/features/feed/format-relative';
-import { designerDesignsFeedHref } from '@/features/profile/designer-profile-href';
+import {
+  designerDesignsFeedHref,
+  userProfileHref,
+} from '@/features/profile/designer-profile-href';
 import { bestPhotoUrl } from '@/lib/ravelry/api';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -110,6 +115,7 @@ export function ProfileProjectPost({ username, person, project }: Props) {
     [data.first_photo, data.photos],
   );
 
+  const pathname = usePathname();
   const displayName = person?.username || username;
   const avatar
     = person?.small_photo_url
@@ -125,7 +131,7 @@ export function ProfileProjectPost({ username, person, project }: Props) {
       || null;
   const designerHref
     = patternId != null
-      ? designerDesignsFeedHref(author, patternId)
+      ? designerDesignsFeedHref(author, patternId, pathname)
       : null;
 
   if (!ready && !photos.length)
@@ -139,7 +145,7 @@ export function ProfileProjectPost({ username, person, project }: Props) {
         variant="project"
         authorName={displayName}
         authorAvatar={avatar}
-        authorHref={`/user/${displayName}`}
+        authorHref={userProfileHref(displayName, pathname)}
         projectName={data.name}
         patternName={data.pattern_name ?? patternQuery.data?.name}
         designerName={designerName}

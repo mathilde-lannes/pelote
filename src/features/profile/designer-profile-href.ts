@@ -1,5 +1,14 @@
 import type { RavelryPatternAuthor } from '@/lib/ravelry/types';
 
+/**
+ * User profile URLs differ by tab stack:
+ * - Home → `/user/:username`
+ * - Search → `/search/user/:username` (keeps Search tab focused on back)
+ */
+export function userBasePath(pathname?: string | null): string {
+  return pathname?.startsWith('/search') ? '/search/user' : '/user';
+}
+
 function designerRouteParts(
   author: RavelryPatternAuthor | null | undefined,
 ): { routeUser: string; query: string } | null {
@@ -26,13 +35,13 @@ function designerRouteParts(
  */
 export function designerProfileHref(
   author: RavelryPatternAuthor | null | undefined,
+  pathname?: string | null,
 ): string | null {
   const parts = designerRouteParts(author);
   if (!parts)
     return null;
-  return parts.query
-    ? `/user/${parts.routeUser}?${parts.query}`
-    : `/user/${parts.routeUser}`;
+  const base = `${userBasePath(pathname)}/${parts.routeUser}`;
+  return parts.query ? `${base}?${parts.query}` : base;
 }
 
 /**
@@ -41,10 +50,26 @@ export function designerProfileHref(
 export function designerDesignsFeedHref(
   author: RavelryPatternAuthor | null | undefined,
   patternId: number,
+  pathname?: string | null,
 ): string | null {
   const parts = designerRouteParts(author);
   if (!parts || !(patternId > 0))
     return null;
-  const path = `/user/${parts.routeUser}/designs/${patternId}`;
+  const path = `${userBasePath(pathname)}/${parts.routeUser}/designs/${patternId}`;
   return parts.query ? `${path}?${parts.query}` : path;
+}
+
+export function userProfileHref(
+  username: string,
+  pathname?: string | null,
+): string {
+  return `${userBasePath(pathname)}/${username}`;
+}
+
+export function userProjectFeedHref(
+  username: string,
+  projectId: number,
+  pathname?: string | null,
+): string {
+  return `${userBasePath(pathname)}/${username}/feed/${projectId}`;
 }

@@ -433,25 +433,11 @@ export async function resolveDesignerPermalinkForProfile(options: {
   return resolveDesignerPermalink(options.username);
 }
 
-/**
- * Patterns by designer via site search filter `designer`, same as
- * https://www.ravelry.com/patterns/search?designer= — documented filter family
- * for `GET /patterns/search.json`.
- */
-export async function fetchPatternsByDesigner(
-  designer: string,
-  options?: { page?: number; pageSize?: number; permalink?: string },
-): Promise<DesignerPatternsPage> {
-  const page = options?.page ?? 1;
-  const pageSize = options?.pageSize ?? 48;
-  const permalink = (options?.permalink ?? designer).trim() || designer;
-  const { data } = await client.get('patterns/search.json', {
-    params: {
-      designer: permalink,
-      page,
-      page_size: pageSize,
-    },
-  });
+function patternsSearchPageFromPayload(
+  data: { patterns?: unknown; paginator?: Record<string, unknown> },
+  page: number,
+  pageSize: number,
+): DesignerPatternsPage {
   const list = data.patterns ?? [];
   const patterns = (Array.isArray(list) ? list : [])
     .map((raw: unknown) => normalizePattern(raw))
@@ -473,6 +459,73 @@ export async function fetchPatternsByDesigner(
     pageSize,
     pageCount: Number.isFinite(pageCount) && pageCount > 0 ? pageCount : 1,
     totalResults,
+  };
+}
+
+/**
+ * Patterns by designer via site search filter `designer`, same as
+ * https://www.ravelry.com/patterns/search?designer= — documented filter family
+ * for `GET /patterns/search.json`.
+ */
+export async function fetchPatternsByDesigner(
+  designer: string,
+  options?: { page?: number; pageSize?: number; permalink?: string },
+): Promise<DesignerPatternsPage> {
+  const page = options?.page ?? 1;
+  const pageSize = options?.pageSize ?? 48;
+  const permalink = (options?.permalink ?? designer).trim() || designer;
+  const { data } = await client.get('patterns/search.json', {
+    params: {
+      designer: permalink,
+      page,
+      page_size: pageSize,
+    },
+  });
+  return patternsSearchPageFromPayload(data, page, pageSize);
+}
+
+function mergeSearchPatternsWithFull(
+  listPatterns: RavelryPattern[],
+  fullPatterns: RavelryPattern[],
+): RavelryPattern[] {
+  const byId = new Map(fullPatterns.map(pattern => [pattern.id, pattern]));
+  return listPatterns.map((pattern) => {
+    const full = byId.get(pattern.id);
+    if (!full)
+      return pattern;
+    return {
+      ...pattern,
+      ...full,
+      name: full.name || pattern.name,
+      photos: full.photos.length ? full.photos : pattern.photos,
+      pattern_author: full.pattern_author ?? pattern.pattern_author,
+    };
+  });
+}
+
+/**
+ * Hot-right-now style ranking via site search sort `recently-popular`
+ * (same as https://www.ravelry.com/patterns/search#sort=recently-popular).
+ * Search rows are Pattern#list (thin stats) — merge Pattern#full via patterns.json?ids=.
+ */
+export async function fetchRecentlyPopularPatterns(
+  options?: { page?: number; pageSize?: number },
+): Promise<DesignerPatternsPage> {
+  const page = options?.page ?? 1;
+  const pageSize = options?.pageSize ?? 48;
+  const { data } = await client.get('patterns/search.json', {
+    params: {
+      sort: 'recently-popular',
+      page,
+      page_size: pageSize,
+    },
+  });
+  const listed = patternsSearchPageFromPayload(data, page, pageSize);
+  const ids = listed.patterns.map(pattern => pattern.id);
+  const full = ids.length ? await fetchFullPatterns(ids) : [];
+  return {
+    ...listed,
+    patterns: mergeSearchPatternsWithFull(listed.patterns, full),
   };
 }
 

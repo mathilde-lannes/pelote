@@ -1,6 +1,6 @@
 import type { RavelryPhoto } from '@/lib/ravelry/types';
 import { Image } from 'expo-image';
-import { Link } from 'expo-router';
+import { Link, usePathname } from 'expo-router';
 import * as React from 'react';
 
 import { ExpandableText } from '@/components/expandable-text';
@@ -13,6 +13,7 @@ import {
   Projects,
   Yarn,
 } from '@/components/ui/icons';
+import { patternProjectsHref } from '@/features/explore/pattern-href';
 import { PatternInfoSheet } from '@/features/feed/components/pattern-info-sheet';
 import { PhotoCarousel } from '@/features/feed/components/photo-carousel';
 import { formatCompactCount } from '@/features/feed/format-compact-count';
@@ -194,6 +195,7 @@ function PostStats({
   projects,
   comments,
   yarns,
+  projectsHref,
 }: {
   variant: PostProps['variant'];
   patternId?: number;
@@ -201,6 +203,7 @@ function PostStats({
   projects: string | null;
   comments: string | null;
   yarns: string | null;
+  projectsHref?: string | null;
 }) {
   return (
     <View className="flex-row items-center justify-between px-[18px] pt-1">
@@ -216,7 +219,7 @@ function PostStats({
                 icon={<Projects color="#ffffff" />}
                 count={projects}
                 label="Projects"
-                href={`/pattern/${patternId}/projects`}
+                href={projectsHref}
               />
             )
           : null}
@@ -365,6 +368,7 @@ export function Post(props: PostProps) {
     favoritesCount,
     commentsCount,
   } = props;
+  const pathname = usePathname();
 
   const subtitle
     = props.variant === 'pattern'
@@ -395,6 +399,10 @@ export function Post(props: PostProps) {
       : props.designerHref
         ? <DesignerDesignsTrailing href={props.designerHref} />
         : null;
+  const projectsHref
+    = props.variant === 'pattern'
+      ? patternProjectsHref(props.patternId, pathname)
+      : null;
 
   return (
     <View className="bg-black pb-4">
@@ -426,6 +434,7 @@ export function Post(props: PostProps) {
             ? countLabel(props.packsCount)
             : null
         }
+        projectsHref={projectsHref}
       />
       <PostCaption
         authorName={authorName}
