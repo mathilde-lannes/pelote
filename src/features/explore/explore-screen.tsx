@@ -112,11 +112,12 @@ export function ExploreScreen() {
   });
   const peopleSuggestQuery = usePeopleSearch({
     variables: { query: debouncedDraft },
-    enabled: Boolean(user) && showingOverlay && debouncedDraft.length > 0,
+    enabled:
+      Boolean(user) && showingOverlay && debouncedDraft.length >= 3,
   });
   const peopleResultsQuery = usePeopleSearch({
     variables: { query: committedQuery },
-    enabled: Boolean(user) && activeSearch,
+    enabled: Boolean(user) && activeSearch && committedQuery.trim().length >= 3,
   });
 
   const popularPatterns = React.useMemo(

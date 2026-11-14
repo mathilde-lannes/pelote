@@ -751,7 +751,7 @@ export async function searchPeople(
   query: string,
 ): Promise<PeopleSearchResponse> {
   const q = query.trim();
-  if (!q)
+  if (q.length < 3)
     return { people: [] };
 
   // Ravelry has no people/search endpoint — only people/{username}.json

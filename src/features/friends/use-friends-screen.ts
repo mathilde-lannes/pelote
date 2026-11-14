@@ -43,7 +43,7 @@ export function useFriendsScreen() {
   const friendsQuery = useFriends({ enabled: Boolean(user) });
   const searchQuery = usePeopleSearch({
     variables: { query: debounced },
-    enabled: Boolean(user) && debounced.length > 0,
+    enabled: Boolean(user) && debounced.length >= 3,
   });
 
   const addFriend = useAddFriend();
@@ -104,7 +104,7 @@ export function useFriendsScreen() {
     }
   };
 
-  const showingSearch = debounced.length > 0;
+  const showingSearch = debounced.length >= 3;
   const results = showingSearch
     ? (searchQuery.data ?? [])
     : (friendsQuery.data ?? []);

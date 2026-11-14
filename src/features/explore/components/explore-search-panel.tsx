@@ -38,11 +38,13 @@ export function ExploreSearchPanel({
   const trimmed = query.trim();
   const showRecents = recents.length > 0;
   const showSuggestions = trimmed.length > 0;
-  const anyPending = peoplePending || suggestionsPending;
+  const showPeople = trimmed.length >= 3;
+  const anyPending
+    = (showPeople && peoplePending) || suggestionsPending;
   const noMatches
     = showSuggestions
       && !anyPending
-      && !people.length
+      && !(showPeople && people.length)
       && !suggestions.length;
 
   return (
@@ -108,34 +110,38 @@ export function ExploreSearchPanel({
       {showSuggestions
         ? (
             <>
-              <View className="px-4 pt-5">
-                <Text className="mb-2 text-xs font-medium tracking-wide text-fog-500 uppercase">
-                  People
-                </Text>
-                {peoplePending && !people.length
-                  ? (
-                      <View className="items-center py-4">
-                        <ActivityIndicator color="#ffffff" />
-                      </View>
-                    )
-                  : null}
-                {!peoplePending && !people.length
-                  ? (
-                      <Text className="py-3 text-sm text-fog-400">
-                        No people match “
-                        {trimmed}
-                        ”.
+              {showPeople
+                ? (
+                    <View className="px-4 pt-5">
+                      <Text className="mb-2 text-xs font-medium tracking-wide text-fog-500 uppercase">
+                        People
                       </Text>
-                    )
-                  : null}
-                {people.map(person => (
-                  <ExplorePersonRow
-                    key={person.id}
-                    person={person}
-                    onPress={() => onSelectPerson(person)}
-                  />
-                ))}
-              </View>
+                      {peoplePending && !people.length
+                        ? (
+                            <View className="items-center py-4">
+                              <ActivityIndicator color="#ffffff" />
+                            </View>
+                          )
+                        : null}
+                      {!peoplePending && !people.length
+                        ? (
+                            <Text className="py-3 text-sm text-fog-400">
+                              No people match “
+                              {trimmed}
+                              ”.
+                            </Text>
+                          )
+                        : null}
+                      {people.map(person => (
+                        <ExplorePersonRow
+                          key={person.id}
+                          person={person}
+                          onPress={() => onSelectPerson(person)}
+                        />
+                      ))}
+                    </View>
+                  )
+                : null}
 
               <View className="px-4 pt-5">
                 <Text className="mb-2 text-xs font-medium tracking-wide text-fog-500 uppercase">
