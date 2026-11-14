@@ -232,31 +232,25 @@ export function ExploreScreen() {
     }
   }
   else if (!user || (popularQuery.isPending && !popularPatterns.length)) {
-    body = <PatternGridSkeleton headerTitle="Recently popular" />;
+    body = <PatternGridSkeleton />;
   }
   else if (popularQuery.isError && !popularPatterns.length) {
     body = (
-      <>
-        <SectionTitle title="Recently popular" />
-        <ExploreStatus
-          title="Couldn’t load patterns"
-          body="Check your connection and try again."
-          onRetry={() => {
-            void popularQuery.refetch();
-          }}
-        />
-      </>
+      <ExploreStatus
+        title="Couldn’t load patterns"
+        body="Check your connection and try again."
+        onRetry={() => {
+          void popularQuery.refetch();
+        }}
+      />
     );
   }
   else if (!popularPatterns.length) {
     body = (
-      <>
-        <SectionTitle title="Recently popular" />
-        <ExploreStatus
-          title="No patterns yet"
-          body="Recently popular patterns from Ravelry will show up here."
-        />
-      </>
+      <ExploreStatus
+        title="No patterns yet"
+        body="Recently popular patterns from Ravelry will show up here."
+      />
     );
   }
   else {
@@ -264,7 +258,6 @@ export function ExploreScreen() {
       <PatternGrid
         listRef={listRef}
         patterns={popularPatterns}
-        ListHeaderComponent={<SectionTitle title="Recently popular" />}
         onEndReached={onPopularEndReached}
         refreshing={popularQuery.isRefetching && !popularQuery.isFetchingNextPage}
         onRefresh={() => {

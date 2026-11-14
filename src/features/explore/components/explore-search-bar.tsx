@@ -29,7 +29,7 @@ export function ExploreSearchBar({
   inputRef,
 }: Props) {
   return (
-    <View className="flex-row items-center gap-2 border-b border-ink-300 px-3 py-2">
+    <View className="flex-row items-center gap-2 px-3 py-2">
       <View className="min-w-0 flex-1 flex-row items-center rounded-xl border border-ink-300 bg-ink-100 px-3">
         <Search color={colors.fog[400]} width={18} height={18} strokeWidth={2} />
         <TextInput
