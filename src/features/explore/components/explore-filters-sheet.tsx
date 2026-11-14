@@ -8,9 +8,12 @@ import colors from '@/components/ui/colors';
 import {
   AVAILABILITY_OPTIONS,
   CATEGORY_OPTIONS,
+  COLORS_OPTIONS,
   CRAFT_OPTIONS,
   FIT_OPTIONS,
   LANGUAGE_OPTIONS,
+  METERAGE_OPTIONS,
+  NEEDLE_OPTIONS,
   WEIGHT_OPTIONS,
   type FilterOption,
   type PatternSearchFilters,
@@ -181,6 +184,30 @@ export function ExploreFiltersSheet({
             options={WEIGHT_OPTIONS}
             values={filters.weights}
             onChange={weights => onChange({ ...filters, weights })}
+          />
+        </FilterSection>
+
+        <FilterSection title="Yarn meterage">
+          <SingleSelectChips
+            options={METERAGE_OPTIONS}
+            value={filters.meterage}
+            onChange={meterage => onChange({ ...filters, meterage })}
+          />
+        </FilterSection>
+
+        <FilterSection title="Needle size">
+          <MultiSelectChips
+            options={NEEDLE_OPTIONS}
+            values={filters.needles}
+            onChange={needles => onChange({ ...filters, needles })}
+          />
+        </FilterSection>
+
+        <FilterSection title="Colors used">
+          <MultiSelectChips
+            options={COLORS_OPTIONS}
+            values={filters.colors}
+            onChange={colors => onChange({ ...filters, colors })}
           />
         </FilterSection>
 

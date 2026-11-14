@@ -28,6 +28,9 @@ describe('pattern search filters', () => {
       weights: ['fingering', 'dk'],
       categories: ['hat'],
       fits: ['baby', 'child'],
+      colors: ['2', '6'],
+      needles: ['us-6', 'us-8'],
+      meterage: '400|800',
       availability: 'free',
       language: 'en',
       photo: true,
@@ -36,10 +39,28 @@ describe('pattern search filters', () => {
       weight: 'fingering|dk',
       pc: 'hat',
       fit: 'baby|child',
+      colors: '2|6',
+      needle: 'us-6|us-8',
+      meterage: '400|800',
       availability: 'free',
       language: 'en',
       photo: 'yes',
     });
+  });
+
+  it('treats colors, needles, and meterage as active filters', () => {
+    expect(hasActivePatternFilters({
+      ...EMPTY_PATTERN_SEARCH_FILTERS,
+      colors: ['1'],
+    })).toBe(true);
+    expect(hasActivePatternFilters({
+      ...EMPTY_PATTERN_SEARCH_FILTERS,
+      needles: ['us-6'],
+    })).toBe(true);
+    expect(hasActivePatternFilters({
+      ...EMPTY_PATTERN_SEARCH_FILTERS,
+      meterage: '450|600',
+    })).toBe(true);
   });
 
   it('toggles multi-select values', () => {
