@@ -14,6 +14,7 @@ import {
   Yarn,
 } from '@/components/ui/icons';
 import { PhotoCarousel } from '@/features/feed/components/photo-carousel';
+import { formatCompactCount } from '@/features/feed/format-compact-count';
 import { formatRelative } from '@/features/feed/format-relative';
 
 function stripHtml(html: string): string {
@@ -31,7 +32,7 @@ function countLabel(count: number | null | undefined): string | null {
   if (typeof count !== 'number' || !Number.isFinite(count))
     return null;
   const n = Math.max(0, Math.floor(count));
-  return n > 0 ? String(n) : null;
+  return n > 0 ? formatCompactCount(n) : null;
 }
 
 function Stat({

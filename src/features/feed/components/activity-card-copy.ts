@@ -1,5 +1,7 @@
 import type { FriendActivity } from '@/lib/ravelry/types';
 
+import { formatCompactCount } from '@/features/feed/format-compact-count';
+
 function stripHtml(html: string): string {
   return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 }
@@ -50,5 +52,7 @@ export function likesLabel(count: number | null | undefined): string | null {
   if (typeof count !== 'number' || !Number.isFinite(count))
     return null;
   const n = Math.max(0, Math.floor(count));
-  return n === 1 ? '1 like' : `${n} likes`;
+  if (n === 1)
+    return '1 like';
+  return `${formatCompactCount(n)} likes`;
 }
