@@ -3,11 +3,13 @@ import { Image } from 'expo-image';
 import * as React from 'react';
 import { Dimensions, View } from 'react-native';
 
+import { usePattern } from '@/features/explore/api';
 import { useProject } from '@/features/feed/api';
 import { Post } from '@/features/feed/components/post';
 import { POST_ITEM_HEIGHT } from '@/features/feed/components/post-layout';
 import { collectProjectPhotos } from '@/features/feed/components/collect-project-photos';
 import { formatRelative } from '@/features/feed/format-relative';
+import { designerDesignsFeedHref } from '@/features/profile/designer-profile-href';
 import { bestPhotoUrl } from '@/lib/ravelry/api';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -90,6 +92,19 @@ export function ProfileProjectPost({ username, person, project }: Props) {
 
   const ready = Boolean(detailQuery.data) || detailQuery.isError || !detailQuery.isPending;
   const data = detailQuery.data ?? project;
+  const patternId = data.pattern_id ?? null;
+  // Project list rows often lack nested pattern_author — warm Pattern#show.
+  const patternQuery = usePattern({
+    variables: { id: patternId ?? 0 },
+    enabled: Boolean(patternId) && !data.pattern_author,
+    retry: (failureCount, error) => {
+      const status = (error as { response?: { status?: number } })?.response?.status;
+      if (status === 403 || status === 404)
+        return false;
+      return failureCount < 2;
+    },
+  });
+
   const photos = React.useMemo(
     () => collectProjectPhotos(data.first_photo, data.photos),
     [data.first_photo, data.photos],
@@ -100,6 +115,18 @@ export function ProfileProjectPost({ username, person, project }: Props) {
     = person?.small_photo_url
       ?? person?.photo_url
       ?? null;
+  const author
+    = data.pattern_author
+      ?? patternQuery.data?.pattern_author
+      ?? null;
+  const designerName
+    = author?.name?.trim()
+      || author?.users[0]?.username?.trim()
+      || null;
+  const designerHref
+    = patternId != null
+      ? designerDesignsFeedHref(author, patternId)
+      : null;
 
   if (!ready && !photos.length)
     return <ProfileProjectPostPlaceholder project={project} />;
@@ -114,7 +141,9 @@ export function ProfileProjectPost({ username, person, project }: Props) {
         authorAvatar={avatar}
         authorHref={`/user/${displayName}`}
         projectName={data.name}
-        patternName={data.pattern_name}
+        patternName={data.pattern_name ?? patternQuery.data?.name}
+        designerName={designerName}
+        designerHref={designerHref}
         photos={photos}
         notesHtml={data.notes_html}
         relative={projectDateLabel(data)}

@@ -179,6 +179,10 @@ export type ProjectPostProps = PostBase & {
   projectName: string;
   /** Pattern the project is based on, when known. */
   patternName?: string | null;
+  /** Designer display name shown next to the pattern name. */
+  designerName?: string | null;
+  /** Opens designer designs feed scrolled to this pattern. */
+  designerHref?: string | null;
 };
 
 export type PostProps = PatternPostProps | ProjectPostProps;
@@ -319,6 +323,38 @@ function PatternInfoTrailing({
   );
 }
 
+function DesignerDesignsTrailing({ href }: { href: string }) {
+  return (
+    <Link href={href as never} asChild>
+      <Pressable
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel="View designer pattern"
+      >
+        <PatternInfo color="#ffffff" />
+      </Pressable>
+    </Link>
+  );
+}
+
+function projectSubtitle({
+  patternName,
+  designerName,
+  projectName,
+}: {
+  patternName?: string | null;
+  designerName?: string | null;
+  projectName: string;
+}): string {
+  const pattern = patternName?.trim() || '';
+  const designer = designerName?.trim() || '';
+  if (pattern && designer)
+    return `${pattern} · ${designer}`;
+  if (pattern)
+    return pattern;
+  return projectName;
+}
+
 export function Post(props: PostProps) {
   const {
     authorName,
@@ -333,7 +369,11 @@ export function Post(props: PostProps) {
   const subtitle
     = props.variant === 'pattern'
       ? props.patternName
-      : (props.patternName || props.projectName);
+      : projectSubtitle({
+          patternName: props.patternName,
+          designerName: props.designerName,
+          projectName: props.projectName,
+        });
   const notes = notesHtml ? stripHtml(notesHtml) : '';
   const relative
     = props.relative?.trim()
@@ -352,7 +392,9 @@ export function Post(props: PostProps) {
             patternName={props.patternName}
           />
         )
-      : null;
+      : props.designerHref
+        ? <DesignerDesignsTrailing href={props.designerHref} />
+        : null;
 
   return (
     <View className="bg-black pb-4">

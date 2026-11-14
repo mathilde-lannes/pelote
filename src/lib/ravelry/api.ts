@@ -188,11 +188,19 @@ async function enrichFriendPhotos(
 
 function normalizeProject(raw: any): RavelryProject {
   const userRaw = raw.user ?? raw.person ?? null;
+  const patternIdRaw = Number(raw.pattern_id ?? raw.pattern?.id);
+  const patternId
+    = Number.isFinite(patternIdRaw) && patternIdRaw > 0 ? patternIdRaw : null;
+  const nestedPattern = raw.pattern != null && patternId != null
+    ? normalizePattern({ ...raw.pattern, id: patternId })
+    : null;
   return {
     id: raw.id,
     name: raw.name,
     permalink: raw.permalink,
-    pattern_name: raw.pattern_name ?? raw.pattern?.name ?? null,
+    pattern_name: raw.pattern_name ?? nestedPattern?.name ?? raw.pattern?.name ?? null,
+    pattern_id: patternId,
+    pattern_author: nestedPattern?.pattern_author ?? null,
     status_name: raw.status_name ?? null,
     progress: raw.progress ?? null,
     notes_html: raw.notes_html ?? raw.notes ?? null,

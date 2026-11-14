@@ -23,6 +23,7 @@ import {
   usePerson,
   usePersonProjects,
 } from './api';
+import { designerDesignsFeedHref } from './designer-profile-href';
 
 const GRID_GAP = 2;
 const COLS = 3;
@@ -188,28 +189,6 @@ function ProjectTile({
   );
 }
 
-function designFeedHref({
-  username,
-  patternId,
-  designerPermalink,
-  designerId,
-}: {
-  username: string;
-  patternId: number;
-  designerPermalink?: string;
-  designerId?: number;
-}): string {
-  const params = new URLSearchParams();
-  if (designerPermalink)
-    params.set('designer', designerPermalink);
-  if (designerId != null && designerId > 0)
-    params.set('designer_id', String(designerId));
-  const query = params.toString();
-  return query
-    ? `/user/${username}/designs/${patternId}?${query}`
-    : `/user/${username}/designs/${patternId}`;
-}
-
 function DesignTile({
   username,
   pattern,
@@ -222,12 +201,19 @@ function DesignTile({
   designerId?: number;
 }) {
   const uri = bestPhotoUrl(pattern.photos[0]);
-  const href = designFeedHref({
-    username,
-    patternId: pattern.id,
-    designerPermalink,
-    designerId,
-  });
+  const href
+    = designerDesignsFeedHref(
+      {
+        id: designerId ?? pattern.pattern_author?.id ?? 0,
+        name: pattern.pattern_author?.name ?? '',
+        permalink: designerPermalink ?? pattern.pattern_author?.permalink,
+        users: pattern.pattern_author?.users?.length
+          ? pattern.pattern_author.users
+          : [{ id: 0, username, small_photo_url: null, photo_url: null }],
+      },
+      pattern.id,
+    )
+    ?? `/user/${username}/designs/${pattern.id}`;
 
   return (
     <Link href={href as never} asChild>

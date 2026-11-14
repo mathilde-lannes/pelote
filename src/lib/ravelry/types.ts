@@ -21,6 +21,10 @@ export type RavelryProject = {
   name: string;
   permalink?: string;
   pattern_name?: string | null;
+  /** Linked pattern id when present on Project#full / list. */
+  pattern_id?: number | null;
+  /** Designer from nested pattern on Project#full. */
+  pattern_author?: RavelryPatternAuthor | null;
   status_name?: string | null;
   progress?: number | null;
   notes_html?: string | null;
