@@ -4,7 +4,7 @@ import { Link } from 'expo-router';
 import * as React from 'react';
 
 import { ExpandableText } from '@/components/expandable-text';
-import { Pressable, Text, View } from '@/components/ui';
+import { Pressable, Text, useModal, View } from '@/components/ui';
 import {
   Bookmark,
   Comments,
@@ -13,6 +13,7 @@ import {
   Projects,
   Yarn,
 } from '@/components/ui/icons';
+import { PatternInfoSheet } from '@/features/feed/components/pattern-info-sheet';
 import { PhotoCarousel } from '@/features/feed/components/photo-carousel';
 import { formatCompactCount } from '@/features/feed/format-compact-count';
 import { formatRelative } from '@/features/feed/format-relative';
@@ -283,6 +284,41 @@ function PostCaption({
   );
 }
 
+function PatternInfoTrailing({
+  patternId,
+  patternName,
+}: {
+  patternId: number;
+  patternName: string;
+}) {
+  const modal = useModal();
+  const [opened, setOpened] = React.useState(false);
+
+  const onPress = React.useCallback(() => {
+    setOpened(true);
+    modal.present();
+  }, [modal]);
+
+  return (
+    <>
+      <Pressable
+        onPress={onPress}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel="Pattern info"
+      >
+        <PatternInfo color="#ffffff" />
+      </Pressable>
+      <PatternInfoSheet
+        ref={modal.ref}
+        patternId={patternId}
+        patternName={patternName}
+        enabled={opened}
+      />
+    </>
+  );
+}
+
 export function Post(props: PostProps) {
   const {
     authorName,
@@ -311,15 +347,10 @@ export function Post(props: PostProps) {
   const trailing
     = props.variant === 'pattern'
       ? (
-          <Link href={`/pattern/${props.patternId}` as never} asChild>
-            <Pressable
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="Pattern info"
-            >
-              <PatternInfo color="#ffffff" />
-            </Pressable>
-          </Link>
+          <PatternInfoTrailing
+            patternId={props.patternId}
+            patternName={props.patternName}
+          />
         )
       : null;
 

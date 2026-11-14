@@ -1,5 +1,6 @@
 import type {
   PatternHighlight,
+  RavelryNeedleSize,
   RavelryPattern,
   RavelryPatternAuthor,
   RavelryPerson,
@@ -131,6 +132,39 @@ function normalizeAuthor(raw: unknown): RavelryPatternAuthor | null {
   };
 }
 
+function namedObject(raw: unknown): string | null {
+  if (!isRecord(raw))
+    return null;
+  return asString(raw.name);
+}
+
+function asFiniteNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function normalizeNeedleSize(raw: unknown): RavelryNeedleSize | null {
+  if (!isRecord(raw))
+    return null;
+  const name = asString(raw.name);
+  if (!name)
+    return null;
+  return {
+    id: Number(raw.id ?? 0) || 0,
+    name,
+    metric: asFiniteNumber(raw.metric),
+    us: asString(raw.us),
+    crochet: typeof raw.crochet === 'boolean' ? raw.crochet : null,
+    knitting: typeof raw.knitting === 'boolean' ? raw.knitting : null,
+  };
+}
+
+function yarnWeightDescription(raw: Record<string, unknown>): string | null {
+  const direct = asString(raw.yarn_weight_description);
+  if (direct)
+    return direct;
+  return namedObject(raw.yarn_weight);
+}
+
 export function normalizePattern(raw: unknown): RavelryPattern | null {
   if (!isRecord(raw))
     return null;
@@ -146,6 +180,12 @@ export function normalizePattern(raw: unknown): RavelryPattern | null {
   // Pattern#full uses pattern_author; Pattern#list (search) uses designer.
   const author = normalizeAuthor(raw.pattern_author)
     ?? normalizeAuthor(raw.designer);
+  const needles = Array.isArray(raw.pattern_needle_sizes)
+    ? raw.pattern_needle_sizes.flatMap((item) => {
+        const needle = normalizeNeedleSize(item);
+        return needle ? [needle] : [];
+      })
+    : [];
   return {
     id,
     name: asString(raw.name) ?? 'Pattern',
@@ -156,9 +196,27 @@ export function normalizePattern(raw: unknown): RavelryPattern | null {
     comments_count: typeof comments === 'number' ? comments : null,
     packs_count: packs,
     free: typeof raw.free === 'boolean' ? raw.free : null,
+    price: asString(raw.price)
+      ?? (typeof raw.price === 'number' && Number.isFinite(raw.price)
+        ? String(raw.price)
+        : null),
+    currency: asString(raw.currency),
+    currency_symbol: asString(raw.currency_symbol),
     notes_html: asString(raw.notes_html) ?? asString(raw.notes),
     photos,
     pattern_author: author,
+    craft_name: namedObject(raw.craft),
+    pattern_type_name: namedObject(raw.pattern_type),
+    yarn_weight_description: yarnWeightDescription(raw),
+    gauge_description: asString(raw.gauge_description),
+    gauge: asFiniteNumber(raw.gauge),
+    gauge_divisor: asFiniteNumber(raw.gauge_divisor),
+    row_gauge: asFiniteNumber(raw.row_gauge),
+    gauge_pattern: asString(raw.gauge_pattern),
+    yardage_description: asString(raw.yardage_description),
+    sizes_available: asString(raw.sizes_available),
+    difficulty_average: asFiniteNumber(raw.difficulty_average),
+    pattern_needle_sizes: needles,
   };
 }
 

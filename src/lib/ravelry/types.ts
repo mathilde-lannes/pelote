@@ -90,6 +90,16 @@ export type RavelryPatternAuthor = {
   users: RavelryPerson[];
 };
 
+/** Needle / hook row from Pattern#full `pattern_needle_sizes`. */
+export type RavelryNeedleSize = {
+  id: number;
+  name: string;
+  metric?: number | null;
+  us?: string | null;
+  crochet?: boolean | null;
+  knitting?: boolean | null;
+};
+
 /** Pattern#full fields used by highlights and pattern detail. */
 export type RavelryPattern = {
   id: number;
@@ -103,9 +113,28 @@ export type RavelryPattern = {
   /** Yarn / pack rows when present on Pattern#full. */
   packs_count?: number | null;
   free?: boolean | null;
+  /** Pattern#full price amount (string or number from API). */
+  price?: string | null;
+  currency?: string | null;
+  currency_symbol?: string | null;
   notes_html?: string | null;
   photos: RavelryPhoto[];
   pattern_author?: RavelryPatternAuthor | null;
+  /** Craft label from Pattern#full `craft.name`. */
+  craft_name?: string | null;
+  /** Pattern type / category label from Pattern#full. */
+  pattern_type_name?: string | null;
+  yarn_weight_description?: string | null;
+  /** Preformatted gauge line when present (Pattern#full). */
+  gauge_description?: string | null;
+  gauge?: number | null;
+  gauge_divisor?: number | null;
+  row_gauge?: number | null;
+  gauge_pattern?: string | null;
+  yardage_description?: string | null;
+  sizes_available?: string | null;
+  difficulty_average?: number | null;
+  pattern_needle_sizes?: RavelryNeedleSize[];
 };
 
 /** One row from `GET /patterns/highlights.json` → `timeline_entries`. */

@@ -114,6 +114,41 @@ describe('normalizePattern Pattern#list', () => {
   });
 });
 
+describe('normalizePattern Pattern#full craft fields', () => {
+  it('maps yarn weight, gauge, and needle sizes', () => {
+    const pattern = normalizePattern({
+      id: 42,
+      name: 'Sample',
+      craft: { name: 'Knitting' },
+      pattern_type: { name: 'Pullover' },
+      yarn_weight_description: 'DK (11 wpi)',
+      gauge_description: '22 stitches and 30 rows = 4 inches in Stockinette',
+      free: false,
+      price: 6.5,
+      currency: 'USD',
+      currency_symbol: '$',
+      yardage_description: '1000 - 1200 yards',
+      sizes_available: 'XS-3XL',
+      difficulty_average: 2.4,
+      pattern_needle_sizes: [
+        { id: 1, name: 'US 6 - 4.0 mm', metric: 4, us: '6', knitting: true },
+        { id: 2, name: 'US 4 - 3.5 mm', metric: 3.5, us: '4', knitting: true },
+      ],
+    });
+
+    expect(pattern?.craft_name).toBe('Knitting');
+    expect(pattern?.pattern_type_name).toBe('Pullover');
+    expect(pattern?.yarn_weight_description).toBe('DK (11 wpi)');
+    expect(pattern?.gauge_description).toContain('Stockinette');
+    expect(pattern?.pattern_needle_sizes).toHaveLength(2);
+    expect(pattern?.pattern_needle_sizes?.[0]?.name).toBe('US 6 - 4.0 mm');
+    expect(pattern?.difficulty_average).toBe(2.4);
+    expect(pattern?.free).toBe(false);
+    expect(pattern?.price).toBe('6.5');
+    expect(pattern?.currency_symbol).toBe('$');
+  });
+});
+
 describe('pattern photos from GET /patterns.json', () => {
   it('reads the id-keyed patterns map and merges photos onto highlights', () => {
     const full = patternsFromListPayload({
