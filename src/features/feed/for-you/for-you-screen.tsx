@@ -1,3 +1,4 @@
+import type { FeedMode } from '../feed-mode';
 import type { PatternHighlight } from '@/lib/ravelry/types';
 import { FlashList } from '@shopify/flash-list';
 import * as React from 'react';
@@ -29,10 +30,11 @@ function FeedFooter({ loading }: { loading: boolean }) {
 }
 
 type Props = {
-  onSwitchFeed?: () => void;
+  feedMode: FeedMode;
+  onFeedModeChange: (mode: FeedMode) => void;
 };
 
-export function ForYouScreen({ onSwitchFeed }: Props = {}) {
+export function ForYouScreen({ feedMode, onFeedModeChange }: Props) {
   const user = useAuthStore.use.user();
   const {
     data,
@@ -76,7 +78,7 @@ export function ForYouScreen({ onSwitchFeed }: Props = {}) {
     return (
       <SafeAreaView className="flex-1 bg-black" edges={['top']}>
         <FocusAwareStatusBar />
-        <ForYouHeader onPressTitle={onSwitchFeed} />
+        <ForYouHeader value={feedMode} onChange={onFeedModeChange} />
         <View className="flex-1 items-center justify-center px-6">
           <Text className="mb-2 text-center text-lg font-semibold text-white">
             Couldn’t load highlights
@@ -99,7 +101,7 @@ export function ForYouScreen({ onSwitchFeed }: Props = {}) {
     return (
       <SafeAreaView className="flex-1 bg-black" edges={['top']}>
         <FocusAwareStatusBar />
-        <ForYouHeader onPressTitle={onSwitchFeed} />
+        <ForYouHeader value={feedMode} onChange={onFeedModeChange} />
         <View className="flex-1 items-center justify-center px-6">
           <Text className="mb-2 text-center text-lg font-semibold text-white">
             No highlights yet
@@ -131,7 +133,9 @@ export function ForYouScreen({ onSwitchFeed }: Props = {}) {
             tintColor="#ffffff"
           />
         )}
-        ListHeaderComponent={<ForYouHeader onPressTitle={onSwitchFeed} />}
+        ListHeaderComponent={(
+          <ForYouHeader value={feedMode} onChange={onFeedModeChange} />
+        )}
         ListFooterComponent={<FeedFooter loading={isFetchingNextPage} />}
       />
     </SafeAreaView>

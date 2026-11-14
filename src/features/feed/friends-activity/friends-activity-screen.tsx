@@ -1,4 +1,5 @@
 import type { FriendActivity } from '../api';
+import type { FeedMode } from '../feed-mode';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import * as React from 'react';
@@ -13,6 +14,7 @@ import {
   View,
 } from '@/components/ui';
 import { useAuthStore } from '@/features/auth/use-auth-store';
+import { ForYouHeader } from '@/features/feed/for-you/for-you-header';
 import { isHomeFeedActivity, useFriendsActivity } from '../api';
 import { ActivityCard } from '../components/activity-card';
 
@@ -26,25 +28,45 @@ function FeedFooter({ loading }: { loading: boolean }) {
   );
 }
 
-function FriendsFeedHeader({ onSwitchFeed }: { onSwitchFeed?: () => void }) {
+function FriendsEmptyState({
+  feedMode,
+  onFeedModeChange,
+  onFindFriends,
+}: {
+  feedMode: FeedMode;
+  onFeedModeChange: (mode: FeedMode) => void;
+  onFindFriends: () => void;
+}) {
   return (
-    <View className="items-center border-b border-ink-300 px-4 py-3">
-      {onSwitchFeed
-        ? (
-            <Button label="Following" variant="link" onPress={onSwitchFeed} />
-          )
-        : (
-            <PeloteWordmark size="sm" />
-          )}
-    </View>
+    <SafeAreaView className="flex-1 bg-black" edges={['top']}>
+      <FocusAwareStatusBar />
+      <ForYouHeader value={feedMode} onChange={onFeedModeChange} />
+      <View className="flex-1 items-center justify-center px-6">
+        <PeloteWordmark size="md" />
+        <Text className="mt-8 text-center text-2xl font-semibold text-white">
+          Your feed is waiting for friends
+        </Text>
+        <Text className="mt-3 text-center text-base/6 text-fog-400">
+          Add friends and designers on Ravelry to fill this Instagram-style
+          photo feed with project updates.
+        </Text>
+        <View className="mt-8">
+          <Button label="Find friends & designers" onPress={onFindFriends} />
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 type Props = {
-  onSwitchFeed?: () => void;
+  feedMode: FeedMode;
+  onFeedModeChange: (mode: FeedMode) => void;
 };
 
-export function FriendsActivityScreen({ onSwitchFeed }: Props = {}) {
+export function FriendsActivityScreen({
+  feedMode,
+  onFeedModeChange,
+}: Props) {
   const router = useRouter();
   const user = useAuthStore.use.user();
   const {
@@ -90,38 +112,29 @@ export function FriendsActivityScreen({ onSwitchFeed }: Props = {}) {
 
   if (isError) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-black px-6" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-black" edges={['top']}>
         <FocusAwareStatusBar />
-        <Text className="mb-2 text-center text-lg font-semibold text-white">
-          Couldn’t load your feed
-        </Text>
-        <Text className="mb-4 text-center text-sm text-fog-400">
-          Check your connection and try again.
-        </Text>
-        <Button label="Retry" onPress={() => refetch()} />
+        <ForYouHeader value={feedMode} onChange={onFeedModeChange} />
+        <View className="flex-1 items-center justify-center px-6">
+          <Text className="mb-2 text-center text-lg font-semibold text-white">
+            Couldn’t load your feed
+          </Text>
+          <Text className="mb-4 text-center text-sm text-fog-400">
+            Check your connection and try again.
+          </Text>
+          <Button label="Retry" onPress={() => refetch()} />
+        </View>
       </SafeAreaView>
     );
   }
 
   if (!photoFirst.length) {
     return (
-      <SafeAreaView className="flex-1 bg-black px-6 pt-4" edges={['top']}>
-        <FocusAwareStatusBar />
-        <PeloteWordmark size="md" />
-        <Text className="mt-8 text-center text-2xl font-semibold text-white">
-          Your feed is waiting for friends
-        </Text>
-        <Text className="mt-3 text-center text-base/6 text-fog-400">
-          Add friends and designers on Ravelry to fill this Instagram-style
-          photo feed with project updates.
-        </Text>
-        <View className="mt-8">
-          <Button
-            label="Find friends & designers"
-            onPress={() => router.push('/friends')}
-          />
-        </View>
-      </SafeAreaView>
+      <FriendsEmptyState
+        feedMode={feedMode}
+        onFeedModeChange={onFeedModeChange}
+        onFindFriends={() => router.push('/friends')}
+      />
     );
   }
 
@@ -143,7 +156,7 @@ export function FriendsActivityScreen({ onSwitchFeed }: Props = {}) {
             />
           )}
           ListHeaderComponent={(
-            <FriendsFeedHeader onSwitchFeed={onSwitchFeed} />
+            <ForYouHeader value={feedMode} onChange={onFeedModeChange} />
           )}
           ListFooterComponent={<FeedFooter loading={isFetchingNextPage} />}
         />

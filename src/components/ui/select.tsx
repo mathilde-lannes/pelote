@@ -62,17 +62,26 @@ type OptionsProps = {
   onSelect: (option: OptionType) => void;
   value?: string | number;
   testID?: string;
+  /** Force dark sheet chrome (Pelote home is always dark). */
+  appearance?: 'auto' | 'dark';
 };
 
 function keyExtractor(item: OptionType) {
   return `select-item-${item.value}`;
 }
 
-export function Options({ ref, options, onSelect, value, testID }: OptionsProps & { ref?: React.RefObject<BottomSheetModal | null> }) {
+export function Options({
+  ref,
+  options,
+  onSelect,
+  value,
+  testID,
+  appearance = 'auto',
+}: OptionsProps & { ref?: React.RefObject<BottomSheetModal | null> }) {
   const height = options.length * 70 + 100;
   const snapPoints = React.useMemo(() => [height], [height]);
   const { theme } = useUniwind();
-  const isDark = theme === 'dark';
+  const isDark = appearance === 'dark' || theme === 'dark';
 
   const renderSelectItem = React.useCallback(
     ({ item }: { item: OptionType }) => (
@@ -80,11 +89,26 @@ export function Options({ ref, options, onSelect, value, testID }: OptionsProps 
         key={`select-item-${item.value}`}
         label={item.label}
         selected={value === item.value}
+        dark={isDark}
         onPress={() => onSelect(item)}
         testID={testID ? `${testID}-item-${item.value}` : undefined}
       />
     ),
-    [onSelect, value, testID],
+    [isDark, onSelect, value, testID],
+  );
+
+  const renderHandle = React.useCallback(
+    () => (
+      <View className="items-center pt-2 pb-3">
+        <View
+          className="h-1 w-12 rounded-lg"
+          style={{
+            backgroundColor: isDark ? colors.ink[500] : colors.fog[400],
+          }}
+        />
+      </View>
+    ),
+    [isDark],
   );
 
   return (
@@ -93,8 +117,9 @@ export function Options({ ref, options, onSelect, value, testID }: OptionsProps 
       index={0}
       snapPoints={snapPoints}
       backgroundStyle={{
-        backgroundColor: isDark ? colors.neutral[800] : colors.white,
+        backgroundColor: isDark ? colors.black : colors.white,
       }}
+      handleComponent={renderHandle}
     >
       <List
         data={options}
@@ -111,18 +136,34 @@ const Option = React.memo(
   ({
     label,
     selected = false,
+    dark = false,
     ...props
   }: PressableProps & {
     selected?: boolean;
     label: string;
+    dark?: boolean;
   }) => {
     return (
       <Pressable
-        className="flex-row items-center border-b border-neutral-300 bg-white px-3 py-2 dark:border-neutral-700 dark:bg-neutral-800"
+        className={
+          dark
+            ? 'flex-row items-center border-b border-ink-300 bg-black px-3 py-2'
+            : 'flex-row items-center border-b border-neutral-300 bg-white px-3 py-2 dark:border-neutral-700 dark:bg-neutral-800'
+        }
         {...props}
       >
-        <Text className="flex-1 dark:text-neutral-100">{label}</Text>
-        {selected && <Check />}
+        <Text
+          className={
+            dark
+              ? 'flex-1 text-white'
+              : 'flex-1 dark:text-neutral-100'
+          }
+        >
+          {label}
+        </Text>
+        {selected
+          ? <Check color={dark ? '#ffffff' : undefined} />
+          : null}
       </Pressable>
     );
   },
@@ -218,7 +259,7 @@ export function Select(props: SelectProps) {
   );
 }
 
-function Check({ ...props }: SvgProps) {
+function Check({ color, ...props }: SvgProps) {
   return (
     <Svg
       width={25}
@@ -226,10 +267,11 @@ function Check({ ...props }: SvgProps) {
       fill="none"
       viewBox="0 0 25 24"
       {...props}
-      className="stroke-black dark:stroke-white"
+      className={color ? undefined : 'stroke-black dark:stroke-white'}
     >
       <Path
         d="m20.256 6.75-10.5 10.5L4.506 12"
+        stroke={color}
         strokeWidth={2.438}
         strokeLinecap="round"
         strokeLinejoin="round"

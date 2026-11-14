@@ -95,7 +95,7 @@ export function Modal({ ref, snapPoints: _snapPoints = ['60%'] as (string | numb
       snapPoints={snapPoints}
       backdropComponent={props.backdropComponent || renderBackdrop}
       enableDynamicSizing={false}
-      handleComponent={renderHandleComponent}
+      handleComponent={props.handleComponent || renderHandleComponent}
     />
   );
 }
