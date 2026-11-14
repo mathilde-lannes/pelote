@@ -11,6 +11,7 @@ import { bestPhotoUrl } from '@/lib/ravelry/api';
 import { usePattern, usePatternSearch } from './api';
 import { PatternPost } from './components/pattern-post';
 import { patternPostItemHeight, patternPostOffset } from './pattern-feed-layout';
+import { useExploreFiltersStore } from './use-explore-filters-store';
 
 function FeedStatus({ message }: { message: string }) {
   return (
@@ -52,8 +53,9 @@ export function SearchResultsFeedScreen() {
     navigation.setOptions({ title: query });
   }, [navigation, query]);
 
+  const filters = useExploreFiltersStore.use.filters();
   const searchQuery = usePatternSearch({
-    variables: { query },
+    variables: { query, filters },
     enabled: Boolean(query),
   });
 

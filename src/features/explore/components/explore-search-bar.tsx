@@ -13,6 +13,7 @@ type Props = {
   onSubmit?: () => void;
   onClear?: () => void;
   onPressFilter?: () => void;
+  filtersActive?: boolean;
   inputRef?: React.RefObject<TextInput | null>;
 };
 
@@ -24,6 +25,7 @@ export function ExploreSearchBar({
   onSubmit,
   onClear,
   onPressFilter,
+  filtersActive = false,
   inputRef,
 }: Props) {
   return (
@@ -64,8 +66,8 @@ export function ExploreSearchBar({
         onPress={onPressFilter}
         hitSlop={8}
         accessibilityRole="button"
-        accessibilityLabel="Filters"
-        className="items-center justify-center px-1 py-2"
+        accessibilityLabel={filtersActive ? 'Filters, filters active' : 'Filters'}
+        className="relative items-center justify-center px-1 py-2"
       >
         <SlidersHorizontal
           color={colors.white}
@@ -73,6 +75,16 @@ export function ExploreSearchBar({
           height={22}
           strokeWidth={2}
         />
+        {filtersActive
+          ? (
+              <View
+                className="absolute top-1 right-0 size-2.5 rounded-full"
+                style={{ backgroundColor: colors.danger[500] }}
+                accessibilityElementsHidden
+                importantForAccessibility="no"
+              />
+            )
+          : null}
       </Pressable>
     </View>
   );

@@ -9,6 +9,7 @@ import {
   FocusAwareStatusBar,
   SafeAreaView,
   Text,
+  useModal,
 } from '@/components/ui';
 import { useAuthStore } from '@/features/auth/use-auth-store';
 import {
@@ -16,12 +17,15 @@ import {
   usePatternSearchSuggestions,
   useRecentlyPopularPatterns,
 } from './api';
+import { ExploreFiltersSheet } from './components/explore-filters-sheet';
 import { ExploreSearchBar } from './components/explore-search-bar';
 import { ExploreSearchPanel } from './components/explore-search-panel';
 import { PatternGrid } from './components/pattern-grid';
 import { PatternGridSkeleton } from './components/pattern-grid-skeleton';
 import { fuzzyFilter } from './fuzzy-match';
+import { hasActivePatternFilters } from './pattern-search-filters';
 import { patternHref, searchResultsFeedHref } from './pattern-href';
+import { useExploreFiltersStore } from './use-explore-filters-store';
 import { useRecentSearches } from './use-recent-searches';
 
 function SectionTitle({ title }: { title: string }) {
@@ -67,12 +71,18 @@ export function ExploreScreen() {
   const router = useRouter();
   const listRef = React.useRef<FlatList<RavelryPattern>>(null);
   const inputRef = React.useRef<TextInput>(null);
+  const filtersModal = useModal();
   useScrollToTop(listRef);
 
   const [draft, setDraft] = React.useState('');
   const [committedQuery, setCommittedQuery] = React.useState('');
   const [isFocused, setIsFocused] = React.useState(false);
   const [debouncedDraft, setDebouncedDraft] = React.useState('');
+
+  const filters = useExploreFiltersStore.use.filters();
+  const setFilters = useExploreFiltersStore.use.setFilters();
+  const clearFilters = useExploreFiltersStore.use.clearFilters();
+  const filtersActive = hasActivePatternFilters(filters);
 
   const { recents, remember, remove, clear, refresh } = useRecentSearches();
 
@@ -85,14 +95,15 @@ export function ExploreScreen() {
   const activeSearch = committedQuery.trim().length > 0;
 
   const popularQuery = useRecentlyPopularPatterns({
+    variables: { filters },
     enabled: Boolean(user) && !activeSearch,
   });
   const searchResultsQuery = usePatternSearch({
-    variables: { query: committedQuery },
+    variables: { query: committedQuery, filters },
     enabled: Boolean(user) && activeSearch,
   });
   const suggestionsQuery = usePatternSearchSuggestions({
-    variables: { query: debouncedDraft },
+    variables: { query: debouncedDraft, filters },
     enabled: Boolean(user) && showingOverlay && debouncedDraft.length > 0,
   });
 
@@ -285,6 +296,14 @@ export function ExploreScreen() {
         }}
         onSubmit={() => commitSearch(draft)}
         onClear={onCancel}
+        onPressFilter={filtersModal.present}
+        filtersActive={filtersActive}
+      />
+      <ExploreFiltersSheet
+        modalRef={filtersModal.ref}
+        filters={filters}
+        onChange={setFilters}
+        onClear={clearFilters}
       />
       {body}
     </SafeAreaView>

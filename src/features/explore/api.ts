@@ -13,8 +13,15 @@ import {
   fetchRecentlyPopularPatterns,
   invalidatePatternHighlightTimeline,
 } from '@/lib/ravelry/api';
+import {
+  EMPTY_PATTERN_SEARCH_FILTERS,
+  patternFiltersQueryKey,
+  patternFiltersToParams,
+  type PatternSearchFilters,
+} from './pattern-search-filters';
 
 export type { PatternHighlight, PatternHighlightsPage, RavelryPattern };
+export type { PatternSearchFilters };
 
 const RECENTLY_POPULAR_PAGE_SIZE = 48;
 const PATTERN_SEARCH_PAGE_SIZE = 48;
@@ -44,14 +51,17 @@ export const usePatternHighlights = createInfiniteQuery<
 
 export const useRecentlyPopularPatterns = createInfiniteQuery<
   DesignerPatternsPage,
-  void,
+  { filters?: PatternSearchFilters },
   AxiosError
 >({
-  queryKey: ['patterns', 'recently-popular', 'v2-full', `page-${RECENTLY_POPULAR_PAGE_SIZE}`],
-  fetcher: (_variables, { pageParam }) =>
+  queryKey: ['patterns', 'recently-popular', 'v3-filters', `page-${RECENTLY_POPULAR_PAGE_SIZE}`],
+  fetcher: (variables, { pageParam }) =>
     fetchRecentlyPopularPatterns({
       page: pageParam as number,
       pageSize: RECENTLY_POPULAR_PAGE_SIZE,
+      filters: patternFiltersToParams(
+        variables.filters ?? EMPTY_PATTERN_SEARCH_FILTERS,
+      ),
     }),
   getNextPageParam: lastPage =>
     lastPage.page < lastPage.pageCount
@@ -72,28 +82,34 @@ export const usePattern = createQuery<
 /** Live typeahead — thin Pattern#list rows, no full enrich. */
 export const usePatternSearchSuggestions = createQuery<
   DesignerPatternsPage,
-  { query: string },
+  { query: string; filters?: PatternSearchFilters },
   AxiosError
 >({
-  queryKey: ['patterns', 'search-suggest'],
+  queryKey: ['patterns', 'search-suggest', 'v2-filters'],
   fetcher: variables =>
     fetchPatternsByQuery(variables.query, {
       page: 1,
       pageSize: PATTERN_SUGGEST_PAGE_SIZE,
       enrich: false,
+      filters: patternFiltersToParams(
+        variables.filters ?? EMPTY_PATTERN_SEARCH_FILTERS,
+      ),
     }),
 });
 
 export const usePatternSearch = createInfiniteQuery<
   DesignerPatternsPage,
-  { query: string },
+  { query: string; filters?: PatternSearchFilters },
   AxiosError
 >({
-  queryKey: ['patterns', 'search', `page-${PATTERN_SEARCH_PAGE_SIZE}`],
+  queryKey: ['patterns', 'search', 'v2-filters', `page-${PATTERN_SEARCH_PAGE_SIZE}`],
   fetcher: (variables, { pageParam }) =>
     fetchPatternsByQuery(variables.query, {
       page: pageParam as number,
       pageSize: PATTERN_SEARCH_PAGE_SIZE,
+      filters: patternFiltersToParams(
+        variables.filters ?? EMPTY_PATTERN_SEARCH_FILTERS,
+      ),
     }),
   getNextPageParam: lastPage =>
     lastPage.page < lastPage.pageCount
@@ -101,3 +117,5 @@ export const usePatternSearch = createInfiniteQuery<
       : undefined,
   initialPageParam: 1,
 });
+
+export { patternFiltersQueryKey };

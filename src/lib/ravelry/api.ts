@@ -503,18 +503,26 @@ function mergeSearchPatternsWithFull(
   });
 }
 
+export type PatternSearchFilterParams = Record<string, string>;
+
 /**
  * Hot-right-now style ranking via site search sort `recently-popular`
  * (same as https://www.ravelry.com/patterns/search#sort=recently-popular).
  * Search rows are Pattern#list (thin stats) — merge Pattern#full via patterns.json?ids=.
+ * Optional `filters` are the same query-string facets as the site search form.
  */
 export async function fetchRecentlyPopularPatterns(
-  options?: { page?: number; pageSize?: number },
+  options?: {
+    page?: number;
+    pageSize?: number;
+    filters?: PatternSearchFilterParams;
+  },
 ): Promise<DesignerPatternsPage> {
   const page = options?.page ?? 1;
   const pageSize = options?.pageSize ?? 48;
   const { data } = await client.get('patterns/search.json', {
     params: {
+      ...(options?.filters ?? {}),
       sort: 'recently-popular',
       page,
       page_size: pageSize,
@@ -533,10 +541,16 @@ export async function fetchRecentlyPopularPatterns(
  * Free-text pattern search via `GET /patterns/search.json?query=`
  * (same family as https://www.ravelry.com/patterns/search). Ravelry ranks
  * best matches — callers should not require exact name equality.
+ * Optional `filters` map to documented site-search facets (craft, weight, …).
  */
 export async function fetchPatternsByQuery(
   query: string,
-  options?: { page?: number; pageSize?: number; enrich?: boolean },
+  options?: {
+    page?: number;
+    pageSize?: number;
+    enrich?: boolean;
+    filters?: PatternSearchFilterParams;
+  },
 ): Promise<DesignerPatternsPage> {
   const q = query.trim();
   const page = options?.page ?? 1;
@@ -553,6 +567,7 @@ export async function fetchPatternsByQuery(
 
   const { data } = await client.get('patterns/search.json', {
     params: {
+      ...(options?.filters ?? {}),
       query: q,
       page,
       page_size: pageSize,
