@@ -21,6 +21,10 @@ export default function SearchStackLayout() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
+        name="results/[id]"
+        options={{ title: 'Search' }}
+      />
+      <Stack.Screen
         name="pattern/[id]"
         options={{ headerShown: false }}
       />

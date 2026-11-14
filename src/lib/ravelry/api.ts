@@ -530,6 +530,47 @@ export async function fetchRecentlyPopularPatterns(
 }
 
 /**
+ * Free-text pattern search via `GET /patterns/search.json?query=`
+ * (same family as https://www.ravelry.com/patterns/search). Ravelry ranks
+ * best matches — callers should not require exact name equality.
+ */
+export async function fetchPatternsByQuery(
+  query: string,
+  options?: { page?: number; pageSize?: number; enrich?: boolean },
+): Promise<DesignerPatternsPage> {
+  const q = query.trim();
+  const page = options?.page ?? 1;
+  const pageSize = options?.pageSize ?? 48;
+  if (!q) {
+    return {
+      patterns: [],
+      page,
+      pageSize,
+      pageCount: 1,
+      totalResults: 0,
+    };
+  }
+
+  const { data } = await client.get('patterns/search.json', {
+    params: {
+      query: q,
+      page,
+      page_size: pageSize,
+    },
+  });
+  const listed = patternsSearchPageFromPayload(data, page, pageSize);
+  if (options?.enrich === false)
+    return listed;
+
+  const ids = listed.patterns.map(pattern => pattern.id);
+  const full = ids.length ? await fetchFullPatterns(ids) : [];
+  return {
+    ...listed,
+    patterns: mergeSearchPatternsWithFull(listed.patterns, full),
+  };
+}
+
+/**
  * Try several designer= candidates (permalink, username, …) until one returns
  * patterns. Brand designers often need the permalink, not the login username.
  */

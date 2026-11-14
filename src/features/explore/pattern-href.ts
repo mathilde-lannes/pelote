@@ -14,6 +14,20 @@ export function patternHref(
   return `${patternBasePath(pathname)}/${patternId}`;
 }
 
+/**
+ * Search-query results feed scrolled to a pattern, so the user can swipe
+ * through the other matches for `query`.
+ */
+export function searchResultsFeedHref(
+  query: string,
+  patternId: number,
+): string | null {
+  const q = query.trim();
+  if (!q || !(patternId > 0))
+    return null;
+  return `/search/results/${patternId}?q=${encodeURIComponent(q)}`;
+}
+
 export function patternProjectsHref(
   patternId: number,
   pathname?: string | null,

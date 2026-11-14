@@ -2,7 +2,7 @@ import { MotiView } from 'moti';
 import * as React from 'react';
 import { useWindowDimensions, View } from 'react-native';
 
-import { FocusAwareStatusBar, SafeAreaView, Text } from '@/components/ui';
+import { Text } from '@/components/ui';
 
 const GAP = 2;
 const COLUMNS = 3;
@@ -18,9 +18,9 @@ function PatternTileSkeleton({ size }: { size: number }) {
 }
 
 export function PatternGridSkeleton({
-  headerTitle = 'Recently popular',
+  headerTitle,
 }: {
-  headerTitle?: string;
+  headerTitle?: string | null;
 }) {
   const { width } = useWindowDimensions();
   const cell = (width - GAP * (COLUMNS - 1)) / COLUMNS;
@@ -30,13 +30,16 @@ export function PatternGridSkeleton({
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-black" edges={['top']}>
-      <FocusAwareStatusBar />
-      <View className="items-center border-b border-ink-300 px-4 py-3">
-        <Text className="text-lg font-semibold text-white">
-          {headerTitle}
-        </Text>
-      </View>
+    <View className="flex-1 bg-black">
+      {headerTitle
+        ? (
+            <View className="items-center border-b border-ink-300 px-4 py-3">
+              <Text className="text-lg font-semibold text-white">
+                {headerTitle}
+              </Text>
+            </View>
+          )
+        : null}
       <MotiView
         from={{ opacity: 0.35 }}
         animate={{ opacity: 0.85 }}
@@ -56,6 +59,6 @@ export function PatternGridSkeleton({
           />
         ))}
       </MotiView>
-    </SafeAreaView>
+    </View>
   );
 }

@@ -2,6 +2,7 @@ import {
   patternHref,
   patternProjectFeedHref,
   patternProjectsHref,
+  searchResultsFeedHref,
 } from './pattern-href';
 
 describe('patternHref helpers', () => {
@@ -20,5 +21,13 @@ describe('patternHref helpers', () => {
     expect(patternProjectFeedHref(12, 99, '/search/pattern/12/projects')).toBe(
       '/search/pattern/12/projects/99',
     );
+  });
+
+  it('builds a search-results feed url with the query', () => {
+    expect(searchResultsFeedHref('folk socks', 42)).toBe(
+      '/search/results/42?q=folk%20socks',
+    );
+    expect(searchResultsFeedHref('  ', 42)).toBeNull();
+    expect(searchResultsFeedHref('socks', 0)).toBeNull();
   });
 });
