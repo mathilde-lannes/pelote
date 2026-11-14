@@ -71,7 +71,11 @@ export default function RootLayout() {
 
   return (
     <Providers onLayout={onLayoutRootView}>
-      <Stack>
+      <Stack
+        screenOptions={{
+          headerBackButtonDisplayMode: 'minimal',
+        }}
+      >
         <Stack.Screen name="(app)" options={{ headerShown: false }} />
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
@@ -79,7 +83,6 @@ export default function RootLayout() {
           name="project/[username]/[id]"
           options={{
             title: 'Project',
-            headerBackTitle: 'Feed',
           }}
         />
         <Stack.Screen

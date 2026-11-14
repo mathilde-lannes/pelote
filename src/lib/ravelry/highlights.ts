@@ -140,6 +140,7 @@ export function normalizePattern(raw: unknown): RavelryPattern | null {
   const photos = collectPhotos(raw);
   const favorites = raw.favorites_count;
   const projects = raw.projects_count;
+  const queued = raw.queued_projects_count;
   const comments = raw.comments_count;
   const packs = Array.isArray(raw.packs) ? raw.packs.length : null;
   // Pattern#full uses pattern_author; Pattern#list (search) uses designer.
@@ -151,6 +152,7 @@ export function normalizePattern(raw: unknown): RavelryPattern | null {
     permalink: asString(raw.permalink),
     favorites_count: typeof favorites === 'number' ? favorites : null,
     projects_count: typeof projects === 'number' ? projects : null,
+    queued_projects_count: typeof queued === 'number' ? queued : null,
     comments_count: typeof comments === 'number' ? comments : null,
     packs_count: packs,
     free: typeof raw.free === 'boolean' ? raw.free : null,

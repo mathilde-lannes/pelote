@@ -25,14 +25,37 @@ const COLS = 3;
 const TILE
   = (Dimensions.get('window').width - GRID_GAP * (COLS - 1)) / COLS;
 
+function StatColumn({
+  value,
+  label,
+}: {
+  value: number | null;
+  label: string;
+}) {
+  return (
+    <View>
+      <Text className="text-base font-semibold text-white">
+        {value == null ? '—' : formatCompactCount(value)}
+      </Text>
+      <Text className="text-sm text-fog-400">
+        {label}
+      </Text>
+    </View>
+  );
+}
+
 function PatternProjectsHeader({
   name,
+  designerName,
   photoUrl,
   projectCount,
+  queuedCount,
 }: {
   name: string;
+  designerName: string | null;
   photoUrl: string | null;
   projectCount: number | null;
+  queuedCount: number | null;
 }) {
   const initial = (name || '?').slice(0, 1).toUpperCase();
   return (
@@ -57,13 +80,16 @@ function PatternProjectsHeader({
           <Text className="text-xl font-semibold text-white" numberOfLines={2}>
             {name}
           </Text>
-          <View className="mt-3">
-            <Text className="text-base font-semibold text-white">
-              {projectCount == null ? '—' : formatCompactCount(projectCount)}
-            </Text>
-            <Text className="text-sm text-fog-400">
-              projects
-            </Text>
+          {designerName
+            ? (
+                <Text className="mt-1 text-sm text-fog-400" numberOfLines={1}>
+                  {designerName}
+                </Text>
+              )
+            : null}
+          <View className="mt-3 flex-row gap-6">
+            <StatColumn value={projectCount} label="projects" />
+            <StatColumn value={queuedCount} label="queued" />
           </View>
         </View>
       </View>
@@ -130,6 +156,11 @@ export function PatternProjectsScreen() {
     : (projects.length || pattern?.projects_count || null);
   const photoUrl = bestPhotoUrl(pattern?.photos[0] ?? null);
   const name = pattern?.name ?? 'Pattern';
+  const designerName
+    = pattern?.pattern_author?.name?.trim()
+      || pattern?.pattern_author?.users[0]?.username?.trim()
+      || null;
+  const queuedCount = pattern?.queued_projects_count ?? null;
 
   if (!enabled) {
     return (
@@ -155,8 +186,14 @@ export function PatternProjectsScreen() {
   const header = (
     <PatternProjectsHeader
       name={name}
+      designerName={designerName}
       photoUrl={photoUrl}
-      projectCount={projectsQuery.isPending ? null : projectCount}
+      projectCount={
+        patternQuery.isPending && projectsQuery.isPending
+          ? null
+          : (pattern?.projects_count ?? projectCount)
+      }
+      queuedCount={patternQuery.isPending ? null : queuedCount}
     />
   );
 

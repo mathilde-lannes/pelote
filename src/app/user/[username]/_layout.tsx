@@ -10,6 +10,7 @@ export default function UserProfileLayout() {
         headerStyle: { backgroundColor: '#000000' },
         headerTintColor: '#ffffff',
         headerShadowVisible: false,
+        headerBackButtonDisplayMode: 'minimal',
         contentStyle: { backgroundColor: '#000000' },
       }}
     >
@@ -22,6 +23,7 @@ export default function UserProfileLayout() {
             <HeaderBackButton
               {...props}
               tintColor="#ffffff"
+              displayMode="minimal"
               onPress={() => {
                 if (router.canGoBack())
                   router.back();
@@ -36,14 +38,12 @@ export default function UserProfileLayout() {
         name="feed/[id]"
         options={{
           title: 'Posts',
-          headerBackTitle: 'Profile',
         }}
       />
       <Stack.Screen
         name="designs/[id]"
         options={{
           title: 'Designs',
-          headerBackTitle: 'Profile',
         }}
       />
     </Stack>

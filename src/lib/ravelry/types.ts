@@ -97,6 +97,8 @@ export type RavelryPattern = {
   permalink?: string | null;
   favorites_count?: number | null;
   projects_count?: number | null;
+  /** Users who queued the pattern (Pattern#full). */
+  queued_projects_count?: number | null;
   comments_count?: number | null;
   /** Yarn / pack rows when present on Pattern#full. */
   packs_count?: number | null;

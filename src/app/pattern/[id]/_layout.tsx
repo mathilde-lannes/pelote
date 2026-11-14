@@ -9,6 +9,7 @@ export default function PatternLayout() {
     <HeaderBackButton
       {...props}
       tintColor="#ffffff"
+      displayMode="minimal"
       onPress={() => {
         if (router.canGoBack())
           router.back();
@@ -24,6 +25,7 @@ export default function PatternLayout() {
         headerStyle: { backgroundColor: '#000000' },
         headerTintColor: '#ffffff',
         headerShadowVisible: false,
+        headerBackButtonDisplayMode: 'minimal',
         contentStyle: { backgroundColor: '#000000' },
       }}
     >
@@ -47,7 +49,6 @@ export default function PatternLayout() {
         name="projects/[projectId]"
         options={{
           title: 'Posts',
-          headerBackTitle: 'Projects',
         }}
       />
     </Stack>
