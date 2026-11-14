@@ -1,6 +1,6 @@
 import type { FlatList as FlatListType } from 'react-native';
 import type { RavelryPattern } from './api';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useNavigation } from 'expo-router';
 import * as React from 'react';
 import { ActivityIndicator, FlatList } from 'react-native';
 
@@ -84,6 +84,7 @@ function useDesignsFeedScroll(
 }
 
 export function DesignerPatternsFeedScreen() {
+  const navigation = useNavigation();
   const params = useLocalSearchParams<{
     username: string;
     id: string;
@@ -116,6 +117,18 @@ export function DesignerPatternsFeedScreen() {
     () => designsQuery.data?.patterns ?? [],
     [designsQuery.data],
   );
+
+  const designerName
+    = patterns[0]?.pattern_author?.name?.trim()
+      || personQuery.data?.first_name?.trim()
+      || personQuery.data?.username?.trim()
+      || username;
+
+  React.useLayoutEffect(() => {
+    if (!designerName)
+      return;
+    navigation.setOptions({ title: `${designerName} designs` });
+  }, [designerName, navigation]);
 
   const startPatternId = Number(startId);
   // Warm Pattern#show for the tapped tile so the feed opens without a thin→full resize.

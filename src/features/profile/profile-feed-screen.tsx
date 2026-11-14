@@ -1,6 +1,6 @@
 import type { FlatList as FlatListType } from 'react-native';
 import type { RavelryProject } from './api';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useNavigation } from 'expo-router';
 import * as React from 'react';
 import {
   ActivityIndicator,
@@ -87,6 +87,7 @@ function useProfileFeedScroll(
 }
 
 export function ProfileFeedScreen() {
+  const navigation = useNavigation();
   const params = useLocalSearchParams<{ username: string; id: string }>();
   const username = String(params.username ?? '').trim();
   const startId = String(params.id ?? '').trim();
@@ -104,6 +105,16 @@ export function ProfileFeedScreen() {
     () => projectsQuery.data?.projects ?? [],
     [projectsQuery.data],
   );
+
+  const displayName
+    = personQuery.data?.username?.trim()
+      || username;
+
+  React.useLayoutEffect(() => {
+    if (!displayName)
+      return;
+    navigation.setOptions({ title: `${displayName} posts` });
+  }, [displayName, navigation]);
 
   const {
     listRef,
