@@ -3,7 +3,9 @@ import type {
   FriendActivity,
   FriendEntry,
   FriendsListResponse,
+  PatternHighlight,
   PeopleSearchResponse,
+  RavelryPattern,
   RavelryPerson,
   RavelryPhoto,
   RavelryProject,
@@ -15,6 +17,15 @@ import {
   normalizeFavoritesCount,
   resolveActivityType,
 } from './activity-utils';
+import {
+  HIGHLIGHT_DAYS,
+  mergeHighlightPatterns,
+  normalizeHighlights,
+  normalizePattern,
+  patternFromShowPayload,
+  patternsFromListPayload,
+  sliceHighlightPage,
+} from './highlights';
 
 export { normalizeCreatedAt, resolveActivityType } from './activity-utils';
 
@@ -458,6 +469,73 @@ export async function removeFriend(
   await client.post(
     `people/${encodeURIComponent(username)}/friends/${friendshipId}/destroy.json`,
   );
+}
+
+const PATTERN_ID_CHUNK = 50;
+
+async function fetchFullPatterns(ids: number[]): Promise<RavelryPattern[]> {
+  const chunks: number[][] = [];
+  for (let index = 0; index < ids.length; index += PATTERN_ID_CHUNK)
+    chunks.push(ids.slice(index, index + PATTERN_ID_CHUNK));
+
+  const pages = await Promise.all(chunks.map(async (chunk) => {
+    // Documented: space-delimited ids, sent as +. Axios must not encode + as %2B.
+    const { data } = await client.get(`patterns.json?ids=${chunk.join('+')}`);
+    return patternsFromListPayload(data).flatMap((raw) => {
+      const pattern = normalizePattern(raw);
+      return pattern ? [pattern] : [];
+    });
+  }));
+  return pages.flat();
+}
+
+export type PatternHighlightsPage = {
+  highlights: PatternHighlight[];
+  page: number;
+  pageSize: number;
+  total: number;
+};
+
+let highlightTimeline: Promise<PatternHighlight[]> | null = null;
+
+/** Drop the cached highlights timeline so the next page load hits the API. */
+export function invalidatePatternHighlightTimeline() {
+  highlightTimeline = null;
+}
+
+function loadHighlightTimeline(): Promise<PatternHighlight[]> {
+  if (!highlightTimeline) {
+    highlightTimeline = client
+      .get('patterns/highlights.json', { params: { days: HIGHLIGHT_DAYS } })
+      .then(({ data }) => normalizeHighlights(data))
+      .catch((error: unknown) => {
+        highlightTimeline = null;
+        throw error;
+      });
+  }
+  return highlightTimeline;
+}
+
+export async function fetchPatternHighlightsPage(
+  page = 1,
+): Promise<PatternHighlightsPage> {
+  // highlights.json only accepts `days`. Page the photo lookup instead.
+  const timeline = await loadHighlightTimeline();
+  const sliced = sliceHighlightPage(timeline, page);
+  const ids = [...new Set(sliced.highlights.map(item => item.pattern.id))];
+  const full = ids.length ? await fetchFullPatterns(ids) : [];
+  return {
+    ...sliced,
+    highlights: mergeHighlightPatterns(sliced.highlights, full),
+  };
+}
+
+export async function fetchPattern(id: number): Promise<RavelryPattern> {
+  const { data } = await client.get(`patterns/${id}.json`);
+  const pattern = patternFromShowPayload(data, id);
+  if (!pattern)
+    throw new Error('Pattern missing from response');
+  return pattern;
 }
 
 export function bestPhotoUrl(
