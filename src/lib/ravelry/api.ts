@@ -197,6 +197,9 @@ function normalizeProject(raw: any): RavelryProject {
     notes_html: raw.notes_html ?? raw.notes ?? null,
     started: raw.started ?? null,
     completed: raw.completed ?? null,
+    // Prefer ISO from activity parser; keep raw string if format is unusual.
+    created_at: normalizeCreatedAt(raw) || raw.created_at || null,
+    updated_at: normalizeCreatedAt({ created_at: raw.updated_at }) || raw.updated_at || null,
     user_id: raw.user_id,
     craft_name: raw.craft_name ?? raw.craft?.name ?? null,
     favorites_count: normalizeFavoritesCount(raw),

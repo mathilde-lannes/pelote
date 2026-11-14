@@ -24,8 +24,12 @@ export type RavelryProject = {
   status_name?: string | null;
   progress?: number | null;
   notes_html?: string | null;
+  /** Optional craft timeline — users often leave these blank. */
   started?: string | null;
   completed?: string | null;
+  /** When the project notebook entry was created (usually always present). */
+  created_at?: string | null;
+  updated_at?: string | null;
   user_id?: number;
   first_photo?: RavelryPhoto | null;
   photos?: RavelryPhoto[];

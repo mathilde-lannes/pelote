@@ -19,7 +19,13 @@ type Props = {
 };
 
 function projectDateLabel(project: RavelryProject): string {
-  for (const value of [project.started, project.completed]) {
+  // Craft dates are optional on Ravelry; created_at is the reliable “posted” stamp.
+  for (const value of [
+    project.completed,
+    project.started,
+    project.created_at,
+    project.updated_at,
+  ]) {
     if (typeof value !== 'string' || !value.trim())
       continue;
     const normalized = value.includes('/')

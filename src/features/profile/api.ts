@@ -27,10 +27,18 @@ export type DesignerPatternsResult = {
 };
 
 function projectRecencyMs(project: RavelryProject): number {
-  for (const value of [project.started, project.completed]) {
+  for (const value of [
+    project.completed,
+    project.started,
+    project.created_at,
+    project.updated_at,
+  ]) {
     if (typeof value !== 'string' || !value.trim())
       continue;
-    const time = new Date(value).getTime();
+    const normalized = value.includes('/')
+      ? value.replace(/\//g, '-')
+      : value;
+    const time = new Date(normalized).getTime();
     if (Number.isFinite(time))
       return time;
   }

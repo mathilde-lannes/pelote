@@ -1,12 +1,26 @@
-/** Relative Instagram-style age. Invalid/empty dates → empty string (never NaNd). */
-export function formatRelative(iso: string): string {
+function formatAbsolute(date: Date, now: Date): string {
+  const sameYear = date.getFullYear() === now.getFullYear();
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    ...(sameYear ? {} : { year: 'numeric' }),
+  });
+}
+
+/**
+ * Instagram-style age for recent posts; absolute date once older than a week.
+ * Invalid/empty dates → empty string (never NaNd).
+ */
+export function formatRelative(iso: string, nowMs: number = Date.now()): string {
   if (!iso || !iso.trim())
     return '';
-  const time = new Date(iso).getTime();
+  const date = new Date(iso);
+  const time = date.getTime();
   if (!Number.isFinite(time))
     return '';
 
-  const diff = Date.now() - time;
+  const now = new Date(nowMs);
+  const diff = nowMs - time;
   if (!Number.isFinite(diff))
     return '';
 
@@ -28,6 +42,5 @@ export function formatRelative(iso: string): string {
   if (days < 7)
     return `${days}d`;
 
-  const weeks = Math.floor(days / 7);
-  return Number.isFinite(weeks) ? `${weeks}w` : '';
+  return formatAbsolute(date, now);
 }
