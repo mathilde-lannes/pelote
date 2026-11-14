@@ -1,4 +1,6 @@
+import type { ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
+import { MotiView } from 'moti';
 import * as React from 'react';
 import { View } from 'react-native';
 
@@ -14,39 +16,77 @@ type PostSkeletonProps = {
   photoUri?: string | null;
 };
 
+function SkeletonBlock({
+  className,
+  style,
+  delay = 0,
+}: {
+  className?: string;
+  style?: ViewStyle;
+  delay?: number;
+}) {
+  return (
+    <MotiView
+      from={{ opacity: 0.35 }}
+      animate={{ opacity: 0.85 }}
+      transition={{
+        type: 'timing',
+        duration: 750,
+        loop: true,
+        repeatReverse: true,
+        delay,
+      }}
+      className={className}
+      style={style}
+    />
+  );
+}
+
 export function PostSkeleton({ photoUri }: PostSkeletonProps) {
   return (
     <View style={{ height: POST_ITEM_HEIGHT }} className="bg-black">
       <View className="flex-row items-center gap-2.5 px-4 py-3">
-        <View className="size-8 rounded-full bg-ink-400" />
+        <SkeletonBlock className="size-8 rounded-full bg-ink-400" />
         <View className="min-w-0 flex-1 gap-1.5">
-          <View className="h-3.5 w-28 rounded bg-ink-300" />
-          <View className="h-3 w-40 rounded bg-ink-200" />
+          <SkeletonBlock
+            className="h-3.5 w-28 rounded bg-ink-300"
+            delay={40}
+          />
+          <SkeletonBlock
+            className="h-3 w-40 rounded bg-ink-200"
+            delay={80}
+          />
         </View>
       </View>
-      <View
-        style={{ width: '100%', height: POST_MEDIA_HEIGHT }}
-        className="bg-ink-200"
-      >
-        {photoUri
-          ? (
+      {photoUri
+        ? (
+            <View
+              style={{ width: '100%', height: POST_MEDIA_HEIGHT }}
+              className="bg-ink-200"
+            >
               <Image
                 source={{ uri: photoUri }}
                 style={{ width: '100%', height: '100%' }}
                 contentFit="cover"
               />
-            )
-          : null}
-      </View>
+            </View>
+          )
+        : (
+            <SkeletonBlock
+              style={{ width: '100%', height: POST_MEDIA_HEIGHT }}
+              className="bg-ink-200"
+              delay={50}
+            />
+          )}
       <View style={{ height: POST_DOTS_HEIGHT }} />
       <View className="flex-row items-center gap-4 px-[18px] pt-2">
-        <View className="h-3 w-10 rounded bg-ink-300" />
-        <View className="h-3 w-10 rounded bg-ink-300" />
-        <View className="h-3 w-8 rounded bg-ink-300" />
+        <SkeletonBlock className="h-3 w-10 rounded bg-ink-300" delay={100} />
+        <SkeletonBlock className="h-3 w-10 rounded bg-ink-300" delay={140} />
+        <SkeletonBlock className="h-3 w-8 rounded bg-ink-300" delay={180} />
       </View>
       <View className="mt-3 gap-1.5 px-4">
-        <View className="h-3 w-64 rounded bg-ink-200" />
-        <View className="h-3 w-32 rounded bg-ink-200" />
+        <SkeletonBlock className="h-3 w-64 rounded bg-ink-200" delay={120} />
+        <SkeletonBlock className="h-3 w-32 rounded bg-ink-200" delay={160} />
       </View>
     </View>
   );

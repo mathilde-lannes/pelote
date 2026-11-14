@@ -16,6 +16,7 @@ import {
   refreshPatternHighlights,
   usePatternHighlights,
 } from '@/features/explore/api';
+import { FeedSkeletonScreen } from '@/features/feed/components/post-skeleton';
 import { ForYouHeader } from './for-you-header';
 import { ForYouPost } from './for-you-post';
 
@@ -64,12 +65,10 @@ export function ForYouScreen({ feedMode, onFeedModeChange }: Props) {
 
   if (!user || (isPending && !highlights.length)) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-black" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-black" edges={['top']}>
         <FocusAwareStatusBar />
-        <ActivityIndicator color="#ffffff" size="large" />
-        <Text className="mt-3 text-sm text-fog-400">
-          Loading pattern highlights…
-        </Text>
+        <ForYouHeader value={feedMode} onChange={onFeedModeChange} />
+        <FeedSkeletonScreen />
       </SafeAreaView>
     );
   }

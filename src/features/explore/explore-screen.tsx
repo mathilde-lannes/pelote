@@ -11,6 +11,7 @@ import {
 } from '@/components/ui';
 import { useAuthStore } from '@/features/auth/use-auth-store';
 import { useRecentlyPopularPatterns } from './api';
+import { PatternGridSkeleton } from './components/pattern-grid-skeleton';
 import { PatternTile } from './components/pattern-tile';
 
 const EXPLORE_GAP = 2;
@@ -100,17 +101,8 @@ export function ExploreScreen() {
       fetchNextPage();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
-  if (!user || (isPending && !patterns.length)) {
-    return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-black" edges={['top']}>
-        <FocusAwareStatusBar />
-        <ActivityIndicator color="#ffffff" size="large" />
-        <Text className="mt-3 text-sm text-fog-400">
-          Loading popular patterns…
-        </Text>
-      </SafeAreaView>
-    );
-  }
+  if (!user || (isPending && !patterns.length))
+    return <PatternGridSkeleton />;
 
   if (isError && !patterns.length) {
     return (
