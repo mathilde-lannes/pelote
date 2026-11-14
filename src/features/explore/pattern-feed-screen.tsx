@@ -1,10 +1,11 @@
 import type { FlatList as FlatListType } from 'react-native';
 import type { PatternHighlight } from '@/lib/ravelry/types';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, usePathname } from 'expo-router';
 import * as React from 'react';
-import { ActivityIndicator, FlatList } from 'react-native';
+import { ActivityIndicator, FlatList, View } from 'react-native';
 
-import { FocusAwareStatusBar, Text, View } from '@/components/ui';
+import { FocusAwareStatusBar, Text } from '@/components/ui';
+import { POST_ITEM_HEIGHT } from '@/features/feed/components/post-layout';
 import {
   usePattern,
   usePatternHighlights,
@@ -22,65 +23,6 @@ function FeedStatus({ message }: { message: string }) {
   );
 }
 
-function usePatternFeedScroll(startId: string, items: PatternHighlight[]) {
-  const listRef = React.useRef<FlatListType<PatternHighlight>>(null);
-  const didScroll = React.useRef(false);
-
-  const startIndex = React.useMemo(() => {
-    if (!startId || !items.length)
-      return 0;
-    const index = items.findIndex(
-      item => String(item.pattern.id) === startId,
-    );
-    return index >= 0 ? index : 0;
-  }, [items, startId]);
-
-  React.useEffect(() => {
-    didScroll.current = false;
-  }, [startId]);
-
-  const getItemLayout = React.useCallback(
-    (_: ArrayLike<PatternHighlight> | null | undefined, index: number) => ({
-      length: patternPostItemHeight(items[index]!),
-      offset: patternPostOffset(items, index),
-      index,
-    }),
-    [items],
-  );
-
-  const scrollToStart = React.useCallback(() => {
-    if (didScroll.current || startIndex <= 0 || !items.length)
-      return;
-    listRef.current?.scrollToIndex({
-      index: startIndex,
-      animated: false,
-      viewPosition: 0,
-    });
-    didScroll.current = true;
-  }, [items.length, startIndex]);
-
-  const onScrollToIndexFailed = React.useCallback(
-    (info: { index: number }) => {
-      setTimeout(() => {
-        listRef.current?.scrollToOffset({
-          offset: patternPostOffset(items, info.index),
-          animated: false,
-        });
-        didScroll.current = true;
-      }, 16);
-    },
-    [items],
-  );
-
-  return {
-    listRef,
-    startIndex,
-    getItemLayout,
-    scrollToStart,
-    onScrollToIndexFailed,
-  };
-}
-
 function toHighlight(pattern: PatternHighlight['pattern']): PatternHighlight {
   return {
     id: `pattern:${pattern.id}`,
@@ -89,12 +31,26 @@ function toHighlight(pattern: PatternHighlight['pattern']): PatternHighlight {
   };
 }
 
+function PatternFeedRow({ item }: { item: PatternHighlight }) {
+  return (
+    <View style={{ height: POST_ITEM_HEIGHT }} className="overflow-hidden bg-black">
+      <PatternPost item={item} />
+    </View>
+  );
+}
+
 export function PatternFeedScreen() {
+  const pathname = usePathname();
   const params = useLocalSearchParams<{ id: string }>();
   const startId = String(params.id ?? '').trim();
   const patternId = Number(startId);
-  const highlightsQuery = usePatternHighlights();
-  const popularQuery = useRecentlyPopularPatterns();
+  // Search stack opens recently popular; Home opens highlights. Avoid waiting
+  // on the unused list (spinner → content jump).
+  const fromSearch = pathname.startsWith('/search');
+
+  const highlightsQuery = usePatternHighlights({ enabled: !fromSearch });
+  const popularQuery = useRecentlyPopularPatterns({ enabled: fromSearch });
+
   const highlights = React.useMemo(
     () => (highlightsQuery.data?.pages ?? []).flatMap(page => page.highlights),
     [highlightsQuery.data],
@@ -105,25 +61,28 @@ export function PatternFeedScreen() {
     ),
     [popularQuery.data],
   );
+
   const inHighlights = React.useMemo(
-    () => highlights.some(item => String(item.pattern.id) === startId),
-    [highlights, startId],
+    () => !fromSearch && highlights.some(item => String(item.pattern.id) === startId),
+    [fromSearch, highlights, startId],
   );
   const inPopular = React.useMemo(
-    () => popular.some(item => String(item.pattern.id) === startId),
-    [popular, startId],
+    () => fromSearch && popular.some(item => String(item.pattern.id) === startId),
+    [fromSearch, popular, startId],
   );
 
-  // Designer grids (and other non-list entry points) open patterns that are
-  // not in highlights or recently popular — fetch that pattern directly.
+  const listPending = fromSearch
+    ? popularQuery.isPending && !popular.length
+    : highlightsQuery.isPending && !highlights.length;
+
+  // Deep links / other entry points — fetch Pattern#show when not in the list.
   const patternQuery = usePattern({
     variables: { id: patternId },
     enabled:
       Boolean(startId)
       && Number.isFinite(patternId)
       && patternId > 0
-      && !highlightsQuery.isPending
-      && !popularQuery.isPending
+      && !listPending
       && !inHighlights
       && !inPopular,
   });
@@ -151,22 +110,47 @@ export function PatternFeedScreen() {
         ? popularQuery
         : null;
 
-  const {
-    listRef,
-    startIndex,
-    getItemLayout,
-    scrollToStart,
-    onScrollToIndexFailed,
-  } = usePatternFeedScroll(startId, items);
+  const listRef = React.useRef<FlatListType<PatternHighlight>>(null);
+  const startIndex = React.useMemo(() => {
+    if (!startId || !items.length || listSource === 'single')
+      return 0;
+    const index = items.findIndex(
+      item => String(item.pattern.id) === startId,
+    );
+    return index >= 0 ? index : 0;
+  }, [items, listSource, startId]);
+
+  const getItemLayout = React.useCallback(
+    (_: ArrayLike<PatternHighlight> | null | undefined, index: number) => ({
+      length: patternPostItemHeight(items[index]!),
+      offset: patternPostOffset(items, index),
+      index,
+    }),
+    [items],
+  );
+
+  const onScrollToIndexFailed = React.useCallback(
+    (info: { index: number }) => {
+      listRef.current?.scrollToOffset({
+        offset: patternPostOffset(items, info.index),
+        animated: false,
+      });
+    },
+    [items],
+  );
+
+  // Paint already scrolled — avoids flash at index 0 then jump.
+  const contentOffset = React.useMemo(
+    () => (startIndex > 0
+      ? { x: 0, y: patternPostOffset(items, startIndex) }
+      : undefined),
+    [items, startIndex],
+  );
 
   if (!startId)
     return <FeedStatus message="Missing pattern" />;
 
-  if (
-    (highlightsQuery.isPending && !highlights.length)
-    || (popularQuery.isPending && !popular.length && !inHighlights)
-    || (listSource === 'single' && patternQuery.isPending)
-  ) {
+  if (listPending || (listSource === 'single' && patternQuery.isPending)) {
     return (
       <View className="flex-1 items-center justify-center bg-black">
         <FocusAwareStatusBar />
@@ -175,10 +159,10 @@ export function PatternFeedScreen() {
     );
   }
 
-  if (inHighlights && highlightsQuery.isError && !highlights.length)
+  if (!fromSearch && highlightsQuery.isError && !highlights.length)
     return <FeedStatus message="Couldn’t load highlights." />;
 
-  if (inPopular && popularQuery.isError && !popular.length)
+  if (fromSearch && popularQuery.isError && !popular.length)
     return <FeedStatus message="Couldn’t load popular patterns." />;
 
   if (listSource === 'single' && patternQuery.isError)
@@ -194,11 +178,9 @@ export function PatternFeedScreen() {
         ref={listRef}
         data={items}
         keyExtractor={item => item.id}
-        key={startId}
+        key={`${pathname}:${startId}`}
         getItemLayout={getItemLayout}
-        initialScrollIndex={
-          listSource !== 'single' && startIndex > 0 ? startIndex : undefined
-        }
+        contentOffset={contentOffset}
         initialNumToRender={Math.min(
           items.length,
           Math.max(startIndex + 3, 5),
@@ -214,9 +196,8 @@ export function PatternFeedScreen() {
           }
         }}
         onEndReachedThreshold={0.5}
-        onLayout={scrollToStart}
         onScrollToIndexFailed={onScrollToIndexFailed}
-        renderItem={({ item }) => <PatternPost item={item} />}
+        renderItem={({ item }) => <PatternFeedRow item={item} />}
         ListFooterComponent={
           listQuery?.isFetchingNextPage
             ? (
