@@ -74,11 +74,27 @@ Note: with on-device token exchange, the client secret is present inside the app
 | --- | --- |
 | `pnpm start` | Expo dev server |
 | `pnpm ios` | Native rebuild (picks up `RAVELRY_CLIENT_SECRET` into `extra`) |
+| `pnpm storybook` | On-device Storybook (swaps the app entry when `STORYBOOK_ENABLED=true`) |
+| `pnpm storybook:ios` / `pnpm storybook:android` | Storybook with a native rebuild |
 | `pnpm lint` / `pnpm type-check` / `pnpm test` | Quality gates |
 | `pnpm build:preview:android` | EAS preview APK |
 | `pnpm build:production:ios` | EAS production iOS |
 | `pnpm check:runtime-app-version` | Fail if `package.json` version was not bumped vs the parent commit |
 | `pnpm build:production:ios:local` | Local production iOS build after the runtime-version check |
+
+## Storybook
+
+On-device component workshop powered by [`@storybook/react-native`](https://storybookjs.github.io/react-native/). Metro swaps the app entry for Storybook only when `STORYBOOK_ENABLED=true`, so normal `pnpm start` builds stay free of Storybook code.
+
+```bash
+# First time after install (new native modules: async-storage, slider, datetimepicker)
+pnpm storybook:ios
+
+# Later sessions — Metro only
+pnpm storybook
+```
+
+Open **Feed → Post** for the `ActivityCard` example. Add more stories next to components as `*.stories.tsx` under `src/` (see `src/features/feed/components/activity-card.stories.tsx`). Config lives in `.rnstorybook/`.
 
 ## CI/CD
 
