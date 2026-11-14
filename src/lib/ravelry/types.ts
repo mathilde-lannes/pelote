@@ -90,6 +90,10 @@ export type RavelryPattern = {
   name: string;
   permalink?: string | null;
   favorites_count?: number | null;
+  projects_count?: number | null;
+  comments_count?: number | null;
+  /** Yarn / pack rows when present on Pattern#full. */
+  packs_count?: number | null;
   free?: boolean | null;
   notes_html?: string | null;
   photos: RavelryPhoto[];

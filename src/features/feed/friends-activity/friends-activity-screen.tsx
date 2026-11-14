@@ -1,4 +1,4 @@
-import type { FriendActivity } from './api';
+import type { FriendActivity } from '../api';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import * as React from 'react';
@@ -13,8 +13,8 @@ import {
   View,
 } from '@/components/ui';
 import { useAuthStore } from '@/features/auth/use-auth-store';
-import { isHomeFeedActivity, useFriendsActivity } from './api';
-import { ActivityCard } from './components/activity-card';
+import { isHomeFeedActivity, useFriendsActivity } from '../api';
+import { ActivityCard } from '../components/activity-card';
 
 function FeedFooter({ loading }: { loading: boolean }) {
   if (!loading)
@@ -26,7 +26,25 @@ function FeedFooter({ loading }: { loading: boolean }) {
   );
 }
 
-export function FeedScreen() {
+function FriendsFeedHeader({ onSwitchFeed }: { onSwitchFeed?: () => void }) {
+  return (
+    <View className="items-center border-b border-ink-300 px-4 py-3">
+      {onSwitchFeed
+        ? (
+            <Button label="Following" variant="link" onPress={onSwitchFeed} />
+          )
+        : (
+            <PeloteWordmark size="sm" />
+          )}
+    </View>
+  );
+}
+
+type Props = {
+  onSwitchFeed?: () => void;
+};
+
+export function FriendsActivityScreen({ onSwitchFeed }: Props = {}) {
   const router = useRouter();
   const user = useAuthStore.use.user();
   const {
@@ -125,9 +143,7 @@ export function FeedScreen() {
             />
           )}
           ListHeaderComponent={(
-            <View className="items-center border-b border-ink-300 px-4 py-3">
-              <PeloteWordmark size="sm" />
-            </View>
+            <FriendsFeedHeader onSwitchFeed={onSwitchFeed} />
           )}
           ListFooterComponent={<FeedFooter loading={isFetchingNextPage} />}
         />

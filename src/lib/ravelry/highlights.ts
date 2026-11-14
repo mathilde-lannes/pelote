@@ -139,11 +139,17 @@ export function normalizePattern(raw: unknown): RavelryPattern | null {
     return null;
   const photos = collectPhotos(raw);
   const favorites = raw.favorites_count;
+  const projects = raw.projects_count;
+  const comments = raw.comments_count;
+  const packs = Array.isArray(raw.packs) ? raw.packs.length : null;
   return {
     id,
     name: asString(raw.name) ?? 'Pattern',
     permalink: asString(raw.permalink),
     favorites_count: typeof favorites === 'number' ? favorites : null,
+    projects_count: typeof projects === 'number' ? projects : null,
+    comments_count: typeof comments === 'number' ? comments : null,
+    packs_count: packs,
     free: typeof raw.free === 'boolean' ? raw.free : null,
     notes_html: asString(raw.notes_html) ?? asString(raw.notes),
     photos,
