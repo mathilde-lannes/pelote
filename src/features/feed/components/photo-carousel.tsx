@@ -39,35 +39,32 @@ function Dots({
   if (count <= 1)
     return null;
 
-  const below = placement === 'below';
-  return (
-    <View
-      className={
-        below
-          ? 'w-full flex-row items-center justify-center gap-[5px] py-2'
-          : 'absolute bottom-3 w-full flex-row items-center justify-center gap-1.5'
-      }
-    >
-      {Array.from({ length: count }, (_, i) => {
-        const active = i === index;
-        if (below) {
-          return (
-            <View
-              key={i}
-              className="size-1.5 rounded-full"
-              style={{ backgroundColor: active ? DOT_ACTIVE : DOT_INACTIVE }}
-            />
-          );
-        }
-        return (
+  if (placement === 'below') {
+    return (
+      <>
+        {Array.from({ length: count }, (_, i) => (
           <View
             key={i}
-            className={`size-1.5 rounded-full ${
-              active ? 'bg-white' : 'bg-white/40'
-            }`}
+            className="size-1.5 rounded-full"
+            style={{
+              backgroundColor: i === index ? DOT_ACTIVE : DOT_INACTIVE,
+            }}
           />
-        );
-      })}
+        ))}
+      </>
+    );
+  }
+
+  return (
+    <View className="absolute bottom-3 w-full flex-row items-center justify-center gap-1.5">
+      {Array.from({ length: count }, (_, i) => (
+        <View
+          key={i}
+          className={`size-1.5 rounded-full ${
+            i === index ? 'bg-white' : 'bg-white/40'
+          }`}
+        />
+      ))}
     </View>
   );
 }
@@ -157,11 +154,17 @@ export function PhotoCarousel({
       </View>
       {dotsPlacement === 'below'
         ? (
-            <Dots
-              count={uris.length}
-              index={index}
-              placement="below"
-            />
+            // Always reserve height so 1→N photo upgrades don't resize the post.
+            <View
+              className="w-full flex-row items-center justify-center gap-[5px]"
+              style={{ height: 22 }}
+            >
+              <Dots
+                count={uris.length}
+                index={index}
+                placement="below"
+              />
+            </View>
           )
         : null}
     </View>

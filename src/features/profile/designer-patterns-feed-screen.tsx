@@ -5,10 +5,11 @@ import * as React from 'react';
 import { ActivityIndicator, FlatList } from 'react-native';
 
 import { FocusAwareStatusBar, Text, View } from '@/components/ui';
+import { usePattern } from '@/features/explore/api';
 import { useDesignerPatterns, usePerson } from './api';
 import { DesignerPatternPost } from './components/designer-pattern-post';
 import {
-  designPostItemHeight,
+  DESIGN_POST_ITEM_HEIGHT,
   designPostOffset,
 } from './designer-patterns-feed-layout';
 
@@ -42,7 +43,7 @@ function useDesignsFeedScroll(
 
   const getItemLayout = React.useCallback(
     (_: ArrayLike<RavelryPattern> | null | undefined, index: number) => ({
-      length: designPostItemHeight(patterns[index]!),
+      length: DESIGN_POST_ITEM_HEIGHT,
       offset: designPostOffset(patterns, index),
       index,
     }),
@@ -115,6 +116,16 @@ export function DesignerPatternsFeedScreen() {
     () => designsQuery.data?.patterns ?? [],
     [designsQuery.data],
   );
+
+  const startPatternId = Number(startId);
+  // Warm Pattern#show for the tapped tile so the feed opens without a thin→full resize.
+  usePattern({
+    variables: { id: startPatternId },
+    enabled:
+      Boolean(startId)
+      && Number.isFinite(startPatternId)
+      && startPatternId > 0,
+  });
 
   const {
     listRef,

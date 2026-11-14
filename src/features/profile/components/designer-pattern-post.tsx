@@ -1,19 +1,18 @@
-import type { RavelryPattern, RavelryPerson } from '@/lib/ravelry/types';
+import type {
+  PatternHighlight,
+  RavelryPattern,
+  RavelryPerson,
+} from '@/lib/ravelry/types';
 import { Image } from 'expo-image';
-import { Link } from 'expo-router';
 import * as React from 'react';
+import { Dimensions, View } from 'react-native';
 
-import { ExpandableText } from '@/components/expandable-text';
-import { Pressable, Text, View } from '@/components/ui';
 import { usePattern } from '@/features/explore/api';
-import { likesLabel } from '@/features/feed/components/activity-card-copy';
-import { PhotoCarousel } from '@/features/feed/components/photo-carousel';
-import { designerProfileHref } from '../designer-profile-href';
-import {
-  DESIGN_POST_ITEM_HEIGHT,
-  DESIGN_POST_MEDIA_HEIGHT,
-  designPostChromeHeight,
-} from '../designer-patterns-feed-layout';
+import { ForYouPost } from '@/features/feed/for-you/for-you-post';
+import { FOR_YOU_POST_ITEM_HEIGHT } from '@/features/feed/for-you/for-you-post-layout';
+import { bestPhotoUrl } from '@/lib/ravelry/api';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
 
 type Props = {
   username: string;
@@ -21,13 +20,41 @@ type Props = {
   pattern: RavelryPattern;
 };
 
-function stripHtml(html: string): string {
-  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+/**
+ * Hold the For You frame steady while Pattern#show loads — search rows are thin
+ * (one photo, no notes) and swapping into full details used to resize the post.
+ */
+function DesignerPatternPostPlaceholder({ pattern }: { pattern: RavelryPattern }) {
+  const uri = bestPhotoUrl(pattern.photos[0]);
+  return (
+    <View style={{ height: FOR_YOU_POST_ITEM_HEIGHT }} className="bg-black">
+      <View className="flex-row items-center gap-2.5 px-4 py-3">
+        <View className="size-8 rounded-full bg-ink-400" />
+        <View className="min-w-0 flex-1 gap-1.5">
+          <View className="h-3.5 w-28 rounded bg-ink-300" />
+          <View className="h-3 w-40 rounded bg-ink-200" />
+        </View>
+      </View>
+      <View
+        style={{ width: SCREEN_WIDTH, height: SCREEN_WIDTH }}
+        className="bg-ink-200"
+      >
+        {uri
+          ? (
+              <Image
+                source={{ uri }}
+                style={{ width: '100%', height: '100%' }}
+                contentFit="cover"
+              />
+            )
+          : null}
+      </View>
+      <View style={{ height: 22 }} />
+    </View>
+  );
 }
 
 export function DesignerPatternPost({ username, person, pattern }: Props) {
-  const [captionExpanded, setCaptionExpanded] = React.useState(false);
-  // Search list payloads are thin (often one photo, no notes) — enrich like projects.
   const detailQuery = usePattern({
     variables: { id: pattern.id },
     retry: (failureCount, error) => {
@@ -37,92 +64,58 @@ export function DesignerPatternPost({ username, person, pattern }: Props) {
       return failureCount < 2;
     },
   });
-  const data = detailQuery.data ?? pattern;
-  const photos = data.photos?.length ? data.photos : pattern.photos;
 
-  const author = data.pattern_author ?? pattern.pattern_author;
-  const linkedUser = author?.users[0];
-  const avatar
-    = linkedUser?.small_photo_url
-      ?? linkedUser?.photo_url
-      ?? person?.small_photo_url
-      ?? person?.photo_url
-      ?? null;
-  const displayName
-    = author?.name
-      || linkedUser?.username
-      || person?.username
-      || username;
-  const profileHref = designerProfileHref(author)
-    ?? `/user/${username}`;
-  const likes = likesLabel(data.favorites_count);
-  const description = data.notes_html ? stripHtml(data.notes_html) : '';
-  const rowHeight
-    = DESIGN_POST_MEDIA_HEIGHT + designPostChromeHeight(Boolean(description));
+  const item = React.useMemo<PatternHighlight | null>(() => {
+    // Wait for full pattern so we don't paint thin search data then resize.
+    const data = detailQuery.data;
+    if (!data) {
+      if (detailQuery.isError)
+        return {
+          id: `pattern:${pattern.id}`,
+          timeline_date: null,
+          pattern,
+        };
+      return null;
+    }
+
+    const photos = data.photos?.length ? data.photos : pattern.photos;
+    const author = data.pattern_author ?? pattern.pattern_author;
+    const hasLinkedUser = Boolean(author?.users[0]);
+    const patternAuthor
+      = author
+        ? {
+            ...author,
+            users: hasLinkedUser
+              ? author.users
+              : person
+                ? [person]
+                : author.users,
+          }
+        : person
+          ? {
+              id: 0,
+              name: person.username || username,
+              users: [person],
+            }
+          : null;
+
+    return {
+      id: `pattern:${data.id}`,
+      timeline_date: null,
+      pattern: {
+        ...data,
+        photos,
+        pattern_author: patternAuthor,
+      },
+    };
+  }, [detailQuery.data, detailQuery.isError, pattern, person, username]);
+
+  if (!item)
+    return <DesignerPatternPostPlaceholder pattern={pattern} />;
 
   return (
-    <View
-      style={
-        captionExpanded
-          ? { minHeight: Math.max(rowHeight, DESIGN_POST_ITEM_HEIGHT) }
-          : { height: rowHeight }
-      }
-      className="bg-black"
-    >
-      <Link href={profileHref as never} asChild>
-        <Pressable className="flex-row items-center gap-3 p-3">
-          {avatar
-            ? (
-                <Image
-                  source={{ uri: avatar }}
-                  style={{ width: 32, height: 32, borderRadius: 16 }}
-                  contentFit="cover"
-                />
-              )
-            : (
-                <View className="size-8 items-center justify-center rounded-full bg-ink-300">
-                  <Text className="text-sm font-semibold text-white">
-                    {displayName.slice(0, 1).toUpperCase()}
-                  </Text>
-                </View>
-              )}
-          <View className="flex-1">
-            <Text className="text-sm font-semibold text-white" numberOfLines={1}>
-              {displayName}
-            </Text>
-          </View>
-        </Pressable>
-      </Link>
-
-      <PhotoCarousel photos={photos} />
-
-      <View className="gap-1 px-3 pt-2 pb-3">
-        {likes
-          ? (
-              <Text className="text-sm font-semibold text-white">{likes}</Text>
-            )
-          : null}
-        <Text className="text-sm text-white" numberOfLines={1}>
-          <Text className="font-semibold">{displayName}</Text>
-          {data.name
-            ? (
-                <Text className="font-normal text-fog-300">
-                  {' '}
-                  {data.name}
-                </Text>
-              )
-            : null}
-        </Text>
-        {description
-          ? (
-              <ExpandableText
-                text={description}
-                numberOfLines={2}
-                onExpandedChange={setCaptionExpanded}
-              />
-            )
-          : null}
-      </View>
+    <View style={{ minHeight: FOR_YOU_POST_ITEM_HEIGHT }} className="bg-black">
+      <ForYouPost item={item} />
     </View>
   );
 }
