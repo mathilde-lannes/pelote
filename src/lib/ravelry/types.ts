@@ -31,6 +31,8 @@ export type RavelryProject = {
   created_at?: string | null;
   updated_at?: string | null;
   user_id?: number;
+  /** Owner when present (e.g. patterns/{id}/projects.json). */
+  user?: RavelryPerson | null;
   first_photo?: RavelryPhoto | null;
   photos?: RavelryPhoto[];
   craft_name?: string | null;

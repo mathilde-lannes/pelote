@@ -187,6 +187,7 @@ async function enrichFriendPhotos(
 }
 
 function normalizeProject(raw: any): RavelryProject {
+  const userRaw = raw.user ?? raw.person ?? null;
   return {
     id: raw.id,
     name: raw.name,
@@ -200,7 +201,8 @@ function normalizeProject(raw: any): RavelryProject {
     // Prefer ISO from activity parser; keep raw string if format is unusual.
     created_at: normalizeCreatedAt(raw) || raw.created_at || null,
     updated_at: normalizeCreatedAt({ created_at: raw.updated_at }) || raw.updated_at || null,
-    user_id: raw.user_id,
+    user_id: raw.user_id ?? userRaw?.id,
+    user: userRaw ? normalizePerson(userRaw) : null,
     craft_name: raw.craft_name ?? raw.craft?.name ?? null,
     favorites_count: normalizeFavoritesCount(raw),
     first_photo: normalizePhoto(raw.first_photo),
@@ -549,6 +551,69 @@ export async function fetchProject(
     `projects/${encodeURIComponent(username)}/${id}.json`,
   );
   return normalizeProject(data.project ?? data);
+}
+
+function projectsPageFromPayload(
+  data: any,
+  page: number,
+  pageSize: number,
+): ProjectsListPage {
+  const list = data.projects ?? [];
+  const projects = (Array.isArray(list) ? list : []).map(normalizeProject);
+  const paginator = data.paginator ?? {};
+  const pageCountRaw = paginator.page_count ?? paginator.last_page ?? 1;
+  const pageCount = Number(pageCountRaw);
+  const totalRaw = paginator.results;
+  const totalResults
+    = typeof totalRaw === 'number' && Number.isFinite(totalRaw)
+      ? totalRaw
+      : null;
+
+  return {
+    projects,
+    page,
+    pageSize,
+    pageCount: Number.isFinite(pageCount) && pageCount > 0 ? pageCount : 1,
+    totalResults,
+  };
+}
+
+/**
+ * Projects made from a pattern.
+ *
+ * Prefer `GET /projects/search.json` with the pattern filter (site project
+ * search family) so notebooks without photos are included. The collection
+ * `GET patterns/{id}/projects.json` is photogallery-oriented and undercounts
+ * vs Pattern#full `projects_count`.
+ */
+export async function fetchPatternProjects(
+  pattern: { id: number; permalink?: string | null; name?: string | null },
+  options?: { page?: number; pageSize?: number },
+): Promise<ProjectsListPage> {
+  const page = options?.page ?? 1;
+  const pageSize = options?.pageSize ?? 48;
+  const patternKey
+    = pattern.permalink?.trim()
+      || pattern.name?.trim()
+      || String(pattern.id);
+
+  const { data: searchData } = await client.get('projects/search.json', {
+    params: {
+      page,
+      page_size: pageSize,
+      // Same filter family as the website project search “pattern” facet.
+      pattern: patternKey,
+    },
+  });
+  const searchPage = projectsPageFromPayload(searchData, page, pageSize);
+  if (searchPage.projects.length > 0 || (searchPage.totalResults ?? 0) > 0)
+    return searchPage;
+
+  const { data } = await client.get(
+    `patterns/${pattern.id}/projects.json`,
+    { params: { page, page_size: pageSize } },
+  );
+  return projectsPageFromPayload(data, page, pageSize);
 }
 
 export async function fetchFriends(

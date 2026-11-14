@@ -39,16 +39,15 @@ function Stat({
   icon,
   count,
   label,
+  href,
 }: {
   icon: React.ReactNode;
   count: string | null;
   label: string;
+  href?: string | null;
 }) {
-  return (
-    <View
-      className="flex-row items-center gap-2"
-      accessibilityLabel={count ? `${label} ${count}` : label}
-    >
+  const body = (
+    <>
       {icon}
       {count
         ? (
@@ -57,6 +56,31 @@ function Stat({
             </Text>
           )
         : null}
+    </>
+  );
+  const accessibilityLabel = count ? `${label} ${count}` : label;
+
+  if (href) {
+    return (
+      <Link href={href as never} asChild>
+        <Pressable
+          className="flex-row items-center gap-2"
+          accessibilityRole="button"
+          accessibilityLabel={accessibilityLabel}
+          hitSlop={8}
+        >
+          {body}
+        </Pressable>
+      </Link>
+    );
+  }
+
+  return (
+    <View
+      className="flex-row items-center gap-2"
+      accessibilityLabel={accessibilityLabel}
+    >
+      {body}
     </View>
   );
 }
@@ -158,6 +182,107 @@ export type ProjectPostProps = PostBase & {
 
 export type PostProps = PatternPostProps | ProjectPostProps;
 
+function PostStats({
+  variant,
+  patternId,
+  favorites,
+  projects,
+  comments,
+  yarns,
+}: {
+  variant: PostProps['variant'];
+  patternId?: number;
+  favorites: string | null;
+  projects: string | null;
+  comments: string | null;
+  yarns: string | null;
+}) {
+  return (
+    <View className="flex-row items-center justify-between px-[18px] pt-1">
+      <View className="flex-row items-center gap-[19px]">
+        <Stat
+          icon={<Heart color="#ffffff" />}
+          count={favorites}
+          label="Favorites"
+        />
+        {variant === 'pattern' && patternId != null
+          ? (
+              <Stat
+                icon={<Projects color="#ffffff" />}
+                count={projects}
+                label="Projects"
+                href={`/pattern/${patternId}/projects`}
+              />
+            )
+          : null}
+        <Stat
+          icon={<Comments color="#ffffff" />}
+          count={comments}
+          label="Comments"
+        />
+        {variant === 'pattern'
+          ? (
+              <Stat
+                icon={<Yarn color="#ffffff" />}
+                count={yarns}
+                label="Yarn"
+              />
+            )
+          : null}
+      </View>
+      <Bookmark color="#ffffff" />
+    </View>
+  );
+}
+
+function PostCaption({
+  authorName,
+  notes,
+  fallbackTitle,
+  relative,
+}: {
+  authorName: string;
+  notes: string;
+  fallbackTitle: string;
+  relative: string;
+}) {
+  return (
+    <View className="mt-2 gap-1 px-4">
+      {notes
+        ? (
+            <ExpandableText
+              prefix={authorName}
+              text={notes}
+              numberOfLines={1}
+              className="text-sm text-fog-300"
+              prefixClassName="font-bold text-white"
+              moreClassName="text-sm font-semibold text-fog-500"
+            />
+          )
+        : (
+            <Text className="text-sm text-white" numberOfLines={1}>
+              <Text className="font-bold">{authorName}</Text>
+              {fallbackTitle
+                ? (
+                    <Text className="font-normal text-fog-300">
+                      {' '}
+                      {fallbackTitle}
+                    </Text>
+                  )
+                : null}
+            </Text>
+          )}
+      {relative
+        ? (
+            <Text className="text-xs text-fog-500">
+              {relative}
+            </Text>
+          )
+        : null}
+    </View>
+  );
+}
+
 export function Post(props: PostProps) {
   const {
     authorName,
@@ -179,21 +304,10 @@ export function Post(props: PostProps) {
       || (props.variant === 'pattern'
         ? relativeDate(props.timelineDate)
         : '');
-  const favorites = countLabel(favoritesCount);
-  const comments = countLabel(commentsCount);
-  const projects
-    = props.variant === 'pattern'
-      ? countLabel(props.projectsCount)
-      : null;
-  const yarns
-    = props.variant === 'pattern'
-      ? countLabel(props.packsCount)
-      : null;
   const captionFallbackTitle
     = props.variant === 'pattern'
       ? props.patternName
       : props.projectName;
-
   const trailing
     = props.variant === 'pattern'
       ? (
@@ -224,72 +338,28 @@ export function Post(props: PostProps) {
         dotsPlacement="below"
         showCounter={false}
       />
-      <View className="flex-row items-center justify-between px-[18px] pt-1">
-        <View className="flex-row items-center gap-[19px]">
-          <Stat
-            icon={<Heart color="#ffffff" />}
-            count={favorites}
-            label="Favorites"
-          />
-          {props.variant === 'pattern'
-            ? (
-                <Stat
-                  icon={<Projects color="#ffffff" />}
-                  count={projects}
-                  label="Projects"
-                />
-              )
-            : null}
-          <Stat
-            icon={<Comments color="#ffffff" />}
-            count={comments}
-            label="Comments"
-          />
-          {props.variant === 'pattern'
-            ? (
-                <Stat
-                  icon={<Yarn color="#ffffff" />}
-                  count={yarns}
-                  label="Yarn"
-                />
-              )
-            : null}
-        </View>
-        <Bookmark color="#ffffff" />
-      </View>
-      <View className="mt-2 gap-1 px-4">
-        {notes
-          ? (
-              <ExpandableText
-                prefix={authorName}
-                text={notes}
-                numberOfLines={1}
-                className="text-sm text-fog-300"
-                prefixClassName="font-bold text-white"
-                moreClassName="text-sm font-semibold text-fog-500"
-              />
-            )
-          : (
-              <Text className="text-sm text-white" numberOfLines={1}>
-                <Text className="font-bold">{authorName}</Text>
-                {captionFallbackTitle
-                  ? (
-                      <Text className="font-normal text-fog-300">
-                        {' '}
-                        {captionFallbackTitle}
-                      </Text>
-                    )
-                  : null}
-              </Text>
-            )}
-        {relative
-          ? (
-              <Text className="text-xs text-fog-500">
-                {relative}
-              </Text>
-            )
-          : null}
-      </View>
+      <PostStats
+        variant={props.variant}
+        patternId={props.variant === 'pattern' ? props.patternId : undefined}
+        favorites={countLabel(favoritesCount)}
+        projects={
+          props.variant === 'pattern'
+            ? countLabel(props.projectsCount)
+            : null
+        }
+        comments={countLabel(commentsCount)}
+        yarns={
+          props.variant === 'pattern'
+            ? countLabel(props.packsCount)
+            : null
+        }
+      />
+      <PostCaption
+        authorName={authorName}
+        notes={notes}
+        fallbackTitle={captionFallbackTitle}
+        relative={relative}
+      />
     </View>
   );
 }
