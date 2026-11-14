@@ -1,6 +1,7 @@
 import {
   parseEasProjectId,
   requireEasProjectIdForUpdates,
+  resolveEasProjectId,
 } from '@/lib/eas-project-id';
 
 const PROJECT_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
@@ -10,6 +11,10 @@ describe('parseEasProjectId', () => {
     expect(parseEasProjectId(undefined)).toBeUndefined();
     expect(parseEasProjectId('')).toBeUndefined();
     expect(parseEasProjectId('   ')).toBeUndefined();
+  });
+
+  it('treats docs placeholders as unset', () => {
+    expect(parseEasProjectId('<uuid-from-expo.dev>')).toBeUndefined();
   });
 
   it('accepts an EAS project UUID and trims surrounding space', () => {
@@ -25,6 +30,17 @@ describe('parseEasProjectId', () => {
     expect(() => parseEasProjectId(`${PROJECT_ID}-extra`)).toThrow(
       'Expected an EAS project UUID',
     );
+  });
+});
+
+describe('resolveEasProjectId', () => {
+  it('falls back to .env when process env is a placeholder', () => {
+    const resolved = resolveEasProjectId('<uuid-from-expo.dev>');
+    // Local .env has a real project UUID; CI without .env gets undefined.
+    if (resolved != null)
+      expect(resolved).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+      );
   });
 });
 

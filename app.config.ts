@@ -8,14 +8,14 @@ import 'tsx/cjs';
 import 'dotenv/config';
 import Env from './env';
 import {
-  parseEasProjectId,
   requireEasProjectIdForUpdates,
+  resolveEasProjectId,
 } from './src/lib/eas-project-id';
 /* eslint-enable perfectionist/sort-imports */
 
 // Replace with your Expo account before the first EAS build.
 const EXPO_ACCOUNT_OWNER = process.env.EXPO_ACCOUNT_OWNER ?? 'pelote';
-const parsedEasProjectId = parseEasProjectId(process.env.EAS_PROJECT_ID);
+const parsedEasProjectId = resolveEasProjectId();
 const updatesEnabled
   = Env.EXPO_PUBLIC_APP_ENV === 'preview'
     || Env.EXPO_PUBLIC_APP_ENV === 'production';
