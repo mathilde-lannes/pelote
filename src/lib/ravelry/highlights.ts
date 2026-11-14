@@ -142,6 +142,9 @@ export function normalizePattern(raw: unknown): RavelryPattern | null {
   const projects = raw.projects_count;
   const comments = raw.comments_count;
   const packs = Array.isArray(raw.packs) ? raw.packs.length : null;
+  // Pattern#full uses pattern_author; Pattern#list (search) uses designer.
+  const author = normalizeAuthor(raw.pattern_author)
+    ?? normalizeAuthor(raw.designer);
   return {
     id,
     name: asString(raw.name) ?? 'Pattern',
@@ -153,7 +156,7 @@ export function normalizePattern(raw: unknown): RavelryPattern | null {
     free: typeof raw.free === 'boolean' ? raw.free : null,
     notes_html: asString(raw.notes_html) ?? asString(raw.notes),
     photos,
-    pattern_author: normalizeAuthor(raw.pattern_author),
+    pattern_author: author,
   };
 }
 

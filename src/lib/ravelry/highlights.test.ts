@@ -95,6 +95,25 @@ describe('normalizeHighlights', () => {
   });
 });
 
+describe('normalizePattern Pattern#list', () => {
+  it('reads designer (search list) as pattern_author', () => {
+    const pattern = normalizePattern({
+      id: 99,
+      name: 'Zosia Sweater',
+      first_photo: { id: 1, square_url: 'https://img/z.jpg' },
+      designer: {
+        id: 7,
+        name: 'Mochi Knits',
+        permalink: 'mochiknits',
+        users: [{ id: 8, username: 'mochiknits' }],
+      },
+    });
+    expect(pattern?.pattern_author?.permalink).toBe('mochiknits');
+    expect(pattern?.pattern_author?.users[0]?.username).toBe('mochiknits');
+    expect(pattern?.photos[0]?.square_url).toBe('https://img/z.jpg');
+  });
+});
+
 describe('pattern photos from GET /patterns.json', () => {
   it('reads the id-keyed patterns map and merges photos onto highlights', () => {
     const full = patternsFromListPayload({

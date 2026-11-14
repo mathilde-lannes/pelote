@@ -1,17 +1,28 @@
 import type { AxiosError } from 'axios';
-import type { RavelryPerson, RavelryProject } from '@/lib/ravelry/types';
+import type {
+  RavelryPattern,
+  RavelryPerson,
+  RavelryProject,
+} from '@/lib/ravelry/types';
 import { createQuery } from 'react-query-kit';
 
 import {
+  fetchPatternsByDesignerCandidates,
   fetchPerson,
   fetchProjectsList,
+  resolveDesignerPermalinkForProfile,
 } from '@/lib/ravelry/api';
 
-export type { RavelryPerson, RavelryProject };
+export type { RavelryPattern, RavelryPerson, RavelryProject };
 
 export type PersonProjectsResult = {
   projects: RavelryProject[];
   /** Total projects reported by Ravelry (not capped by loaded pages). */
+  totalCount: number;
+};
+
+export type DesignerPatternsResult = {
+  patterns: RavelryPattern[];
   totalCount: number;
 };
 
@@ -70,6 +81,60 @@ export const usePersonProjects = createQuery<
 
     return {
       projects: sortProjectsByRecent(all),
+      totalCount: first.totalResults ?? all.length,
+    };
+  },
+});
+
+const DESIGNS_PAGE_SIZE = 48;
+/** Cap pages so prolific designers don’t fan out unbounded requests. */
+const DESIGNS_MAX_PAGES = 5;
+
+export type DesignerPatternsVariables = {
+  username: string;
+  /** From pattern_author.permalink when opening a designer from a pattern card. */
+  designerPermalink?: string;
+  /** From pattern_author.id when opening a designer from a pattern card. */
+  designerId?: number;
+};
+
+export const useDesignerPatterns = createQuery<
+  DesignerPatternsResult,
+  DesignerPatternsVariables,
+  AxiosError
+>({
+  // Bump key when search filter / resolution strategy changes.
+  queryKey: ['designer-patterns', 'v3-designer'],
+  fetcher: async (variables) => {
+    const resolved = await resolveDesignerPermalinkForProfile({
+      username: variables.username,
+      designerPermalink: variables.designerPermalink,
+      designerId: variables.designerId,
+    });
+    const candidates = [
+      variables.designerPermalink,
+      resolved,
+      variables.username,
+    ].filter((value): value is string => Boolean(value?.trim()));
+
+    const first = await fetchPatternsByDesignerCandidates(candidates, {
+      page: 1,
+      pageSize: DESIGNS_PAGE_SIZE,
+    });
+    const all = [...first.patterns];
+    const lastPage = Math.min(first.pageCount, DESIGNS_MAX_PAGES);
+    const permalink = first.permalinkUsed;
+
+    for (let page = 2; page <= lastPage; page += 1) {
+      const next = await fetchPatternsByDesignerCandidates([permalink], {
+        page,
+        pageSize: DESIGNS_PAGE_SIZE,
+      });
+      all.push(...next.patterns);
+    }
+
+    return {
+      patterns: all,
       totalCount: first.totalResults ?? all.length,
     };
   },

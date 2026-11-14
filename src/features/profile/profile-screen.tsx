@@ -1,4 +1,4 @@
-import type { RavelryProject } from './api';
+import type { RavelryPattern, RavelryProject } from './api';
 import { Image } from 'expo-image';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import * as React from 'react';
@@ -18,32 +18,46 @@ import {
 import { Settings as SettingsIcon } from '@/components/ui/icons';
 import { useAuthStore } from '@/features/auth/use-auth-store';
 import { bestPhotoUrl } from '@/lib/ravelry/api';
-import { usePerson, usePersonProjects } from './api';
+import {
+  useDesignerPatterns,
+  usePerson,
+  usePersonProjects,
+} from './api';
 
 const GRID_GAP = 2;
 const COLS = 3;
 const TILE
   = (Dimensions.get('window').width - GRID_GAP * (COLS - 1)) / COLS;
 
+type ProfileTab = 'projects' | 'designs';
+
 function ProfileHeader({
   username,
   avatarUrl,
   about,
   projectCount,
+  designCount,
+  tab,
+  onTabChange,
+  showTabSwitch,
   showSettings,
 }: {
   username: string;
   avatarUrl: string | null;
   about: string | null;
   projectCount: number | null;
+  designCount: number | null;
+  tab: ProfileTab;
+  onTabChange: (tab: ProfileTab) => void;
+  showTabSwitch: boolean;
   showSettings: boolean;
 }) {
   const router = useRouter();
   const initial = username.slice(0, 1).toUpperCase() || '?';
 
   return (
-    <View className="border-b border-ink-300 px-4 pt-2 pb-5">
-      <View className="flex-row items-center gap-5">
+    <View className="border-b border-ink-300 px-4 pt-2 pb-3">
+      <View className="flex-row items-center gap-5 pb-2">
         {avatarUrl
           ? (
               <Image
@@ -87,14 +101,54 @@ function ProfileHeader({
                 projects
               </Text>
             </View>
+            {designCount != null && designCount > 0
+              ? (
+                  <View>
+                    <Text className="text-base font-semibold text-white">
+                      {designCount}
+                    </Text>
+                    <Text className="text-sm text-fog-400">
+                      designs
+                    </Text>
+                  </View>
+                )
+              : null}
           </View>
         </View>
       </View>
       {about
         ? (
-            <Text className="mt-4 text-sm/5 text-fog-300">
+            <Text className="mt-2 mb-3 text-sm/5 text-fog-300">
               {about}
             </Text>
+          )
+        : null}
+      {showTabSwitch
+        ? (
+            <View className="mt-2 flex-row border-t border-ink-300">
+              {(['projects', 'designs'] as const).map((key) => {
+                const selected = tab === key;
+                return (
+                  <Pressable
+                    key={key}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    onPress={() => onTabChange(key)}
+                    className={`flex-1 items-center py-3 ${
+                      selected ? 'border-b-2 border-white' : ''
+                    }`}
+                  >
+                    <Text
+                      className={`text-sm font-semibold ${
+                        selected ? 'text-white' : 'text-fog-500'
+                      }`}
+                    >
+                      {key === 'projects' ? 'Projects' : 'Designs'}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
           )
         : null}
     </View>
@@ -109,7 +163,6 @@ function ProjectTile({
   project: RavelryProject;
 }) {
   const uri = bestPhotoUrl(project.first_photo ?? project.photos?.[0]);
-  // Instagram-style: open this user's vertical project feed at the tapped post.
   const href = `/user/${username}/feed/${project.id}`;
 
   return (
@@ -135,11 +188,51 @@ function ProjectTile({
   );
 }
 
+function DesignTile({ pattern }: { pattern: RavelryPattern }) {
+  const uri = bestPhotoUrl(pattern.photos[0]);
+
+  return (
+    <Link href={`/pattern/${pattern.id}` as never} asChild>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={pattern.name}
+        style={{ width: TILE, height: TILE }}
+      >
+        {uri
+          ? (
+              <Image
+                source={{ uri }}
+                style={{ width: '100%', height: '100%' }}
+                contentFit="cover"
+              />
+            )
+          : (
+              <View className="size-full items-center justify-center bg-ink-200 px-2">
+                <Text className="text-center text-xs text-fog-400" numberOfLines={3}>
+                  {pattern.name}
+                </Text>
+              </View>
+            )}
+      </Pressable>
+    </Link>
+  );
+}
+
 export function ProfileScreen() {
-  const params = useLocalSearchParams<{ username: string }>();
+  const params = useLocalSearchParams<{
+    username: string;
+    designer?: string;
+    designer_id?: string;
+  }>();
   const authUser = useAuthStore.use.user();
   const paramUsername = String(params.username ?? '').trim();
   const username = paramUsername || authUser?.username?.trim() || '';
+  const designerPermalink = String(params.designer ?? '').trim();
+  const designerIdRaw = Number(params.designer_id);
+  const designerId
+    = Number.isFinite(designerIdRaw) && designerIdRaw > 0
+      ? designerIdRaw
+      : undefined;
   const isTabProfile = !paramUsername;
   const isOwnProfile
     = Boolean(username)
@@ -154,10 +247,42 @@ export function ProfileScreen() {
     variables: { username },
     enabled: Boolean(username),
   });
+  const designsQuery = useDesignerPatterns({
+    variables: {
+      username,
+      ...(designerPermalink ? { designerPermalink } : {}),
+      ...(designerId != null ? { designerId } : {}),
+    },
+    enabled: Boolean(username),
+  });
 
   const person = personQuery.data;
   const projects = projectsQuery.data?.projects ?? [];
+  const designs = designsQuery.data?.patterns ?? [];
   const projectCount = projectsQuery.data?.totalCount ?? null;
+  const designCount = designsQuery.data?.totalCount ?? null;
+  const hasDesigns = designs.length > 0 || (designCount != null && designCount > 0);
+  const showTabSwitch = hasDesigns && projects.length > 0;
+
+  const [tab, setTab] = React.useState<ProfileTab>('projects');
+  const tabInitialized = React.useRef(false);
+
+  React.useEffect(() => {
+    if (tabInitialized.current)
+      return;
+    if (projectsQuery.isPending || designsQuery.isPending)
+      return;
+    tabInitialized.current = true;
+    // Designers (e.g. For You taps) often have designs but few/no public projects.
+    if (projects.length === 0 && hasDesigns)
+      setTab('designs');
+  }, [
+    designsQuery.isPending,
+    hasDesigns,
+    projects.length,
+    projectsQuery.isPending,
+  ]);
+
   const avatarUrl
     = person?.photo_url
       ?? person?.small_photo_url
@@ -167,7 +292,10 @@ export function ProfileScreen() {
       || person?.first_name?.trim()
       || null;
 
-  const loading = personQuery.isPending || projectsQuery.isPending;
+  const loading
+    = personQuery.isPending
+      || projectsQuery.isPending
+      || designsQuery.isPending;
   const failed = personQuery.isError && !person;
 
   if (!username) {
@@ -200,6 +328,34 @@ export function ProfileScreen() {
   }
 
   const displayName = person?.username || username;
+  const showingDesigns
+    = tab === 'designs' || (hasDesigns && projects.length === 0);
+  const header = (
+    <ProfileHeader
+      username={displayName}
+      avatarUrl={avatarUrl}
+      about={about}
+      projectCount={projectsQuery.isPending ? null : projectCount}
+      designCount={designsQuery.isPending ? null : designCount}
+      tab={showingDesigns ? 'designs' : 'projects'}
+      onTabChange={setTab}
+      showTabSwitch={showTabSwitch}
+      showSettings={isOwnProfile}
+    />
+  );
+
+  const empty = (pending: boolean, label: string) =>
+    pending
+      ? (
+          <View className="items-center py-10">
+            <ActivityIndicator color="#ffffff" />
+          </View>
+        )
+      : (
+          <Text className="mt-10 text-center text-sm text-fog-400">
+            {label}
+          </Text>
+        );
 
   return (
     <SafeAreaView
@@ -207,40 +363,39 @@ export function ProfileScreen() {
       edges={isTabProfile ? ['top'] : ['bottom']}
     >
       <FocusAwareStatusBar />
-      <FlatList
-        data={projects}
-        keyExtractor={item => String(item.id)}
-        numColumns={COLS}
-        columnWrapperStyle={{ gap: GRID_GAP }}
-        contentContainerStyle={{ gap: GRID_GAP, paddingBottom: 24 }}
-        ListHeaderComponent={(
-          <ProfileHeader
-            username={displayName}
-            avatarUrl={avatarUrl}
-            about={about}
-            projectCount={
-              projectsQuery.isPending ? null : projectCount
-            }
-            showSettings={isOwnProfile}
-          />
-        )}
-        ListEmptyComponent={
-          projectsQuery.isPending
-            ? (
-                <View className="items-center py-10">
-                  <ActivityIndicator color="#ffffff" />
-                </View>
-              )
-            : (
-                <Text className="mt-10 text-center text-sm text-fog-400">
-                  No public projects yet.
-                </Text>
-              )
-        }
-        renderItem={({ item }) => (
-          <ProjectTile username={displayName} project={item} />
-        )}
-      />
+      {showingDesigns
+        ? (
+            <FlatList
+              data={designs}
+              keyExtractor={item => String(item.id)}
+              numColumns={COLS}
+              columnWrapperStyle={{ gap: GRID_GAP }}
+              contentContainerStyle={{ gap: GRID_GAP, paddingBottom: 24 }}
+              ListHeaderComponent={header}
+              ListEmptyComponent={empty(
+                designsQuery.isPending,
+                'No published designs yet.',
+              )}
+              renderItem={({ item }) => <DesignTile pattern={item} />}
+            />
+          )
+        : (
+            <FlatList
+              data={projects}
+              keyExtractor={item => String(item.id)}
+              numColumns={COLS}
+              columnWrapperStyle={{ gap: GRID_GAP }}
+              contentContainerStyle={{ gap: GRID_GAP, paddingBottom: 24 }}
+              ListHeaderComponent={header}
+              ListEmptyComponent={empty(
+                projectsQuery.isPending,
+                'No public projects yet.',
+              )}
+              renderItem={({ item }) => (
+                <ProjectTile username={displayName} project={item} />
+              )}
+            />
+          )}
     </SafeAreaView>
   );
 }

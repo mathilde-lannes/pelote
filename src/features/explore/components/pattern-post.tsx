@@ -8,6 +8,7 @@ import { Pressable, Text, View } from '@/components/ui';
 import { likesLabel } from '@/features/feed/components/activity-card-copy';
 import { PhotoCarousel } from '@/features/feed/components/photo-carousel';
 import { formatRelative } from '@/features/feed/format-relative';
+import { designerProfileHref } from '@/features/profile/designer-profile-href';
 import { patternPostItemHeight } from '../pattern-feed-layout';
 
 function stripHtml(html: string): string {
@@ -23,12 +24,12 @@ function relativeDate(value: string | null): string {
 
 function PatternPostHeader({
   name,
-  username,
+  profileHref,
   avatar,
   relative,
 }: {
   name: string;
-  username: string | null;
+  profileHref: string | null;
   avatar: string | null;
   relative: string;
 }) {
@@ -59,7 +60,7 @@ function PatternPostHeader({
     </>
   );
 
-  if (!username) {
+  if (!profileHref) {
     return (
       <View className="flex-row items-center gap-3 p-3">
         {identity}
@@ -68,7 +69,7 @@ function PatternPostHeader({
   }
 
   return (
-    <Link href={`/user/${username}` as never} asChild>
+    <Link href={profileHref as never} asChild>
       <Pressable className="flex-row items-center gap-3 p-3">
         {identity}
       </Pressable>
@@ -82,6 +83,7 @@ export function PatternPost({ item }: { item: PatternHighlight }) {
   const author = pattern.pattern_author;
   const user = author?.users[0];
   const designer = author?.name || user?.username || pattern.name;
+  const profileHref = designerProfileHref(author);
   const notes = pattern.notes_html ? stripHtml(pattern.notes_html) : '';
   const likes = likesLabel(pattern.favorites_count);
   const rowHeight = patternPostItemHeight(item);
@@ -93,7 +95,7 @@ export function PatternPost({ item }: { item: PatternHighlight }) {
     >
       <PatternPostHeader
         name={designer}
-        username={user?.username ?? null}
+        profileHref={profileHref}
         avatar={user?.small_photo_url ?? user?.photo_url ?? null}
         relative={relativeDate(item.timeline_date)}
       />

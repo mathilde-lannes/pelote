@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/icons';
 import { PhotoCarousel } from '@/features/feed/components/photo-carousel';
 import { formatRelative } from '@/features/feed/format-relative';
+import { designerProfileHref } from '@/features/profile/designer-profile-href';
 
 function stripHtml(html: string): string {
   return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -63,13 +64,13 @@ function Stat({
 function ForYouPostHeader({
   name,
   patternName,
-  username,
+  profileHref,
   avatar,
   patternId,
 }: {
   name: string;
   patternName: string;
-  username: string | null;
+  profileHref: string | null;
   avatar: string | null;
   patternId: number;
 }) {
@@ -108,9 +109,9 @@ function ForYouPostHeader({
 
   return (
     <View className="flex-row items-center justify-between px-4 py-3">
-      {username
+      {profileHref
         ? (
-            <Link href={`/user/${username}` as never} asChild>
+            <Link href={profileHref as never} asChild>
               <Pressable className="min-w-0 flex-1">
                 {identity}
               </Pressable>
@@ -136,6 +137,7 @@ export function ForYouPost({ item }: { item: PatternHighlight }) {
   const author = pattern.pattern_author;
   const user = author?.users[0];
   const designer = author?.name || user?.username || pattern.name;
+  const profileHref = designerProfileHref(author);
   const notes = pattern.notes_html ? stripHtml(pattern.notes_html) : '';
   const relative = relativeDate(item.timeline_date);
   const favorites = countLabel(pattern.favorites_count);
@@ -148,7 +150,7 @@ export function ForYouPost({ item }: { item: PatternHighlight }) {
       <ForYouPostHeader
         name={designer}
         patternName={pattern.name}
-        username={user?.username ?? null}
+        profileHref={profileHref}
         avatar={user?.small_photo_url ?? user?.photo_url ?? null}
         patternId={pattern.id}
       />

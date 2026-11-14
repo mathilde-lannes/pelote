@@ -315,6 +315,187 @@ export async function fetchProjectsList(
   };
 }
 
+export type DesignerPatternsPage = {
+  patterns: RavelryPattern[];
+  page: number;
+  pageSize: number;
+  pageCount: number;
+  totalResults: number | null;
+};
+
+type DesignerSearchHit = {
+  id?: number;
+  permalink?: string;
+  name?: string;
+  users?: { username?: string }[];
+};
+
+function designerSlugKey(value: string): string {
+  return value.trim().toLowerCase().replace(/[\s_]+/g, '-');
+}
+
+function designerMatchesQuery(designer: DesignerSearchHit, query: string): boolean {
+  const needle = query.trim().toLowerCase();
+  const slug = designerSlugKey(query);
+  if (!needle)
+    return false;
+  const permalink = designer.permalink?.trim().toLowerCase() ?? '';
+  const name = designer.name?.trim().toLowerCase() ?? '';
+  const users = designer.users ?? [];
+  return permalink === needle
+    || permalink === slug
+    || designerSlugKey(permalink) === slug
+    || name === needle
+    || designerSlugKey(name) === slug
+    || users.some((user) => {
+      const username = user.username?.trim().toLowerCase() ?? '';
+      return username === needle || designerSlugKey(username) === slug;
+    });
+}
+
+/** Documented: GET designers/{id}.json → designer. */
+export async function fetchDesigner(id: number): Promise<DesignerSearchHit | null> {
+  if (!Number.isFinite(id) || id <= 0)
+    return null;
+  try {
+    const { data } = await client.get(`designers/${id}.json`);
+    const designer = data.designer ?? data;
+    return designer && typeof designer === 'object' ? designer : null;
+  }
+  catch {
+    return null;
+  }
+}
+
+/**
+ * Resolve the designer permalink used by pattern search (`designer=` filter on
+ * https://www.ravelry.com/patterns/search).
+ */
+export async function resolveDesignerPermalink(
+  usernameOrPermalink: string,
+): Promise<string> {
+  const q = usernameOrPermalink.trim();
+  if (!q)
+    return q;
+  try {
+    const { data } = await client.get('designers/search.json', {
+      params: { query: q },
+    });
+    const designers: DesignerSearchHit[] = Array.isArray(data.designers)
+      ? data.designers
+      : [];
+    const match = designers.find(designer => designerMatchesQuery(designer, q));
+    const permalink = typeof match?.permalink === 'string'
+      ? match.permalink.trim()
+      : '';
+    return permalink || q;
+  }
+  catch {
+    return q;
+  }
+}
+
+/**
+ * Prefer an explicit designer permalink / id from a pattern card, then fall back
+ * to resolving from the profile username. Brand accounts (e.g. LE KNIT) often
+ * use a different permalink than the linked login username.
+ */
+export async function resolveDesignerPermalinkForProfile(options: {
+  username: string;
+  designerPermalink?: string | null;
+  designerId?: number | null;
+}): Promise<string> {
+  const explicit = options.designerPermalink?.trim();
+  if (explicit)
+    return explicit;
+
+  const designerId = options.designerId;
+  if (typeof designerId === 'number' && designerId > 0) {
+    const designer = await fetchDesigner(designerId);
+    const permalink = designer?.permalink?.trim();
+    if (permalink)
+      return permalink;
+  }
+
+  return resolveDesignerPermalink(options.username);
+}
+
+/**
+ * Patterns by designer via site search filter `designer`, same as
+ * https://www.ravelry.com/patterns/search?designer= — documented filter family
+ * for `GET /patterns/search.json`.
+ */
+export async function fetchPatternsByDesigner(
+  designer: string,
+  options?: { page?: number; pageSize?: number; permalink?: string },
+): Promise<DesignerPatternsPage> {
+  const page = options?.page ?? 1;
+  const pageSize = options?.pageSize ?? 48;
+  const permalink = (options?.permalink ?? designer).trim() || designer;
+  const { data } = await client.get('patterns/search.json', {
+    params: {
+      designer: permalink,
+      page,
+      page_size: pageSize,
+    },
+  });
+  const list = data.patterns ?? [];
+  const patterns = (Array.isArray(list) ? list : [])
+    .map((raw: unknown) => normalizePattern(raw))
+    .filter((pattern: RavelryPattern | null): pattern is RavelryPattern =>
+      Boolean(pattern),
+    );
+  const paginator = data.paginator ?? {};
+  const pageCountRaw = paginator.page_count ?? paginator.last_page ?? 1;
+  const pageCount = Number(pageCountRaw);
+  const totalRaw = paginator.results;
+  const totalResults
+    = typeof totalRaw === 'number' && Number.isFinite(totalRaw)
+      ? totalRaw
+      : null;
+
+  return {
+    patterns,
+    page,
+    pageSize,
+    pageCount: Number.isFinite(pageCount) && pageCount > 0 ? pageCount : 1,
+    totalResults,
+  };
+}
+
+/**
+ * Try several designer= candidates (permalink, username, …) until one returns
+ * patterns. Brand designers often need the permalink, not the login username.
+ */
+export async function fetchPatternsByDesignerCandidates(
+  candidates: string[],
+  options?: { page?: number; pageSize?: number },
+): Promise<DesignerPatternsPage & { permalinkUsed: string }> {
+  const unique = [...new Set(
+    candidates.map(value => value.trim()).filter(Boolean),
+  )];
+  let last: DesignerPatternsPage = {
+    patterns: [],
+    page: options?.page ?? 1,
+    pageSize: options?.pageSize ?? 48,
+    pageCount: 1,
+    totalResults: 0,
+  };
+  let permalinkUsed = unique[0] ?? '';
+
+  for (const candidate of unique) {
+    last = await fetchPatternsByDesigner(candidate, {
+      ...options,
+      permalink: candidate,
+    });
+    permalinkUsed = candidate;
+    if (last.patterns.length > 0 || (last.totalResults ?? 0) > 0)
+      return { ...last, permalinkUsed };
+  }
+
+  return { ...last, permalinkUsed };
+}
+
 export type FriendsActivityPage = {
   activities: FriendActivity[];
   page: number;
