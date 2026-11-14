@@ -1,4 +1,5 @@
 import type { RavelryPattern } from './api';
+import type { RavelryPerson } from '@/lib/ravelry/types';
 import { useScrollToTop } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import * as React from 'react';
@@ -12,12 +13,15 @@ import {
   useModal,
 } from '@/components/ui';
 import { useAuthStore } from '@/features/auth/use-auth-store';
+import { usePeopleSearch } from '@/features/friends/api';
+import { userProfileHref } from '@/features/profile/designer-profile-href';
 import {
   usePatternSearch,
   usePatternSearchSuggestions,
   useRecentlyPopularPatterns,
 } from './api';
 import { ExploreFiltersSheet } from './components/explore-filters-sheet';
+import { ExplorePersonRow } from './components/explore-person-row';
 import { ExploreSearchBar } from './components/explore-search-bar';
 import { ExploreSearchPanel } from './components/explore-search-panel';
 import { PatternGrid } from './components/pattern-grid';
@@ -106,6 +110,14 @@ export function ExploreScreen() {
     variables: { query: debouncedDraft, filters },
     enabled: Boolean(user) && showingOverlay && debouncedDraft.length > 0,
   });
+  const peopleSuggestQuery = usePeopleSearch({
+    variables: { query: debouncedDraft },
+    enabled: Boolean(user) && showingOverlay && debouncedDraft.length > 0,
+  });
+  const peopleResultsQuery = usePeopleSearch({
+    variables: { query: committedQuery },
+    enabled: Boolean(user) && activeSearch,
+  });
 
   const popularPatterns = React.useMemo(
     () => (popularQuery.data?.pages ?? []).flatMap(page => page.patterns),
@@ -115,6 +127,7 @@ export function ExploreScreen() {
     () => (searchResultsQuery.data?.pages ?? []).flatMap(page => page.patterns),
     [searchResultsQuery.data],
   );
+  const resultPeople = peopleResultsQuery.data ?? [];
 
   const filteredRecents = React.useMemo(
     () => fuzzyFilter(recents, draft, item => item.query, 12),
@@ -164,11 +177,42 @@ export function ExploreScreen() {
     router.push(href as never);
   }, [draft, remember, router]);
 
+  const onSelectPerson = React.useCallback((person: RavelryPerson) => {
+    const q = draft.trim() || person.username;
+    if (q)
+      remember(q);
+    setIsFocused(false);
+    inputRef.current?.blur();
+    router.push(userProfileHref(person.username, '/search') as never);
+  }, [draft, remember, router]);
+
   const hrefForSearchResult = React.useCallback(
     (pattern: RavelryPattern) =>
       searchResultsFeedHref(committedQuery, pattern.id),
     [committedQuery],
   );
+
+  const searchResultsHeader = React.useMemo(() => (
+    <View>
+      <SectionTitle title={committedQuery} />
+      {resultPeople.length
+        ? (
+            <View className="border-b border-ink-300 px-4 pb-2">
+              <Text className="mb-2 mt-3 text-xs font-medium tracking-wide text-fog-500 uppercase">
+                People
+              </Text>
+              {resultPeople.slice(0, 6).map(person => (
+                <ExplorePersonRow
+                  key={person.id}
+                  person={person}
+                  onPress={() => onSelectPerson(person)}
+                />
+              ))}
+            </View>
+          )
+        : null}
+    </View>
+  ), [committedQuery, onSelectPerson, resultPeople]);
 
   const onPopularEndReached = React.useCallback(() => {
     if (popularQuery.hasNextPage && !popularQuery.isFetchingNextPage)
@@ -186,41 +230,52 @@ export function ExploreScreen() {
     body = (
       <ExploreSearchPanel
         recents={filteredRecents}
+        people={peopleSuggestQuery.data ?? []}
+        peoplePending={peopleSuggestQuery.isPending || peopleSuggestQuery.isFetching}
         suggestions={suggestionsQuery.data?.patterns ?? []}
         suggestionsPending={suggestionsQuery.isPending || suggestionsQuery.isFetching}
         query={debouncedDraft}
         onSelectRecent={commitSearch}
         onRemoveRecent={remove}
         onClearRecents={clear}
+        onSelectPerson={onSelectPerson}
         onSelectPattern={onSelectPattern}
       />
     );
   }
   else if (activeSearch) {
-    if (searchResultsQuery.isPending && !resultPatterns.length) {
+    if (
+      (searchResultsQuery.isPending && !resultPatterns.length)
+      && (peopleResultsQuery.isPending && !resultPeople.length)
+    ) {
       body = <PatternGridSkeleton headerTitle={committedQuery} />;
     }
-    else if (searchResultsQuery.isError && !resultPatterns.length) {
+    else if (
+      searchResultsQuery.isError
+      && !resultPatterns.length
+      && !resultPeople.length
+    ) {
       body = (
         <>
           <SectionTitle title={committedQuery} />
           <ExploreStatus
-            title="Couldn’t search patterns"
+            title="Couldn’t search"
             body="Check your connection and try again."
             onRetry={() => {
               void searchResultsQuery.refetch();
+              void peopleResultsQuery.refetch();
             }}
           />
         </>
       );
     }
-    else if (!resultPatterns.length) {
+    else if (!resultPatterns.length && !resultPeople.length) {
       body = (
         <>
           <SectionTitle title={committedQuery} />
           <ExploreStatus
-            title="No patterns found"
-            body={`Nothing close to “${committedQuery}”. Try a shorter or different spelling.`}
+            title="No results"
+            body={`Nothing close to “${committedQuery}”. Try a username, designer, or shorter spelling.`}
           />
         </>
       );
@@ -230,11 +285,12 @@ export function ExploreScreen() {
         <PatternGrid
           listRef={listRef}
           patterns={resultPatterns}
-          ListHeaderComponent={<SectionTitle title={committedQuery} />}
+          ListHeaderComponent={searchResultsHeader}
           onEndReached={onResultsEndReached}
           refreshing={searchResultsQuery.isRefetching && !searchResultsQuery.isFetchingNextPage}
           onRefresh={() => {
             void searchResultsQuery.refetch();
+            void peopleResultsQuery.refetch();
           }}
           fetchingNextPage={searchResultsQuery.isFetchingNextPage}
           hrefForPattern={hrefForSearchResult}

@@ -29,7 +29,7 @@ export function ExploreSearchBar({
   inputRef,
 }: Props) {
   return (
-    <View className="flex-row items-center gap-2 px-3 py-2">
+    <View className="flex-row items-center gap-2 px-3 pt-2 pb-3">
       <View className="min-w-0 flex-1 flex-row items-center rounded-full bg-ink-200 px-3.5">
         <Search color={colors.fog[400]} width={18} height={18} strokeWidth={2} />
         <TextInput
@@ -46,7 +46,7 @@ export function ExploreSearchBar({
           placeholder="Search"
           placeholderTextColor={colors.fog[400]}
           className="ml-2 min-w-0 flex-1 py-2.5 text-base text-white"
-          accessibilityLabel="Search patterns"
+          accessibilityLabel="Search patterns and people"
         />
         {value.length > 0
           ? (
