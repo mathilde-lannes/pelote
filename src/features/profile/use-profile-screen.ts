@@ -41,7 +41,8 @@ export function useProfileScreen() {
   });
   const favoritesQuery = usePersonFavorites({
     variables: { username },
-    enabled: Boolean(username),
+    // Favourites tab is only for the signed-in user's own profile.
+    enabled: Boolean(username) && isOwnProfile,
   });
   const designsQuery = useDesignerPatterns({
     variables: {
@@ -62,7 +63,8 @@ export function useProfileScreen() {
 
   const [tab, setTab] = React.useState<ProfileTab>('projects');
   const activeTab
-    = tab === 'designs' && !hasDesigns
+    = (tab === 'favourites' && !isOwnProfile)
+      || (tab === 'designs' && !hasDesigns)
       ? 'projects'
       : tab;
 

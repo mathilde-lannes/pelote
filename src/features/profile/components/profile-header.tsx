@@ -21,6 +21,7 @@ type Props = {
   designsLoading: boolean;
   tab: ProfileTab;
   onTabChange: (tab: ProfileTab) => void;
+  showFavouritesTab: boolean;
   showDesignsTab: boolean;
   showSettings: boolean;
 };
@@ -108,14 +109,17 @@ export function ProfileHeader({
   designsLoading,
   tab,
   onTabChange,
+  showFavouritesTab,
   showDesignsTab,
   showSettings,
 }: Props) {
   const router = useRouter();
   const initial = username.slice(0, 1).toUpperCase() || '?';
-  const tabs: ProfileTab[] = showDesignsTab
-    ? ['projects', 'favourites', 'designs']
-    : ['projects', 'favourites'];
+  const tabs: ProfileTab[] = [
+    'projects',
+    ...(showFavouritesTab ? (['favourites'] as const) : []),
+    ...(showDesignsTab ? (['designs'] as const) : []),
+  ];
   const showDesignsStat
     = designsLoading || (designCount != null && designCount > 0);
 
@@ -158,7 +162,15 @@ export function ProfileHeader({
           </View>
           <View className="mt-3 flex-row gap-6">
             <Stat count={projectCount} label="projects" loading={projectsLoading} />
-            <Stat count={favouriteCount} label="favourites" loading={favouritesLoading} />
+            {showFavouritesTab
+              ? (
+                  <Stat
+                    count={favouriteCount}
+                    label="favourites"
+                    loading={favouritesLoading}
+                  />
+                )
+              : null}
             {showDesignsStat
               ? <Stat count={designCount} label="designs" loading={designsLoading} />
               : null}

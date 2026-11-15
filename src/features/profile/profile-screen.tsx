@@ -58,6 +58,7 @@ export function ProfileScreen() {
       designsLoading={profile.designsPending}
       tab={profile.activeTab}
       onTabChange={profile.setTab}
+      showFavouritesTab={profile.isOwnProfile}
       showDesignsTab={profile.hasDesigns}
       showSettings={profile.isOwnProfile}
     />
