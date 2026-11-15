@@ -1,6 +1,6 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
-import type { RavelryProject, RavelryProjectPack } from '@/lib/ravelry/types';
+import type { RavelryProjectPack } from '@/lib/ravelry/types';
 import type { RavelryYarnSummary } from '@/lib/ravelry/api';
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Image } from 'expo-image';
@@ -15,14 +15,32 @@ import {
 import colors from '@/components/ui/colors';
 import { Modal, Text } from '@/components/ui';
 import { Yarn } from '@/components/ui/icons';
+import { usePattern } from '@/features/explore/api';
 import { useProject, useYarnsByIds } from '@/features/feed/api';
 import { bestPhotoUrl } from '@/lib/ravelry/api';
 
-type Props = {
+type ProjectSource = {
+  source: 'project';
+  username: string;
+  projectId: number;
+  title?: string | null;
+};
+
+type PatternSource = {
+  source: 'pattern';
+  patternId: number;
+  title?: string | null;
+};
+
+type YarnPackSheetProps = (ProjectSource | PatternSource) & {
+  /** Only fetch while the sheet has been opened at least once. */
+  enabled?: boolean;
+};
+
+type ProjectYarnSheetProps = {
   username: string;
   projectId: number;
   projectName?: string | null;
-  /** Only fetch while the sheet has been opened at least once. */
   enabled?: boolean;
 };
 
@@ -275,17 +293,35 @@ function ActivePackDetails({
   );
 }
 
-export function ProjectYarnSheet({
-  ref,
-  username,
-  projectId,
-  projectName,
-  enabled = false,
-}: Props & { ref?: React.RefObject<BottomSheetModal | null> }) {
-  const [activeIndex, setActiveIndex] = React.useState(0);
-  const query = useProject({
-    variables: { username, id: String(projectId) },
-    enabled: enabled && Boolean(username) && projectId > 0,
+function useYarnPackSource(
+  props: YarnPackSheetProps,
+): {
+  packs: RavelryProjectPack[];
+  title: string;
+  isPending: boolean;
+  isError: boolean;
+  ready: boolean;
+  entityKey: string | number | undefined;
+  emptyMessage: string;
+} {
+  const enabled = props.enabled ?? false;
+  const isProject = props.source === 'project';
+  const projectQuery = useProject({
+    variables: {
+      username: isProject ? props.username : '',
+      id: String(isProject ? props.projectId : 0),
+    },
+    enabled: enabled && isProject && Boolean(props.username) && props.projectId > 0,
+    retry: (failureCount, error) => {
+      const status = (error as { response?: { status?: number } })?.response?.status;
+      if (status === 403 || status === 404)
+        return false;
+      return failureCount < 2;
+    },
+  });
+  const patternQuery = usePattern({
+    variables: { id: !isProject ? props.patternId : 0 },
+    enabled: enabled && !isProject && props.patternId > 0,
     retry: (failureCount, error) => {
       const status = (error as { response?: { status?: number } })?.response?.status;
       if (status === 403 || status === 404)
@@ -294,8 +330,47 @@ export function ProjectYarnSheet({
     },
   });
 
-  const project = query.data as RavelryProject | undefined;
-  const packs = project?.packs ?? [];
+  if (isProject) {
+    const project = projectQuery.data;
+    return {
+      packs: project?.packs ?? [],
+      title: project?.name || props.title || 'Yarn',
+      isPending: projectQuery.isPending,
+      isError: projectQuery.isError,
+      ready: Boolean(project),
+      entityKey: project?.id,
+      emptyMessage: 'No yarn listed for this project.',
+    };
+  }
+
+  const pattern = patternQuery.data;
+  return {
+    packs: pattern?.packs ?? [],
+    title: pattern?.name || props.title || 'Yarn',
+    isPending: patternQuery.isPending,
+    isError: patternQuery.isError,
+    ready: Boolean(pattern),
+    entityKey: pattern?.id,
+    emptyMessage: 'No yarn listed for this pattern.',
+  };
+}
+
+export function YarnPackSheet({
+  ref,
+  enabled = false,
+  ...source
+}: YarnPackSheetProps & { ref?: React.RefObject<BottomSheetModal | null> }) {
+  const [activeIndex, setActiveIndex] = React.useState(0);
+  const {
+    packs,
+    title,
+    isPending,
+    isError,
+    ready,
+    entityKey,
+    emptyMessage,
+  } = useYarnPackSource({ ...source, enabled });
+
   const yarnIds = React.useMemo(
     () => [...new Set(
       packs
@@ -328,11 +403,10 @@ export function ProjectYarnSheet({
   const catalogYarn = activePack
     ? resolveCatalogYarn(activePack, yarnsById)
     : null;
-  const title = project?.name || projectName || 'Yarn';
 
   React.useEffect(() => {
     setActiveIndex(0);
-  }, [project?.id]);
+  }, [entityKey]);
 
   const renderHandle = React.useCallback(
     () => (
@@ -360,7 +434,7 @@ export function ProjectYarnSheet({
         contentContainerStyle={{ paddingBottom: 32 }}
         className="bg-black"
       >
-        {query.isPending && !project
+        {isPending && !ready
           ? (
               <View className="items-center py-10">
                 <ActivityIndicator color="#ffffff" />
@@ -368,7 +442,7 @@ export function ProjectYarnSheet({
             )
           : null}
 
-        {query.isError && !project
+        {isError && !ready
           ? (
               <View className="px-5 py-8">
                 <Text className="text-center text-sm text-fog-400">
@@ -378,11 +452,11 @@ export function ProjectYarnSheet({
             )
           : null}
 
-        {project && !packs.length
+        {ready && !packs.length
           ? (
               <View className="px-5 py-8">
                 <Text className="text-center text-sm text-fog-400">
-                  No yarn listed for this project.
+                  {emptyMessage}
                 </Text>
               </View>
             )
@@ -409,5 +483,25 @@ export function ProjectYarnSheet({
           : null}
       </BottomSheetScrollView>
     </Modal>
+  );
+}
+
+/** @deprecated Prefer YarnPackSheet with source="project". */
+export function ProjectYarnSheet({
+  ref,
+  username,
+  projectId,
+  projectName,
+  enabled = false,
+}: ProjectYarnSheetProps & { ref?: React.RefObject<BottomSheetModal | null> }) {
+  return (
+    <YarnPackSheet
+      ref={ref}
+      source="project"
+      username={username}
+      projectId={projectId}
+      title={projectName}
+      enabled={enabled}
+    />
   );
 }

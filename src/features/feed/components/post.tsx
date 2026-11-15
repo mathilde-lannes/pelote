@@ -19,7 +19,7 @@ import { patternProjectsHref } from '@/features/explore/pattern-href';
 import { PatternInfoSheet } from '@/features/feed/components/pattern-info-sheet';
 import { PhotoCarousel } from '@/features/feed/components/photo-carousel';
 import { ProjectInfoSheet } from '@/features/feed/components/project-info-sheet';
-import { ProjectYarnSheet } from '@/features/feed/components/project-yarn-sheet';
+import { YarnPackSheet } from '@/features/feed/components/project-yarn-sheet';
 import { UnfavoriteConfirmSheet } from '@/features/feed/components/unfavorite-confirm-sheet';
 import { formatCompactCount } from '@/features/feed/format-compact-count';
 import { formatRelative } from '@/features/feed/format-relative';
@@ -416,17 +416,23 @@ function ProjectInfoTrailing({
   );
 }
 
-function ProjectYarnStat({
-  username,
-  projectId,
-  projectName,
-  count,
-}: {
-  username: string;
-  projectId: number;
-  projectName: string;
-  count: string | null;
-}) {
+function YarnStat(
+  props: {
+    count: string | null;
+  } & (
+    | {
+      source: 'pattern';
+      patternId: number;
+      title: string;
+    }
+    | {
+      source: 'project';
+      username: string;
+      projectId: number;
+      title: string;
+    }
+  ),
+) {
   const modal = useModal();
   const [opened, setOpened] = React.useState(false);
 
@@ -439,17 +445,30 @@ function ProjectYarnStat({
     <>
       <Stat
         icon={<Yarn color="#ffffff" />}
-        count={count}
+        count={props.count}
         label="Yarn"
         onPress={onPress}
       />
-      <ProjectYarnSheet
-        ref={modal.ref}
-        username={username}
-        projectId={projectId}
-        projectName={projectName}
-        enabled={opened}
-      />
+      {props.source === 'pattern'
+        ? (
+            <YarnPackSheet
+              ref={modal.ref}
+              source="pattern"
+              patternId={props.patternId}
+              title={props.title}
+              enabled={opened}
+            />
+          )
+        : (
+            <YarnPackSheet
+              ref={modal.ref}
+              source="project"
+              username={props.username}
+              projectId={props.projectId}
+              title={props.title}
+              enabled={opened}
+            />
+          )}
     </>
   );
 }
@@ -564,23 +583,27 @@ export function Post(props: PostProps) {
             : null
         }
         comments={countLabel(commentsCount)}
-        yarns={
-          props.variant === 'pattern'
-            ? countLabel(props.packsCount)
-            : null
-        }
+        yarns={null}
         projectsHref={projectsHref}
         yarnAction={
-          props.variant === 'project'
+          props.variant === 'pattern'
             ? (
-                <ProjectYarnStat
-                  username={props.ownerUsername}
-                  projectId={props.projectId}
-                  projectName={props.projectName}
+                <YarnStat
+                  source="pattern"
+                  patternId={props.patternId}
+                  title={props.patternName}
                   count={countLabel(props.packsCount)}
                 />
               )
-            : undefined
+            : (
+                <YarnStat
+                  source="project"
+                  username={props.ownerUsername}
+                  projectId={props.projectId}
+                  title={props.projectName}
+                  count={countLabel(props.packsCount)}
+                />
+              )
         }
       />
       <PostCaption

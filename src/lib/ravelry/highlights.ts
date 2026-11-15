@@ -6,6 +6,7 @@ import type {
   RavelryPerson,
   RavelryPhoto,
 } from './types';
+import { normalizePacks } from './packs';
 
 /** Documented maximum for `days` on GET /patterns/highlights.json. */
 export const HIGHLIGHT_DAYS = 90;
@@ -176,7 +177,7 @@ export function normalizePattern(raw: unknown): RavelryPattern | null {
   const projects = raw.projects_count;
   const queued = raw.queued_projects_count;
   const comments = raw.comments_count;
-  const packs = Array.isArray(raw.packs) ? raw.packs.length : null;
+  const packs = normalizePacks(raw.packs);
   // Pattern#full uses pattern_author; Pattern#list (search) uses designer.
   const author = normalizeAuthor(raw.pattern_author)
     ?? normalizeAuthor(raw.designer);
@@ -194,7 +195,10 @@ export function normalizePattern(raw: unknown): RavelryPattern | null {
     projects_count: typeof projects === 'number' ? projects : null,
     queued_projects_count: typeof queued === 'number' ? queued : null,
     comments_count: typeof comments === 'number' ? comments : null,
-    packs_count: packs,
+    packs_count: packs.length
+      ? packs.length
+      : (typeof raw.packs_count === 'number' ? raw.packs_count : null),
+    packs: packs.length ? packs : undefined,
     free: typeof raw.free === 'boolean' ? raw.free : null,
     price: asString(raw.price)
       ?? (typeof raw.price === 'number' && Number.isFinite(raw.price)

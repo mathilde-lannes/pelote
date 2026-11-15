@@ -18,7 +18,7 @@ export type RavelryPhoto = {
   shelved_url?: string | null;
 };
 
-/** Yarn pack summary from Project#full `packs`. */
+/** Yarn pack summary from Pattern#full / Project#full `packs`. */
 export type RavelryProjectPack = {
   /** Linked catalog yarn id for Yarns#show / yarns.json?ids=. */
   yarn_id?: number | null;
@@ -147,6 +147,8 @@ export type RavelryPattern = {
   comments_count?: number | null;
   /** Yarn / pack rows when present on Pattern#full. */
   packs_count?: number | null;
+  /** Pack rows from Pattern#full (recommended / listed yarns). */
+  packs?: RavelryProjectPack[];
   free?: boolean | null;
   /** Pattern#full price amount (string or number from API). */
   price?: string | null;

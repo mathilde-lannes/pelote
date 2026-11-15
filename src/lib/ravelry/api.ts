@@ -31,6 +31,7 @@ import {
   patternsFromListPayload,
   sliceHighlightPage,
 } from './highlights';
+import { normalizePack } from './packs';
 
 export { normalizeCreatedAt, resolveActivityType } from './activity-utils';
 export { favoriteLookupKey, normalizeFavorite } from './favorites-utils';
@@ -238,102 +239,6 @@ function normalizeProjectNeedle(raw: any): RavelryNeedleSize | null {
   };
 }
 
-function normalizeProjectPack(raw: any): RavelryProjectPack | null {
-  if (!raw || typeof raw !== 'object')
-    return null;
-  const yarnIdRaw = Number(raw.yarn_id ?? raw.yarn?.id);
-  const yarnId
-    = Number.isFinite(yarnIdRaw) && yarnIdRaw > 0 ? yarnIdRaw : null;
-  const yarnName
-    = (typeof raw.yarn_name === 'string' && raw.yarn_name.trim())
-      || (typeof raw.yarn?.name === 'string' && raw.yarn.name.trim())
-      || null;
-  const company
-    = (typeof raw.yarn_company_name === 'string' && raw.yarn_company_name.trim())
-      || (typeof raw.yarn?.yarn_company_name === 'string'
-        && raw.yarn.yarn_company_name.trim())
-      || (typeof raw.yarn?.yarn_company?.name === 'string'
-        && raw.yarn.yarn_company.name.trim())
-      || (typeof raw.yarn_company?.name === 'string' && raw.yarn_company.name.trim())
-      || null;
-  const colorway
-    = typeof raw.colorway === 'string' && raw.colorway.trim()
-      ? raw.colorway.trim()
-      : null;
-  const colorFamily
-    = (typeof raw.color_family?.name === 'string' && raw.color_family.name.trim())
-      || (typeof raw.color_family_name === 'string' && raw.color_family_name.trim())
-      || null;
-  const yarnWeight
-    = (typeof raw.yarn_weight?.name === 'string' && raw.yarn_weight.name.trim())
-      || (typeof raw.yarn?.yarn_weight?.name === 'string'
-        && raw.yarn.yarn_weight.name.trim())
-      || null;
-  const dyeLot
-    = typeof raw.dye_lot === 'string' && raw.dye_lot.trim()
-      ? raw.dye_lot.trim()
-      : null;
-  const skeinsRaw = raw.skeins ?? raw.total_skeins;
-  const skeins
-    = typeof skeinsRaw === 'number' && Number.isFinite(skeinsRaw)
-      ? skeinsRaw
-      : null;
-  const totalYards
-    = typeof raw.total_yards === 'number' && Number.isFinite(raw.total_yards)
-      ? raw.total_yards
-      : null;
-  const totalMeters
-    = typeof raw.total_meters === 'number' && Number.isFinite(raw.total_meters)
-      ? raw.total_meters
-      : null;
-  const shopName
-    = typeof raw.shop_name === 'string' && raw.shop_name.trim()
-      ? raw.shop_name.trim()
-      : null;
-  // User pack/stash photos only — catalog yarn photos belong on Yarn#full.
-  const photo
-    = normalizePhoto(raw.primary_photo)
-      ?? normalizePhoto(raw.first_photo)
-      ?? normalizePhoto(raw.photo)
-      ?? normalizePhoto(
-        Array.isArray(raw.photos) ? raw.photos[0] : null,
-      )
-      ?? normalizePhoto(raw.stash?.first_photo)
-      ?? normalizePhoto(
-        Array.isArray(raw.stash?.photos) ? raw.stash.photos[0] : null,
-      );
-  if (
-    yarnId == null
-    && !yarnName
-    && !company
-    && !colorway
-    && !colorFamily
-    && !yarnWeight
-    && !dyeLot
-    && skeins == null
-    && totalYards == null
-    && totalMeters == null
-    && !shopName
-    && !photo
-  ) {
-    return null;
-  }
-  return {
-    yarn_id: yarnId,
-    yarn_name: yarnName,
-    yarn_company_name: company,
-    colorway,
-    color_family_name: colorFamily,
-    yarn_weight_name: yarnWeight,
-    dye_lot: dyeLot,
-    skeins,
-    total_yards: totalYards,
-    total_meters: totalMeters,
-    shop_name: shopName,
-    photo,
-  };
-}
-
 function normalizeProject(raw: any): RavelryProject {
   const userRaw = raw.user ?? raw.person ?? null;
   const patternIdRaw = Number(raw.pattern_id ?? raw.pattern?.id);
@@ -353,7 +258,7 @@ function normalizeProject(raw: any): RavelryProject {
       entry != null,
     );
   const packs = (Array.isArray(raw.packs) ? raw.packs : [])
-    .map(normalizeProjectPack)
+    .map(normalizePack)
     .filter((entry: RavelryProjectPack | null): entry is RavelryProjectPack =>
       entry != null,
     );
