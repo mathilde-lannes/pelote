@@ -55,8 +55,8 @@ export const useYarnProjects = createQuery<
   { yarnId: number },
   AxiosError
 >({
-  // Bump when switching from ignored yarn_id to yarn= permalink facet.
-  queryKey: ['yarn-projects', 'v2-yarn-facet'],
+  // Bump when switching from yarn= to yarn-link= permalink facet.
+  queryKey: ['yarn-projects', 'v3-yarn-link'],
   fetcher: async (variables) => {
     const yarn = await fetchYarn(variables.yarnId);
     const yarnKey = {

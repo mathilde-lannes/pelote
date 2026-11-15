@@ -1178,9 +1178,10 @@ export async function fetchColorwayStashPhotos(
 /**
  * Projects that list this catalog yarn.
  *
- * Use `GET projects/search.json` with the site `yarn` facet (permalink/name),
- * same family as pattern search’s `pattern=` filter. Numeric `yarn_id` is
- * silently ignored by the API and returns the unfiltered project corpus.
+ * Use `GET projects/search.json` with the site `yarn-link` facet (library
+ * permalink), same as https://www.ravelry.com/projects/search#yarn-link=…
+ * and the yarn page “projects” advanced filter. Plain `yarn=` / numeric
+ * `yarn_id` do not scope results correctly.
  */
 export async function fetchYarnProjects(
   yarn: { id: number; permalink?: string | null; name?: string | null },
@@ -1197,11 +1198,23 @@ export async function fetchYarnProjects(
     params: {
       page,
       page_size: pageSize,
-      // Same filter family as the website project search “yarn” facet.
+      // Website project search yarn filter (`#yarn-link=`).
+      'yarn-link': yarnKey,
+    },
+  });
+  const linked = projectsPageFromPayload(data, page, pageSize);
+  if (linked.projects.length > 0 || (linked.totalResults ?? 0) > 0)
+    return linked;
+
+  // Older clients used `yarn=`; keep as a soft fallback.
+  const { data: fallback } = await client.get('projects/search.json', {
+    params: {
+      page,
+      page_size: pageSize,
       yarn: yarnKey,
     },
   });
-  return projectsPageFromPayload(data, page, pageSize);
+  return projectsPageFromPayload(fallback, page, pageSize);
 }
 
 /**
