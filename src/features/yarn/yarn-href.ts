@@ -26,6 +26,14 @@ export function yarnProjectFeedHref(
   return `${yarnHref(yarnId, pathname)}/${projectId}`;
 }
 
+export function yarnColorwayFeedHref(
+  yarnId: number,
+  colorwayId: number,
+  pathname?: string | null,
+): string {
+  return `${yarnHref(yarnId, pathname)}/colorway/${colorwayId}`;
+}
+
 export function dyerHref(
   companyId: number,
   pathname?: string | null,

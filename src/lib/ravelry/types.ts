@@ -24,6 +24,8 @@ export type RavelryYarnCompany = {
   name: string;
   permalink?: string | null;
   yarn_count?: number | null;
+  /** Brand logo when present on YarnCompany#full. */
+  logo_url?: string | null;
 };
 
 /** Catalog yarn from Yarns#show / yarns.json / yarns/search. */
@@ -39,6 +41,36 @@ export type RavelryYarn = {
   photo?: RavelryPhoto | null;
   photos?: RavelryPhoto[];
   yarn_weight_name?: string | null;
+  /** Fibre blend summary, e.g. `75% Merino, 25% Nylon`. */
+  fiber_description?: string | null;
+  grams?: number | null;
+  yardage?: number | null;
+  wpi?: number | null;
+  min_gauge?: number | null;
+  max_gauge?: number | null;
+  gauge_divisor?: number | null;
+  machine_washable?: boolean | null;
+  discontinued?: boolean | null;
+  texture?: string | null;
+};
+
+/**
+ * Named colour variant from `GET yarns/{id}.json?include=colorways`
+ * (Colorway#full — includes `photo_url` when Ravelry has a representative shot).
+ */
+export type RavelryColorway = {
+  id: number;
+  name: string;
+  code?: string | null;
+  yarn_id?: number | null;
+  /** `null`/absent when active; `"discontinued"` when retired. */
+  current_status?: string | null;
+  projects_count?: number | null;
+  stashes_count?: number | null;
+  usage_count?: number | null;
+  /** Representative colorway image from Colorway#full `photo_url` / photos. */
+  photo?: RavelryPhoto | null;
+  photos?: RavelryPhoto[];
 };
 
 /** Yarn pack summary from Pattern#full / Project#full `packs`. */

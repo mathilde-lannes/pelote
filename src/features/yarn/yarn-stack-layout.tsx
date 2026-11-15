@@ -47,6 +47,12 @@ export function YarnStackLayout({ fallbackHref }: Props) {
           title: 'Posts',
         }}
       />
+      <Stack.Screen
+        name="colorway/[colorwayId]"
+        options={{
+          title: 'Colorways',
+        }}
+      />
     </Stack>
   );
 }

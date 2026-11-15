@@ -2,6 +2,7 @@
 export * from './add';
 export * from './arrow-right';
 export * from './bookmark';
+export * from './box';
 export * from './caret-down';
 export * from './chevron-down';
 export * from './comments';

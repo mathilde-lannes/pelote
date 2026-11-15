@@ -1,5 +1,7 @@
 import type { AxiosError } from 'axios';
 import type {
+  RavelryColorway,
+  RavelryPhoto,
   RavelryProject,
   RavelryYarn,
   RavelryYarnCompany,
@@ -8,13 +10,21 @@ import { createInfiniteQuery, createQuery } from 'react-query-kit';
 
 import { sortProjectsByRecent } from '@/features/profile/api';
 import {
+  fetchColorwayStashPhotos,
   fetchCompanyYarns,
   fetchYarn,
+  fetchYarnColorways,
   fetchYarnCompany,
   fetchYarnProjects,
 } from '@/lib/ravelry/api';
 
-export type { RavelryProject, RavelryYarn, RavelryYarnCompany };
+export type {
+  RavelryColorway,
+  RavelryPhoto,
+  RavelryProject,
+  RavelryYarn,
+  RavelryYarnCompany,
+};
 
 export type YarnProjectsResult = {
   projects: RavelryProject[];
@@ -45,9 +55,16 @@ export const useYarnProjects = createQuery<
   { yarnId: number },
   AxiosError
 >({
-  queryKey: ['yarn-projects', 'v1-projects-search'],
+  // Bump when switching from ignored yarn_id to yarn= permalink facet.
+  queryKey: ['yarn-projects', 'v2-yarn-facet'],
   fetcher: async (variables) => {
-    const first = await fetchYarnProjects(variables.yarnId, {
+    const yarn = await fetchYarn(variables.yarnId);
+    const yarnKey = {
+      id: yarn.id,
+      permalink: yarn.permalink,
+      name: yarn.name,
+    };
+    const first = await fetchYarnProjects(yarnKey, {
       page: 1,
       pageSize: PAGE_SIZE,
     });
@@ -55,7 +72,7 @@ export const useYarnProjects = createQuery<
     const lastPage = Math.min(first.pageCount, MAX_PROJECT_PAGES);
 
     for (let page = 2; page <= lastPage; page += 1) {
-      const next = await fetchYarnProjects(variables.yarnId, {
+      const next = await fetchYarnProjects(yarnKey, {
         page,
         pageSize: PAGE_SIZE,
       });
@@ -76,6 +93,34 @@ export const useYarnCompany = createQuery<
 >({
   queryKey: ['yarn-company'],
   fetcher: variables => fetchYarnCompany(variables.id),
+});
+
+export const useYarnColorways = createQuery<
+  RavelryColorway[],
+  { yarnId: number },
+  AxiosError
+>({
+  queryKey: ['yarn-colorways'],
+  fetcher: variables => fetchYarnColorways(variables.yarnId),
+});
+
+/** Stash photos when a colorway has no catalog photos (max 10). */
+export const useColorwayStashPhotos = createQuery<
+  RavelryPhoto[],
+  {
+    yarnId: number;
+    colorwayId: number;
+    colorwayName: string;
+  },
+  AxiosError
+>({
+  queryKey: ['colorway-stash-photos'],
+  fetcher: variables =>
+    fetchColorwayStashPhotos(variables.yarnId, {
+      colorwayId: variables.colorwayId,
+      colorwayName: variables.colorwayName,
+      limit: 10,
+    }),
 });
 
 export const useCompanyYarns = createInfiniteQuery<

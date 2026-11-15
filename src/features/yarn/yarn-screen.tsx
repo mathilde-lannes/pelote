@@ -1,4 +1,4 @@
-import type { RavelryProject } from './api';
+import type { RavelryColorway, RavelryProject } from './api';
 import { Image } from 'expo-image';
 import { Link, useLocalSearchParams, usePathname } from 'expo-router';
 import * as React from 'react';
@@ -17,13 +17,24 @@ import {
 } from '@/components/ui';
 import { formatCompactCount } from '@/features/feed/format-compact-count';
 import { bestPhotoUrl } from '@/lib/ravelry/api';
-import { useYarn, useYarnProjects } from './api';
-import { dyerHref, yarnProjectFeedHref } from './yarn-href';
+import {
+  useColorwayStashPhotos,
+  useYarn,
+  useYarnColorways,
+  useYarnProjects,
+} from './api';
+import {
+  dyerHref,
+  yarnColorwayFeedHref,
+  yarnProjectFeedHref,
+} from './yarn-href';
 
 const GRID_GAP = 2;
 const COLS = 3;
 const TILE
   = (Dimensions.get('window').width - GRID_GAP * (COLS - 1)) / COLS;
+
+type YarnTab = 'projects' | 'colorways';
 
 function StatColumn({
   value,
@@ -44,18 +55,66 @@ function StatColumn({
   );
 }
 
+function YarnTabs({
+  tab,
+  onTabChange,
+}: {
+  tab: YarnTab;
+  onTabChange: (tab: YarnTab) => void;
+}) {
+  const tabs: { key: YarnTab; label: string }[] = [
+    { key: 'projects', label: 'Projects' },
+    { key: 'colorways', label: 'Colorways' },
+  ];
+
+  return (
+    <View className="flex-row border-b border-ink-300">
+      {tabs.map(({ key, label }) => {
+        const selected = tab === key;
+        return (
+          <Pressable
+            key={key}
+            accessibilityRole="button"
+            accessibilityState={{ selected }}
+            onPress={() => onTabChange(key)}
+            className={`flex-1 items-center pt-3 ${
+              selected
+                ? 'border-b-2 border-white'
+                : 'border-b-2 border-transparent'
+            }`}
+          >
+            <Text
+              className={`pb-3 text-sm font-semibold ${
+                selected ? 'text-white' : 'text-fog-500'
+              }`}
+            >
+              {label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 function YarnHeader({
   name,
   dyerName,
   dyerLink,
   photoUrl,
   projectCount,
+  colorwayCount,
+  tab,
+  onTabChange,
 }: {
   name: string;
   dyerName: string | null;
   dyerLink: string | null;
   photoUrl: string | null;
   projectCount: number | null;
+  colorwayCount: number | null;
+  tab: YarnTab;
+  onTabChange: (tab: YarnTab) => void;
 }) {
   const initial = (name || '?').slice(0, 1).toUpperCase();
   const dyerLabel = dyerName
@@ -67,7 +126,7 @@ function YarnHeader({
     : null;
 
   return (
-    <View className="border-b border-ink-300 px-4 pt-2 pb-3">
+    <View className="px-4 pt-2">
       <View className="flex-row items-center gap-5 pb-2">
         {photoUrl
           ? (
@@ -99,9 +158,11 @@ function YarnHeader({
             : dyerLabel}
           <View className="mt-3 flex-row gap-6">
             <StatColumn value={projectCount} label="projects" />
+            <StatColumn value={colorwayCount} label="colorways" />
           </View>
         </View>
       </View>
+      <YarnTabs tab={tab} onTabChange={onTabChange} />
     </View>
   );
 }
@@ -144,11 +205,72 @@ function ProjectTile({
   );
 }
 
+function ColorwayTile({
+  yarnId,
+  colorway,
+}: {
+  yarnId: number;
+  colorway: RavelryColorway;
+}) {
+  const pathname = usePathname();
+  const catalogPhoto = colorway.photo ?? null;
+  const needsStash = !catalogPhoto;
+  const stashQuery = useColorwayStashPhotos({
+    variables: {
+      yarnId,
+      colorwayId: colorway.id,
+      colorwayName: colorway.name,
+    },
+    enabled: needsStash,
+  });
+  const uri = bestPhotoUrl(
+    catalogPhoto ?? stashQuery.data?.[0] ?? null,
+  );
+  const label = colorway.code
+    ? `${colorway.code} ${colorway.name}`
+    : colorway.name;
+  const href = yarnColorwayFeedHref(yarnId, colorway.id, pathname);
+
+  return (
+    <Link href={href as never} asChild>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        style={{ width: TILE, height: TILE }}
+        className="overflow-hidden bg-ink-200"
+      >
+        {needsStash && stashQuery.isPending && !uri
+          ? (
+              <View className="size-full items-center justify-center">
+                <ActivityIndicator color="#ffffff" />
+              </View>
+            )
+          : uri
+            ? (
+                <Image
+                  source={{ uri }}
+                  style={{ width: '100%', height: '100%' }}
+                  contentFit="cover"
+                />
+              )
+            : (
+                <View className="size-full items-center justify-center px-2">
+                  <Text className="text-center text-xs text-fog-400" numberOfLines={3}>
+                    {label}
+                  </Text>
+                </View>
+              )}
+      </Pressable>
+    </Link>
+  );
+}
+
 export function YarnScreen() {
   const pathname = usePathname();
   const params = useLocalSearchParams<{ id: string }>();
   const yarnId = Number(String(params.id ?? '').trim());
   const enabled = Number.isFinite(yarnId) && yarnId > 0;
+  const [tab, setTab] = React.useState<YarnTab>('projects');
 
   const yarnQuery = useYarn({
     variables: { id: yarnId },
@@ -158,12 +280,22 @@ export function YarnScreen() {
     variables: { yarnId },
     enabled,
   });
+  const colorwaysQuery = useYarnColorways({
+    variables: { yarnId },
+    enabled,
+  });
 
   const yarn = yarnQuery.data;
   const projects = projectsQuery.data?.projects ?? [];
-  const projectCount = projectsQuery.isPending
+  const colorways = colorwaysQuery.data ?? [];
+  const projectCount = projectsQuery.isPending && tab === 'projects'
     ? (yarn?.projects_count ?? null)
-    : (projects.length || yarn?.projects_count || null);
+    : (projectsQuery.data?.totalCount
+      ?? yarn?.projects_count
+      ?? (projects.length || null));
+  const colorwayCount = colorwaysQuery.isPending && tab === 'colorways'
+    ? null
+    : (colorwaysQuery.data?.length ?? null);
   const photoUrl = bestPhotoUrl(yarn?.photo ?? yarn?.photos?.[0] ?? null);
   const name = yarn?.name ?? 'Yarn';
   const dyerName = yarn?.yarn_company_name?.trim() || null;
@@ -182,10 +314,7 @@ export function YarnScreen() {
     );
   }
 
-  if (
-    (yarnQuery.isPending && !yarn)
-    && (projectsQuery.isPending && !projects.length)
-  ) {
+  if (yarnQuery.isPending && !yarn) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-black" edges={['bottom']}>
         <FocusAwareStatusBar />
@@ -201,12 +330,51 @@ export function YarnScreen() {
       dyerLink={dyerLink}
       photoUrl={photoUrl}
       projectCount={
-        yarnQuery.isPending && projectsQuery.isPending
+        yarnQuery.isPending && tab === 'projects' && projectsQuery.isPending
           ? null
           : (yarn?.projects_count ?? projectCount)
       }
+      colorwayCount={
+        tab === 'colorways' && colorwaysQuery.isPending
+          ? null
+          : colorwayCount
+      }
+      tab={tab}
+      onTabChange={setTab}
     />
   );
+
+  if (tab === 'colorways') {
+    return (
+      <SafeAreaView className="flex-1 bg-black" edges={['bottom']}>
+        <FocusAwareStatusBar />
+        <FlatList
+          data={colorways}
+          keyExtractor={item => String(item.id)}
+          numColumns={COLS}
+          columnWrapperStyle={{ gap: GRID_GAP }}
+          contentContainerStyle={{ gap: GRID_GAP, paddingBottom: 24 }}
+          ListHeaderComponent={header}
+          ListEmptyComponent={
+            colorwaysQuery.isPending
+              ? (
+                  <View className="items-center py-10">
+                    <ActivityIndicator color="#ffffff" />
+                  </View>
+                )
+              : (
+                  <Text className="mt-10 text-center text-sm text-fog-400">
+                    No colorways yet.
+                  </Text>
+                )
+          }
+          renderItem={({ item }) => (
+            <ColorwayTile yarnId={yarnId} colorway={item} />
+          )}
+        />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-black" edges={['bottom']}>

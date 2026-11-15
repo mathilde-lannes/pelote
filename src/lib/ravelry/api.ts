@@ -5,6 +5,7 @@ import type {
   FriendsListResponse,
   PatternHighlight,
   PeopleSearchResponse,
+  RavelryColorway,
   RavelryFavorite,
   RavelryFavoriteType,
   RavelryNeedleSize,
@@ -782,6 +783,11 @@ function normalizeYarnCompany(raw: any): RavelryYarnCompany | null {
   if (!name)
     return null;
   const yarnCountRaw = Number(raw?.yarn_count ?? raw?.yarns_count);
+  const logo
+    = (typeof raw?.logo_url === 'string' && raw.logo_url.trim())
+      || (typeof raw?.small_logo_url === 'string' && raw.small_logo_url.trim())
+      || (typeof raw?.photo_url === 'string' && raw.photo_url.trim())
+      || null;
   return {
     id,
     name,
@@ -793,6 +799,7 @@ function normalizeYarnCompany(raw: any): RavelryYarnCompany | null {
       Number.isFinite(yarnCountRaw) && yarnCountRaw >= 0
         ? yarnCountRaw
         : null,
+    logo_url: logo,
   };
 }
 
@@ -826,6 +833,29 @@ function normalizeYarn(raw: any): RavelryYarn | null {
     = (typeof raw?.yarn_weight?.name === 'string' && raw.yarn_weight.name.trim())
       || (typeof raw?.yarn_weight_name === 'string' && raw.yarn_weight_name.trim())
       || null;
+  const fiberParts: string[] = [];
+  if (Array.isArray(raw?.yarn_fibers)) {
+    for (const fiber of raw.yarn_fibers) {
+      const fiberName
+        = (typeof fiber?.fiber_type?.name === 'string' && fiber.fiber_type.name.trim())
+          || (typeof fiber?.name === 'string' && fiber.name.trim())
+          || null;
+      if (!fiberName)
+        continue;
+      const pct = Number(fiber?.percentage);
+      fiberParts.push(
+        Number.isFinite(pct) && pct > 0
+          ? `${pct}% ${fiberName}`
+          : fiberName,
+      );
+    }
+  }
+  const gramsRaw = Number(raw?.grams);
+  const yardageRaw = Number(raw?.yardage);
+  const wpiRaw = Number(raw?.wpi);
+  const minGaugeRaw = Number(raw?.min_gauge);
+  const maxGaugeRaw = Number(raw?.max_gauge);
+  const gaugeDivisorRaw = Number(raw?.gauge_divisor);
   return {
     id,
     name,
@@ -842,6 +872,28 @@ function normalizeYarn(raw: any): RavelryYarn | null {
     photo,
     photos: photos.length ? photos : undefined,
     yarn_weight_name: weight,
+    fiber_description: fiberParts.length ? fiberParts.join(', ') : null,
+    grams: Number.isFinite(gramsRaw) && gramsRaw > 0 ? gramsRaw : null,
+    yardage: Number.isFinite(yardageRaw) && yardageRaw > 0 ? yardageRaw : null,
+    wpi: Number.isFinite(wpiRaw) && wpiRaw > 0 ? wpiRaw : null,
+    min_gauge:
+      Number.isFinite(minGaugeRaw) && minGaugeRaw > 0 ? minGaugeRaw : null,
+    max_gauge:
+      Number.isFinite(maxGaugeRaw) && maxGaugeRaw > 0 ? maxGaugeRaw : null,
+    gauge_divisor:
+      Number.isFinite(gaugeDivisorRaw) && gaugeDivisorRaw > 0
+        ? gaugeDivisorRaw
+        : null,
+    machine_washable:
+      typeof raw?.machine_washable === 'boolean'
+        ? raw.machine_washable
+        : null,
+    discontinued:
+      typeof raw?.discontinued === 'boolean' ? raw.discontinued : null,
+    texture:
+      typeof raw?.texture === 'string' && raw.texture.trim()
+        ? raw.texture.trim()
+        : null,
   };
 }
 
@@ -884,18 +936,265 @@ export async function fetchYarn(id: number): Promise<RavelryYarn> {
   return yarn;
 }
 
-/** Projects that list this catalog yarn — `GET projects/search.json?yarn_id=`. */
-export async function fetchYarnProjects(
+function photoFromUrl(url: string | null | undefined, id = 0): RavelryPhoto | null {
+  if (typeof url !== 'string' || !url.trim())
+    return null;
+  const trimmed = url.trim();
+  return {
+    id,
+    medium_url: trimmed,
+    medium2_url: trimmed,
+    square_url: trimmed,
+    small_url: trimmed,
+    small2_url: trimmed,
+    thumbnail_url: trimmed,
+  };
+}
+
+function normalizeColorway(raw: any): RavelryColorway | null {
+  const id = Number(raw?.id);
+  if (!Number.isFinite(id) || id <= 0)
+    return null;
+  const name
+    = typeof raw?.name === 'string' && raw.name.trim()
+      ? raw.name.trim()
+      : null;
+  if (!name)
+    return null;
+  // Colorway#full only exposes a single representative image (`photo_url`).
+  // Ignore embed `photos[]` — it is empty or unreliable and is not colorway-safe.
+  const photo
+    = normalizePhoto(raw?.first_photo)
+      ?? normalizePhoto(raw?.photo)
+      ?? photoFromUrl(
+        typeof raw?.photo_url === 'string' ? raw.photo_url : null,
+      );
+  const yarnIdRaw = Number(raw?.yarn_id);
+  const projectsRaw = Number(raw?.projects_count);
+  const stashesRaw = Number(raw?.stashes_count);
+  const usageRaw = Number(raw?.usage_count);
+  return {
+    id,
+    name,
+    code:
+      typeof raw?.code === 'string' && raw.code.trim()
+        ? raw.code.trim()
+        : null,
+    yarn_id:
+      Number.isFinite(yarnIdRaw) && yarnIdRaw > 0 ? yarnIdRaw : null,
+    current_status:
+      typeof raw?.current_status === 'string' && raw.current_status.trim()
+        ? raw.current_status.trim()
+        : null,
+    projects_count:
+      Number.isFinite(projectsRaw) && projectsRaw >= 0 ? projectsRaw : null,
+    stashes_count:
+      Number.isFinite(stashesRaw) && stashesRaw >= 0 ? stashesRaw : null,
+    usage_count:
+      Number.isFinite(usageRaw) && usageRaw >= 0 ? usageRaw : null,
+    photo,
+    photos: photo ? [photo] : undefined,
+  };
+}
+
+/**
+ * Colorways for a yarn — `GET yarns/{id}.json?include=colorways`
+ * (top-level `colorways[]`; embed photos are usually empty).
+ */
+export async function fetchYarnColorways(
   yarnId: number,
+): Promise<RavelryColorway[]> {
+  if (!Number.isFinite(yarnId) || yarnId <= 0)
+    throw new Error('Invalid yarn id');
+  const { data } = await client.get(`yarns/${yarnId}.json`, {
+    params: { include: 'colorways' },
+  });
+  const list = Array.isArray(data.colorways) ? data.colorways : [];
+  const colorways: RavelryColorway[] = [];
+  for (const raw of list) {
+    const colorway = normalizeColorway(raw);
+    if (colorway)
+      colorways.push(colorway);
+  }
+  colorways.sort((a, b) => {
+    const usageDiff = (b.usage_count ?? 0) - (a.usage_count ?? 0);
+    if (usageDiff !== 0)
+      return usageDiff;
+    return a.name.localeCompare(b.name);
+  });
+  return colorways;
+}
+
+/** One representative photo per stash entry (people’s stash shot of the skein). */
+function primaryPhotoFromStashEntry(raw: any): RavelryPhoto | null {
+  return (
+    normalizePhoto(raw?.first_photo)
+      ?? (Array.isArray(raw?.photos) ? normalizePhoto(raw.photos[0]) : null)
+  );
+}
+
+function stashEntryColorwayId(raw: any): number | null {
+  const id = Number(
+    raw?.colorway_id
+    ?? raw?.colorway?.id
+    ?? raw?.pack?.colorway_id,
+  );
+  return Number.isFinite(id) && id > 0 ? id : null;
+}
+
+function stashEntryColorwayName(raw: any): string | null {
+  const name
+    = (typeof raw?.colorway_name === 'string' && raw.colorway_name.trim())
+      || (typeof raw?.colorway === 'string' && raw.colorway.trim())
+      || (typeof raw?.colorway?.name === 'string' && raw.colorway.name.trim())
+      || null;
+  return name || null;
+}
+
+function stashEntryYarnId(raw: any): number | null {
+  const id = Number(
+    raw?.yarn_id
+    ?? raw?.yarn?.id
+    ?? raw?.pack?.yarn_id,
+  );
+  return Number.isFinite(id) && id > 0 ? id : null;
+}
+
+/**
+ * Keep only stash rows that clearly belong to this yarn + colorway.
+ * Require yarn id; require colorway id and/or exact name with no conflicts.
+ */
+function stashMatchesColorway(
+  raw: any,
+  target: {
+    yarnId: number;
+    colorwayId: number | null;
+    colorwayName: string | null;
+  },
+): boolean {
+  const { yarnId, colorwayId, colorwayName } = target;
+  const entryYarnId = stashEntryYarnId(raw);
+  // Drop hits we cannot pin to this catalog yarn (avoids other "Nox" yarns).
+  if (entryYarnId == null || entryYarnId !== yarnId)
+    return false;
+
+  const entryId = stashEntryColorwayId(raw);
+  const entryName = stashEntryColorwayName(raw);
+  if (entryId == null && !entryName)
+    return false;
+
+  if (entryId != null && colorwayId != null && entryId !== colorwayId)
+    return false;
+
+  if (
+    entryName
+    && colorwayName
+    && entryName.toLowerCase() !== colorwayName.toLowerCase()
+  ) {
+    return false;
+  }
+
+  if (entryId != null && colorwayId != null && entryId === colorwayId)
+    return true;
+
+  return Boolean(
+    entryName
+    && colorwayName
+    && entryName.toLowerCase() === colorwayName.toLowerCase(),
+  );
+}
+
+/**
+ * Up to `limit` people-stash photos for one colorway (one photo per stash entry).
+ * `GET stash/search.json` + strict yarn/colorway client filter.
+ */
+export async function fetchColorwayStashPhotos(
+  yarnId: number,
+  options: {
+    colorwayId?: number | null;
+    colorwayName?: string | null;
+    limit?: number;
+  },
+): Promise<RavelryPhoto[]> {
+  if (!Number.isFinite(yarnId) || yarnId <= 0)
+    return [];
+  const limit = Math.min(Math.max(options.limit ?? 10, 1), 10);
+  const colorwayId
+    = options.colorwayId != null && Number.isFinite(options.colorwayId)
+      ? options.colorwayId
+      : null;
+  const colorwayName = options.colorwayName?.trim() || null;
+  if (colorwayId == null && !colorwayName)
+    return [];
+
+  const { data } = await client.get('stash/search.json', {
+    params: {
+      yarn_id: yarnId,
+      ...(colorwayId != null ? { colorway_id: colorwayId } : {}),
+      ...(colorwayName
+        ? { colorway_name: colorwayName, colorway: colorwayName }
+        : {}),
+      page: 1,
+      page_size: 50,
+    },
+  });
+  const list = Array.isArray(data.stashes)
+    ? data.stashes
+    : Array.isArray(data.stash)
+      ? data.stash
+      : [];
+
+  const photos: RavelryPhoto[] = [];
+  for (const entry of list) {
+    if (photos.length >= limit)
+      break;
+    if (!stashMatchesColorway(entry, { yarnId, colorwayId, colorwayName }))
+      continue;
+    const photo = primaryPhotoFromStashEntry(entry);
+    if (!photo)
+      continue;
+    const key
+      = photo.id > 0
+        ? `id:${photo.id}`
+        : `url:${photo.medium2_url ?? photo.medium_url ?? photo.square_url ?? ''}`;
+    if (photos.some((existing) => {
+      const existingKey
+        = existing.id > 0
+          ? `id:${existing.id}`
+          : `url:${existing.medium2_url ?? existing.medium_url ?? existing.square_url ?? ''}`;
+      return existingKey === key;
+    })) {
+      continue;
+    }
+    photos.push(photo);
+  }
+  return photos;
+}
+
+/**
+ * Projects that list this catalog yarn.
+ *
+ * Use `GET projects/search.json` with the site `yarn` facet (permalink/name),
+ * same family as pattern search’s `pattern=` filter. Numeric `yarn_id` is
+ * silently ignored by the API and returns the unfiltered project corpus.
+ */
+export async function fetchYarnProjects(
+  yarn: { id: number; permalink?: string | null; name?: string | null },
   options?: { page?: number; pageSize?: number },
 ): Promise<ProjectsListPage> {
   const page = options?.page ?? 1;
   const pageSize = options?.pageSize ?? 48;
+  const yarnKey
+    = yarn.permalink?.trim()
+      || yarn.name?.trim()
+      || String(yarn.id);
+
   const { data } = await client.get('projects/search.json', {
     params: {
       page,
       page_size: pageSize,
-      yarn_id: yarnId,
+      // Same filter family as the website project search “yarn” facet.
+      yarn: yarnKey,
     },
   });
   return projectsPageFromPayload(data, page, pageSize);
