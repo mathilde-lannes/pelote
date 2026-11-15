@@ -113,6 +113,7 @@ export function ProfileProjectPost({ username, person, project }: Props) {
         patternId={patternId}
         patternName={data.pattern_name ?? patternQuery.data?.name}
         designerName={designerName}
+        packsCount={data.packs?.length ?? null}
         photos={photos}
         notesHtml={data.notes_html}
         relative={projectDateLabel(data)}

@@ -13,14 +13,28 @@ export type RavelryPhoto = {
   medium2_url?: string | null;
   square_url?: string | null;
   small_url?: string | null;
+  small2_url?: string | null;
+  thumbnail_url?: string | null;
   shelved_url?: string | null;
 };
 
 /** Yarn pack summary from Project#full `packs`. */
 export type RavelryProjectPack = {
+  /** Linked catalog yarn id for Yarns#show / yarns.json?ids=. */
+  yarn_id?: number | null;
+  /** Catalog yarn name when present on the pack (may lack photos). */
   yarn_name?: string | null;
+  yarn_company_name?: string | null;
   colorway?: string | null;
+  color_family_name?: string | null;
   yarn_weight_name?: string | null;
+  dye_lot?: string | null;
+  skeins?: number | null;
+  total_yards?: number | null;
+  total_meters?: number | null;
+  shop_name?: string | null;
+  /** User-uploaded pack / stash photo — not the dyer catalog image. */
+  photo?: RavelryPhoto | null;
 };
 
 export type RavelryProject = {

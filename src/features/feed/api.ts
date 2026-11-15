@@ -1,5 +1,8 @@
 import type { AxiosError } from 'axios';
-import type { FriendsActivityPage } from '@/lib/ravelry/api';
+import type {
+  FriendsActivityPage,
+  RavelryYarnSummary,
+} from '@/lib/ravelry/api';
 import type { FriendActivity, RavelryProject } from '@/lib/ravelry/types';
 import { createInfiniteQuery, createQuery } from 'react-query-kit';
 
@@ -7,6 +10,7 @@ import { useAuthStore } from '@/features/auth/use-auth-store';
 import {
   fetchFriendsActivity,
   fetchProject,
+  fetchYarnsByIds,
 } from '@/lib/ravelry/api';
 
 export type { FriendActivity, FriendsActivityPage, RavelryProject };
@@ -50,4 +54,14 @@ export const useProject = createQuery<
   fetcher: (variables) => {
     return fetchProject(variables.username, Number(variables.id));
   },
+});
+
+/** Yarn#full rows for project pack photos (`GET yarns.json?ids=`). */
+export const useYarnsByIds = createQuery<
+  RavelryYarnSummary[],
+  { ids: number[] },
+  AxiosError
+>({
+  queryKey: ['yarns', 'by-ids'],
+  fetcher: variables => fetchYarnsByIds(variables.ids),
 });

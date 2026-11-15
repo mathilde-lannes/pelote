@@ -19,6 +19,7 @@ import { patternProjectsHref } from '@/features/explore/pattern-href';
 import { PatternInfoSheet } from '@/features/feed/components/pattern-info-sheet';
 import { PhotoCarousel } from '@/features/feed/components/photo-carousel';
 import { ProjectInfoSheet } from '@/features/feed/components/project-info-sheet';
+import { ProjectYarnSheet } from '@/features/feed/components/project-yarn-sheet';
 import { UnfavoriteConfirmSheet } from '@/features/feed/components/unfavorite-confirm-sheet';
 import { formatCompactCount } from '@/features/feed/format-compact-count';
 import { formatRelative } from '@/features/feed/format-relative';
@@ -212,6 +213,8 @@ export type ProjectPostProps = PostBase & {
   patternName?: string | null;
   /** Designer display name shown next to the pattern name. */
   designerName?: string | null;
+  /** Yarn pack count from Project#full when known. */
+  packsCount?: number | null;
 };
 
 export type PostProps = PatternPostProps | ProjectPostProps;
@@ -227,6 +230,7 @@ function PostStats({
   comments,
   yarns,
   projectsHref,
+  yarnAction,
 }: {
   variant: PostProps['variant'];
   patternId?: number;
@@ -238,6 +242,7 @@ function PostStats({
   comments: string | null;
   yarns: string | null;
   projectsHref?: string | null;
+  yarnAction?: React.ReactNode;
 }) {
   const heartColor = favorited ? colors.danger[500] : '#ffffff';
   return (
@@ -268,15 +273,16 @@ function PostStats({
           count={comments}
           label="Comments"
         />
-        {variant === 'pattern'
-          ? (
-              <Stat
-                icon={<Yarn color="#ffffff" />}
-                count={yarns}
-                label="Yarn"
-              />
-            )
-          : null}
+        {yarnAction
+          ?? (variant === 'pattern'
+            ? (
+                <Stat
+                  icon={<Yarn color="#ffffff" />}
+                  count={yarns}
+                  label="Yarn"
+                />
+              )
+            : null)}
       </View>
       <Bookmark color="#ffffff" />
     </View>
@@ -410,6 +416,44 @@ function ProjectInfoTrailing({
   );
 }
 
+function ProjectYarnStat({
+  username,
+  projectId,
+  projectName,
+  count,
+}: {
+  username: string;
+  projectId: number;
+  projectName: string;
+  count: string | null;
+}) {
+  const modal = useModal();
+  const [opened, setOpened] = React.useState(false);
+
+  const onPress = React.useCallback(() => {
+    setOpened(true);
+    modal.present();
+  }, [modal]);
+
+  return (
+    <>
+      <Stat
+        icon={<Yarn color="#ffffff" />}
+        count={count}
+        label="Yarn"
+        onPress={onPress}
+      />
+      <ProjectYarnSheet
+        ref={modal.ref}
+        username={username}
+        projectId={projectId}
+        projectName={projectName}
+        enabled={opened}
+      />
+    </>
+  );
+}
+
 function projectSubtitle({
   patternName,
   designerName,
@@ -526,6 +570,18 @@ export function Post(props: PostProps) {
             : null
         }
         projectsHref={projectsHref}
+        yarnAction={
+          props.variant === 'project'
+            ? (
+                <ProjectYarnStat
+                  username={props.ownerUsername}
+                  projectId={props.projectId}
+                  projectName={props.projectName}
+                  count={countLabel(props.packsCount)}
+                />
+              )
+            : undefined
+        }
       />
       <PostCaption
         authorName={authorName}

@@ -48,21 +48,6 @@ function formatGauge(project: RavelryProject): string | null {
   return parts.join(' ');
 }
 
-function formatYarn(project: RavelryProject): string | null {
-  const packs = project.packs ?? [];
-  if (!packs.length)
-    return null;
-  const lines = packs.map((pack) => {
-    const parts = [
-      pack.yarn_name?.trim(),
-      pack.colorway?.trim(),
-      pack.yarn_weight_name?.trim(),
-    ].filter(Boolean);
-    return parts.join(' · ');
-  }).filter(Boolean);
-  return lines.length ? lines.join('\n') : null;
-}
-
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <View className="border-b border-ink-300 px-5 py-3.5">
@@ -101,9 +86,6 @@ function rowsForProject(project: RavelryProject): { label: string; value: string
       value: needles.join(', '),
     });
   }
-  const yarn = formatYarn(project);
-  if (yarn)
-    rows.push({ label: yarn.includes('\n') ? 'Yarns' : 'Yarn', value: yarn });
   if (project.started)
     rows.push({ label: 'Started', value: project.started });
   if (project.completed)
