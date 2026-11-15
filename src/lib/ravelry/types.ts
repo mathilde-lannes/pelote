@@ -147,3 +147,18 @@ export type PatternHighlight = {
   timeline_date: string | null;
   pattern: RavelryPattern;
 };
+
+/** Favoritable notebook entity for Favorites#create (`type`). */
+export type RavelryFavoriteType = 'pattern' | 'project';
+
+/**
+ * One row from Favorites#list.
+ * `id` is the favorite record id (needed for destroy); `type_id` is the
+ * pattern/project id that was favorited.
+ */
+export type RavelryFavorite = {
+  id: number;
+  type: RavelryFavoriteType;
+  type_id: number;
+  created_at?: string | null;
+};

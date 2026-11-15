@@ -5,6 +5,8 @@ import type {
   FriendsListResponse,
   PatternHighlight,
   PeopleSearchResponse,
+  RavelryFavorite,
+  RavelryFavoriteType,
   RavelryPattern,
   RavelryPerson,
   RavelryPhoto,
@@ -17,6 +19,7 @@ import {
   normalizeFavoritesCount,
   resolveActivityType,
 } from './activity-utils';
+import { normalizeFavorite } from './favorites-utils';
 import {
   HIGHLIGHT_DAYS,
   mergeHighlightPatterns,
@@ -28,6 +31,7 @@ import {
 } from './highlights';
 
 export { normalizeCreatedAt, resolveActivityType } from './activity-utils';
+export { favoriteLookupKey, normalizeFavorite } from './favorites-utils';
 
 function normalizePhoto(raw: any): RavelryPhoto | null {
   if (!raw)
@@ -835,6 +839,164 @@ export async function removeFriend(
   await client.post(
     `people/${encodeURIComponent(username)}/friends/${friendshipId}/destroy.json`,
   );
+}
+
+export type FavoritesListPage = {
+  favorites: RavelryFavorite[];
+  page: number;
+  pageSize: number;
+  pageCount: number;
+};
+
+/** Map Favorites#list type filter (plural) ↔ Favorites#create type (singular). */
+const FAVORITE_LIST_TYPE: Record<RavelryFavoriteType, string> = {
+  pattern: 'patterns',
+  project: 'projects',
+};
+
+function favoritesPageFromPayload(
+  data: any,
+  page: number,
+  pageSize: number,
+): FavoritesListPage {
+  const list = data.favorites ?? data.bookmarks ?? [];
+  const favorites = (Array.isArray(list) ? list : [])
+    .map(normalizeFavorite)
+    .filter((entry: RavelryFavorite | null): entry is RavelryFavorite =>
+      entry != null,
+    );
+  const paginator = data.paginator ?? {};
+  const pageCountRaw = paginator.page_count ?? paginator.last_page ?? 1;
+  const pageCount = Number(pageCountRaw);
+
+  return {
+    favorites,
+    page,
+    pageSize,
+    pageCount: Number.isFinite(pageCount) && pageCount > 0 ? pageCount : 1,
+  };
+}
+
+/**
+ * Favorites#list — node-ravelry uses `/favorites/list.json`; ravelry-mcp uses
+ * `/favorites.json`. Prefer list.json, fall back on 404.
+ */
+export async function fetchFavoritesPage(
+  username: string,
+  options: {
+    type: RavelryFavoriteType;
+    page?: number;
+    pageSize?: number;
+  },
+): Promise<FavoritesListPage> {
+  const page = options.page ?? 1;
+  const pageSize = options.pageSize ?? 100;
+  const params = {
+    type: FAVORITE_LIST_TYPE[options.type],
+    page,
+    page_size: pageSize,
+  };
+  const base = `people/${encodeURIComponent(username)}/favorites`;
+
+  try {
+    const { data } = await client.get(`${base}/list.json`, { params });
+    return favoritesPageFromPayload(data, page, pageSize);
+  }
+  catch (error) {
+    const status = (error as { response?: { status?: number } })?.response?.status;
+    if (status !== 404)
+      throw error;
+    const { data } = await client.get(`${base}.json`, { params });
+    return favoritesPageFromPayload(data, page, pageSize);
+  }
+}
+
+async function fetchFavoritesForType(
+  username: string,
+  type: RavelryFavoriteType,
+): Promise<RavelryFavorite[]> {
+  const pageSize = 100;
+  const maxPages = 20;
+  const collected: RavelryFavorite[] = [];
+  let page = 1;
+  let pageCount = 1;
+  while (page <= pageCount && page <= maxPages) {
+    const result = await fetchFavoritesPage(username, { type, page, pageSize });
+    collected.push(...result.favorites);
+    pageCount = result.pageCount;
+    if (result.favorites.length === 0)
+      break;
+    page += 1;
+  }
+  return collected;
+}
+
+/** Load every page of pattern + project favorites (capped) for feed heart state. */
+export async function fetchMyFavorites(
+  username: string,
+): Promise<RavelryFavorite[]> {
+  // Project favorites are optional — some API apps only expose pattern/yarn/people.
+  const [patterns, projects] = await Promise.all([
+    fetchFavoritesForType(username, 'pattern'),
+    fetchFavoritesForType(username, 'project').catch(() => [] as RavelryFavorite[]),
+  ]);
+  return [...patterns, ...projects];
+}
+
+/**
+ * Favorites#create —
+ * POST people/{username}/favorites/create.json
+ *
+ * Ravelry ignores JSON bodies here (blank `type` → "type should be one of:…").
+ * Match comments.create: form-urlencoded `type` + `favorited_id`.
+ */
+export async function addFavorite(
+  username: string,
+  type: RavelryFavoriteType,
+  typeId: number,
+): Promise<RavelryFavorite> {
+  const body = new URLSearchParams({
+    type,
+    favorited_id: String(typeId),
+  });
+
+  const { data } = await client.post(
+    `people/${encodeURIComponent(username)}/favorites/create.json`,
+    body.toString(),
+    { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },
+  );
+  const favorite = normalizeFavorite(data.favorite ?? data);
+  if (!favorite) {
+    // Create can return an empty/minimal body — synthesize from the request.
+    return {
+      id: Number(data?.id ?? data?.favorite?.id ?? 0) || Date.now(),
+      type,
+      type_id: typeId,
+      created_at: null,
+    };
+  }
+  return favorite;
+}
+
+/**
+ * Favorites#destroy — node-ravelry uses DELETE …/favorites/{id}.json;
+ * fall back to POST …/destroy.json (same shape as friends).
+ */
+export async function removeFavorite(
+  username: string,
+  favoriteId: number,
+): Promise<void> {
+  const base
+    = `people/${encodeURIComponent(username)}/favorites/${favoriteId}`;
+  try {
+    await client.delete(`${base}.json`);
+  }
+  catch (error) {
+    const status = (error as { response?: { status?: number } })?.response?.status;
+    if (status !== 404 && status !== 405)
+      throw error;
+    await client.post(`${base}/destroy.json`);
+  }
 }
 
 const PATTERN_ID_CHUNK = 50;

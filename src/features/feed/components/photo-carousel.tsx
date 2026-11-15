@@ -5,7 +5,7 @@ import * as React from 'react';
 import {
   Dimensions,
   FlatList,
-
+  Pressable,
   View,
 } from 'react-native';
 
@@ -14,6 +14,7 @@ import { bestPhotoUrl } from '@/lib/ravelry/api';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const DEFAULT_ASPECT = 4 / 5;
+const DOUBLE_TAP_MS = 280;
 
 /** Figma carousel active / inactive dots (For You). */
 const DOT_ACTIVE = '#5478ff';
@@ -25,6 +26,8 @@ type Props = {
   /** Overlay on media (default) or below the media plane. */
   dotsPlacement?: 'overlay' | 'below';
   showCounter?: boolean;
+  /** Instagram-style double tap on the photo plane. */
+  onDoubleTap?: () => void;
 };
 
 function Dots({
@@ -88,8 +91,10 @@ export function PhotoCarousel({
   aspectRatio = DEFAULT_ASPECT,
   dotsPlacement = 'overlay',
   showCounter = true,
+  onDoubleTap,
 }: Props) {
   const [index, setIndex] = React.useState(0);
+  const lastTapRef = React.useRef(0);
   const uris = React.useMemo(
     () =>
       photos
@@ -108,6 +113,15 @@ export function PhotoCarousel({
     },
     [index, uris.length],
   );
+
+  const handlePress = React.useCallback(() => {
+    if (!onDoubleTap)
+      return;
+    const now = Date.now();
+    if (now - lastTapRef.current < DOUBLE_TAP_MS)
+      onDoubleTap();
+    lastTapRef.current = now;
+  }, [onDoubleTap]);
 
   // Always reserve media height so parent lists don't jump when photos load.
   return (
@@ -129,11 +143,23 @@ export function PhotoCarousel({
                   onScroll={onScroll}
                   scrollEventThrottle={16}
                   renderItem={({ item }) => (
-                    <Image
-                      source={{ uri: item }}
-                      style={{ width: SCREEN_WIDTH, height: '100%' }}
-                      contentFit="cover"
-                    />
+                    onDoubleTap
+                      ? (
+                          <Pressable onPress={handlePress}>
+                            <Image
+                              source={{ uri: item }}
+                              style={{ width: SCREEN_WIDTH, height: '100%' }}
+                              contentFit="cover"
+                            />
+                          </Pressable>
+                        )
+                      : (
+                          <Image
+                            source={{ uri: item }}
+                            style={{ width: SCREEN_WIDTH, height: '100%' }}
+                            contentFit="cover"
+                          />
+                        )
                   )}
                 />
                 {showCounter

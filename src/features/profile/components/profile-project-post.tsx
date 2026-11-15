@@ -115,6 +115,7 @@ export function ProfileProjectPost({ username, person, project }: Props) {
         authorName={displayName}
         authorAvatar={avatar}
         authorHref={userProfileHref(displayName, pathname)}
+        projectId={data.id}
         projectName={data.name}
         patternName={data.pattern_name ?? patternQuery.data?.name}
         designerName={designerName}

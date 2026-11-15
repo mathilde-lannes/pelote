@@ -1,3 +1,4 @@
+import type { FavoriteTarget } from '@/features/feed/use-post-favorite';
 import type { RavelryPhoto } from '@/lib/ravelry/types';
 import { Image } from 'expo-image';
 import { Link, usePathname } from 'expo-router';
@@ -5,6 +6,7 @@ import * as React from 'react';
 
 import { ExpandableText } from '@/components/expandable-text';
 import { Pressable, Text, useModal, View } from '@/components/ui';
+import colors from '@/components/ui/colors';
 import {
   Bookmark,
   Comments,
@@ -16,8 +18,10 @@ import {
 import { patternProjectsHref } from '@/features/explore/pattern-href';
 import { PatternInfoSheet } from '@/features/feed/components/pattern-info-sheet';
 import { PhotoCarousel } from '@/features/feed/components/photo-carousel';
+import { UnfavoriteConfirmSheet } from '@/features/feed/components/unfavorite-confirm-sheet';
 import { formatCompactCount } from '@/features/feed/format-compact-count';
 import { formatRelative } from '@/features/feed/format-relative';
+import { usePostFavorite } from '@/features/feed/use-post-favorite';
 
 function stripHtml(html: string): string {
   return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -42,11 +46,15 @@ function Stat({
   count,
   label,
   href,
+  onPress,
+  accessibilityState,
 }: {
   icon: React.ReactNode;
   count: string | null;
   label: string;
   href?: string | null;
+  onPress?: () => void;
+  accessibilityState?: { selected?: boolean; disabled?: boolean };
 }) {
   const body = (
     <>
@@ -74,6 +82,22 @@ function Stat({
           {body}
         </Pressable>
       </Link>
+    );
+  }
+
+  if (onPress) {
+    return (
+      <Pressable
+        className="flex-row items-center gap-2"
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityState={accessibilityState}
+        hitSlop={8}
+        disabled={accessibilityState?.disabled}
+      >
+        {body}
+      </Pressable>
     );
   }
 
@@ -177,6 +201,7 @@ export type PatternPostProps = PostBase & {
 
 export type ProjectPostProps = PostBase & {
   variant: 'project';
+  projectId: number;
   projectName: string;
   /** Pattern the project is based on, when known. */
   patternName?: string | null;
@@ -192,6 +217,9 @@ function PostStats({
   variant,
   patternId,
   favorites,
+  favorited,
+  onFavoritePress,
+  favoriteDisabled,
   projects,
   comments,
   yarns,
@@ -200,18 +228,27 @@ function PostStats({
   variant: PostProps['variant'];
   patternId?: number;
   favorites: string | null;
+  favorited: boolean;
+  onFavoritePress?: () => void;
+  favoriteDisabled?: boolean;
   projects: string | null;
   comments: string | null;
   yarns: string | null;
   projectsHref?: string | null;
 }) {
+  const heartColor = favorited ? colors.danger[500] : '#ffffff';
   return (
     <View className="flex-row items-center justify-between px-[18px] pt-1">
       <View className="flex-row items-center gap-[19px]">
         <Stat
-          icon={<Heart color="#ffffff" />}
+          icon={<Heart color={heartColor} filled={favorited} />}
           count={favorites}
-          label="Favorites"
+          label={favorited ? 'Favorited' : 'Favorite'}
+          onPress={onFavoritePress}
+          accessibilityState={{
+            selected: favorited,
+            disabled: favoriteDisabled,
+          }}
         />
         {variant === 'pattern' && patternId != null
           ? (
@@ -358,6 +395,12 @@ function projectSubtitle({
   return projectName;
 }
 
+function favoriteTargetFor(props: PostProps): FavoriteTarget {
+  if (props.variant === 'pattern')
+    return { type: 'pattern', id: props.patternId };
+  return { type: 'project', id: props.projectId };
+}
+
 export function Post(props: PostProps) {
   const {
     authorName,
@@ -369,6 +412,8 @@ export function Post(props: PostProps) {
     commentsCount,
   } = props;
   const pathname = usePathname();
+  const favoriteTarget = favoriteTargetFor(props);
+  const favorite = usePostFavorite(favoriteTarget, favoritesCount);
 
   const subtitle
     = props.variant === 'pattern'
@@ -403,6 +448,10 @@ export function Post(props: PostProps) {
     = props.variant === 'pattern'
       ? patternProjectsHref(props.patternId, pathname)
       : null;
+  const unfavoriteTitle
+    = props.variant === 'pattern'
+      ? `Remove “${props.patternName}” from favorites?`
+      : `Remove “${props.projectName}” from favorites?`;
 
   return (
     <View className="bg-black pb-4">
@@ -418,11 +467,15 @@ export function Post(props: PostProps) {
         aspectRatio={1}
         dotsPlacement="below"
         showCounter={false}
+        onDoubleTap={favorite.requestToggle}
       />
       <PostStats
         variant={props.variant}
         patternId={props.variant === 'pattern' ? props.patternId : undefined}
-        favorites={countLabel(favoritesCount)}
+        favorites={countLabel(favorite.displayCount)}
+        favorited={favorite.isFavorited}
+        onFavoritePress={favorite.requestToggle}
+        favoriteDisabled={favorite.pending}
         projects={
           props.variant === 'pattern'
             ? countLabel(props.projectsCount)
@@ -441,6 +494,15 @@ export function Post(props: PostProps) {
         notes={notes}
         fallbackTitle={captionFallbackTitle}
         relative={relative}
+      />
+      <UnfavoriteConfirmSheet
+        ref={favorite.unfavoriteModal.ref}
+        title={unfavoriteTitle}
+        onConfirm={() => {
+          void favorite.confirmRemove();
+        }}
+        onCancel={favorite.unfavoriteModal.dismiss}
+        confirming={favorite.removing}
       />
     </View>
   );
