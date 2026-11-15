@@ -1,5 +1,6 @@
 import type { AxiosError } from 'axios';
 import type {
+  RavelryFavorite,
   RavelryPattern,
   RavelryPerson,
   RavelryProject,
@@ -9,15 +10,21 @@ import { createQuery } from 'react-query-kit';
 import {
   fetchPatternsByDesignerCandidates,
   fetchPerson,
+  fetchPersonFavorites,
   fetchProjectsList,
   resolveDesignerPermalinkForProfile,
 } from '@/lib/ravelry/api';
 
-export type { RavelryPattern, RavelryPerson, RavelryProject };
+export type { RavelryFavorite, RavelryPattern, RavelryPerson, RavelryProject };
 
 export type PersonProjectsResult = {
   projects: RavelryProject[];
   /** Total projects reported by Ravelry (not capped by loaded pages). */
+  totalCount: number;
+};
+
+export type PersonFavoritesResult = {
+  favorites: RavelryFavorite[];
   totalCount: number;
 };
 
@@ -92,6 +99,15 @@ export const usePersonProjects = createQuery<
       totalCount: first.totalResults ?? all.length,
     };
   },
+});
+
+export const usePersonFavorites = createQuery<
+  PersonFavoritesResult,
+  { username: string },
+  AxiosError
+>({
+  queryKey: ['person-favorites'],
+  fetcher: variables => fetchPersonFavorites(variables.username),
 });
 
 const DESIGNS_PAGE_SIZE = 48;

@@ -17,6 +17,9 @@ describe('normalizeFavorite', () => {
       type: 'pattern',
       type_id: 42,
       created_at: '2026-01-01',
+      name: null,
+      photo_url: null,
+      owner_username: null,
     });
   });
 
@@ -25,13 +28,24 @@ describe('normalizeFavorite', () => {
       normalizeFavorite({
         id: 11,
         type: 'projects',
-        favorited: { id: 77, name: 'Fog Harbor' },
+        favorited: {
+          id: 77,
+          name: 'Fog Harbor',
+          first_photo: {
+            square_url: 'https://example.com/square.jpg',
+            medium2_url: 'https://example.com/medium2.jpg',
+          },
+          user: { username: 'knitwit' },
+        },
       }),
     ).toEqual({
       id: 11,
       type: 'project',
       type_id: 77,
       created_at: null,
+      name: 'Fog Harbor',
+      photo_url: 'https://example.com/medium2.jpg',
+      owner_username: 'knitwit',
     });
   });
 

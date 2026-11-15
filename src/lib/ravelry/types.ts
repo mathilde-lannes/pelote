@@ -161,4 +161,10 @@ export type RavelryFavorite = {
   type: RavelryFavoriteType;
   type_id: number;
   created_at?: string | null;
+  /** Display name from nested `favorited` when present. */
+  name?: string | null;
+  /** Best thumbnail URL from nested `favorited` photos. */
+  photo_url?: string | null;
+  /** Project owner username when favoriting a project. */
+  owner_username?: string | null;
 };

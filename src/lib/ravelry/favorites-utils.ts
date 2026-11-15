@@ -7,6 +7,32 @@ function normalizeFavoriteType(raw: unknown): RavelryFavoriteType | null {
   return null;
 }
 
+/** Same size preference as `bestPhotoUrl` (medium first, not square/small). */
+function favoritePhotoUrl(favorited: any): string | null {
+  const photo
+    = favorited?.first_photo
+      ?? favorited?.photos?.[0]
+      ?? null;
+  if (!photo)
+    return null;
+  return (
+    photo.medium2_url
+    ?? photo.medium_url
+    ?? photo.shelved_url
+    ?? photo.square_url
+    ?? photo.small_url
+    ?? null
+  );
+}
+
+function favoriteOwnerUsername(favorited: any): string | null {
+  const user = favorited?.user ?? favorited?.person ?? null;
+  const username = user?.username;
+  return typeof username === 'string' && username.trim()
+    ? username.trim()
+    : null;
+}
+
 export function normalizeFavorite(raw: any): RavelryFavorite | null {
   const id = raw?.id;
   if (id == null || !Number.isFinite(Number(id)))
@@ -27,11 +53,19 @@ export function normalizeFavorite(raw: any): RavelryFavorite | null {
   if (type == null || !Number.isFinite(typeId) || typeId <= 0)
     return null;
 
+  const name
+    = (typeof favorited?.name === 'string' && favorited.name.trim())
+      || (typeof raw?.name === 'string' && raw.name.trim())
+      || null;
+
   return {
     id: Number(id),
     type,
     type_id: typeId,
     created_at: typeof raw?.created_at === 'string' ? raw.created_at : null,
+    name,
+    photo_url: favoritePhotoUrl(favorited),
+    owner_username: type === 'project' ? favoriteOwnerUsername(favorited) : null,
   };
 }
 

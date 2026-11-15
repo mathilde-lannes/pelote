@@ -841,17 +841,18 @@ export async function removeFriend(
   );
 }
 
+/** Map Favorites#list type filter (plural) ↔ Favorites#create type (singular). */
+const FAVORITE_LIST_TYPE: Record<RavelryFavoriteType, string> = {
+  pattern: 'patterns',
+  project: 'projects',
+};
+
 export type FavoritesListPage = {
   favorites: RavelryFavorite[];
   page: number;
   pageSize: number;
   pageCount: number;
-};
-
-/** Map Favorites#list type filter (plural) ↔ Favorites#create type (singular). */
-const FAVORITE_LIST_TYPE: Record<RavelryFavoriteType, string> = {
-  pattern: 'patterns',
-  project: 'projects',
+  totalResults: number | null;
 };
 
 function favoritesPageFromPayload(
@@ -868,12 +869,18 @@ function favoritesPageFromPayload(
   const paginator = data.paginator ?? {};
   const pageCountRaw = paginator.page_count ?? paginator.last_page ?? 1;
   const pageCount = Number(pageCountRaw);
+  const totalRaw = paginator.results;
+  const totalResults
+    = typeof totalRaw === 'number' && Number.isFinite(totalRaw)
+      ? totalRaw
+      : null;
 
   return {
     favorites,
     page,
     pageSize,
     pageCount: Number.isFinite(pageCount) && pageCount > 0 ? pageCount : 1,
+    totalResults,
   };
 }
 
@@ -911,36 +918,58 @@ export async function fetchFavoritesPage(
   }
 }
 
-async function fetchFavoritesForType(
+export type PersonFavoritesResult = {
+  favorites: RavelryFavorite[];
+  /** Combined pattern + project favorites reported by Ravelry when available. */
+  totalCount: number;
+};
+
+async function fetchFavoritesForTypeWithTotal(
   username: string,
   type: RavelryFavoriteType,
-): Promise<RavelryFavorite[]> {
+): Promise<{ favorites: RavelryFavorite[]; totalCount: number }> {
   const pageSize = 100;
   const maxPages = 20;
   const collected: RavelryFavorite[] = [];
   let page = 1;
   let pageCount = 1;
+  let totalCount = 0;
   while (page <= pageCount && page <= maxPages) {
     const result = await fetchFavoritesPage(username, { type, page, pageSize });
     collected.push(...result.favorites);
     pageCount = result.pageCount;
+    totalCount = result.totalResults ?? collected.length;
     if (result.favorites.length === 0)
       break;
     page += 1;
   }
-  return collected;
+  return { favorites: collected, totalCount };
 }
 
 /** Load every page of pattern + project favorites (capped) for feed heart state. */
 export async function fetchMyFavorites(
   username: string,
 ): Promise<RavelryFavorite[]> {
+  const result = await fetchPersonFavorites(username);
+  return result.favorites;
+}
+
+/** Public favorites notebook for a profile grid (patterns + projects). */
+export async function fetchPersonFavorites(
+  username: string,
+): Promise<PersonFavoritesResult> {
   // Project favorites are optional — some API apps only expose pattern/yarn/people.
   const [patterns, projects] = await Promise.all([
-    fetchFavoritesForType(username, 'pattern'),
-    fetchFavoritesForType(username, 'project').catch(() => [] as RavelryFavorite[]),
+    fetchFavoritesForTypeWithTotal(username, 'pattern'),
+    fetchFavoritesForTypeWithTotal(username, 'project').catch(() => ({
+      favorites: [] as RavelryFavorite[],
+      totalCount: 0,
+    })),
   ]);
-  return [...patterns, ...projects];
+  return {
+    favorites: [...patterns.favorites, ...projects.favorites],
+    totalCount: patterns.totalCount + projects.totalCount,
+  };
 }
 
 /**
