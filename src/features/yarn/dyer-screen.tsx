@@ -46,20 +46,32 @@ function StatColumn({
 
 function DyerHeader({
   name,
+  photoUrl,
   yarnCount,
 }: {
   name: string;
+  photoUrl: string | null;
   yarnCount: number | null;
 }) {
   const initial = (name || '?').slice(0, 1).toUpperCase();
   return (
     <View className="border-b border-ink-300 px-4 pt-2 pb-3">
       <View className="flex-row items-center gap-5 pb-2">
-        <View className="size-[86px] items-center justify-center rounded-full bg-ink-300">
-          <Text className="text-3xl font-semibold text-white">
-            {initial}
-          </Text>
-        </View>
+        {photoUrl
+          ? (
+              <Image
+                source={{ uri: photoUrl }}
+                style={{ width: 86, height: 86, borderRadius: 43 }}
+                contentFit="cover"
+              />
+            )
+          : (
+              <View className="size-[86px] items-center justify-center rounded-full bg-ink-300">
+                <Text className="text-3xl font-semibold text-white">
+                  {initial}
+                </Text>
+              </View>
+            )}
         <View className="min-w-0 flex-1">
           <Text className="text-xl font-semibold text-white" numberOfLines={2}>
             {name}
@@ -106,16 +118,22 @@ function YarnTile({ yarn }: { yarn: RavelryYarn }) {
 }
 
 export function DyerScreen() {
-  const params = useLocalSearchParams<{ id: string }>();
-  const companyId = Number(String(params.id ?? '').trim());
-  const enabled = Number.isFinite(companyId) && companyId > 0;
+  const params = useLocalSearchParams<{ id: string; name?: string }>();
+  const companyIdRaw = Number(String(params.id ?? '').trim());
+  const companyId
+    = Number.isFinite(companyIdRaw) && companyIdRaw > 0 ? companyIdRaw : null;
+  const companyName
+    = (Array.isArray(params.name) ? params.name[0] : params.name)?.trim()
+      || '';
+  const searchQuery = companyName || (companyId != null ? String(companyId) : '');
+  const enabled = Boolean(searchQuery);
 
   const companyQuery = useYarnCompany({
-    variables: { id: companyId },
+    variables: { query: searchQuery, id: companyId },
     enabled,
   });
   const yarnsQuery = useCompanyYarns({
-    variables: { companyId },
+    variables: { query: searchQuery, companyId },
     enabled,
   });
 
@@ -124,13 +142,19 @@ export function DyerScreen() {
     () => (yarnsQuery.data?.pages ?? []).flatMap(page => page.yarns),
     [yarnsQuery.data],
   );
-  const yarnCount = yarnsQuery.isPending
-    ? (company?.yarn_count ?? null)
-    : (yarnsQuery.data?.pages[0]?.totalResults
-      ?? yarns.length
-      ?? company?.yarn_count
-      ?? null);
-  const name = company?.name ?? 'Dyer';
+  // Prefer the company catalog count — empty/failed yarn search used to
+  // overwrite a correct `yarn_count` with `0` via `yarns.length ?? …`.
+  const yarnCount
+    = company?.yarn_count
+      ?? (yarnsQuery.isSuccess
+        ? (yarnsQuery.data?.pages[0]?.totalResults ?? (yarns.length || null))
+        : null);
+  const name
+    = company?.name?.trim()
+      || companyName
+      || yarns[0]?.yarn_company_name?.trim()
+      || 'Dyer';
+  const photoUrl = company?.logo_url?.trim() || null;
 
   const onEndReached = React.useCallback(() => {
     if (yarnsQuery.hasNextPage && !yarnsQuery.isFetchingNextPage)
@@ -170,6 +194,7 @@ export function DyerScreen() {
         ListHeaderComponent={(
           <DyerHeader
             name={name}
+            photoUrl={photoUrl}
             yarnCount={
               companyQuery.isPending && yarnsQuery.isPending
                 ? null
@@ -184,11 +209,17 @@ export function DyerScreen() {
                   <ActivityIndicator color="#ffffff" />
                 </View>
               )
-            : (
-                <Text className="mt-10 text-center text-sm text-fog-400">
-                  No yarns yet.
-                </Text>
-              )
+            : yarnsQuery.isError
+              ? (
+                  <Text className="mt-10 text-center text-sm text-fog-400">
+                    Couldn't load yarns.
+                  </Text>
+                )
+              : (
+                  <Text className="mt-10 text-center text-sm text-fog-400">
+                    No yarns yet.
+                  </Text>
+                )
         }
         ListFooterComponent={
           yarnsQuery.isFetchingNextPage

@@ -894,6 +894,10 @@ function normalizeYarn(raw: any): RavelryYarn | null {
       typeof raw?.texture === 'string' && raw.texture.trim()
         ? raw.texture.trim()
         : null,
+    notes_html:
+      (typeof raw?.notes_html === 'string' && raw.notes_html.trim())
+      || (typeof raw?.notes === 'string' && raw.notes.trim())
+      || null,
   };
 }
 
@@ -1200,19 +1204,56 @@ export async function fetchYarnProjects(
   return projectsPageFromPayload(data, page, pageSize);
 }
 
-/** Documented: `GET yarn_companies/{id}.json` → yarn_company. */
-export async function fetchYarnCompany(
-  id: number,
-): Promise<RavelryYarnCompany> {
-  if (!Number.isFinite(id) || id <= 0)
-    throw new Error('Invalid yarn company id');
-  const { data } = await client.get(`yarn_companies/${id}.json`);
-  const company = normalizeYarnCompany(
-    data.yarn_company ?? data.company ?? data,
-  );
-  if (!company)
+/**
+ * Documented: `GET yarn_companies/search.json` → `yarn_companies[]`.
+ *
+ * Resolve a dyer/brand by name (and optional id). `YarnCompanies#show` is
+ * unreliable for product use — search is the supported lookup.
+ */
+export async function fetchYarnCompany(options: {
+  query: string;
+  id?: number | null;
+}): Promise<RavelryYarnCompany> {
+  const q = options.query.trim();
+  if (!q)
+    throw new Error('Invalid yarn company query');
+
+  const { data } = await client.get('yarn_companies/search.json', {
+    params: {
+      query: q,
+      page_size: 24,
+      sort: 'best',
+    },
+  });
+  const list: unknown[] = Array.isArray(data.yarn_companies)
+    ? data.yarn_companies
+    : Array.isArray(data.companies)
+      ? data.companies
+      : [];
+  const companies: RavelryYarnCompany[] = [];
+  for (const raw of list) {
+    const company = normalizeYarnCompany(raw);
+    if (company)
+      companies.push(company);
+  }
+
+  const needle = q.toLowerCase();
+  const id = options.id;
+  const match
+    = (typeof id === 'number' && id > 0
+      ? companies.find(company => company.id === id)
+      : undefined)
+      ?? companies.find(company => company.name.toLowerCase() === needle)
+      ?? companies.find(
+        company => company.permalink?.toLowerCase() === needle,
+      )
+      ?? companies.find(company =>
+        company.name.toLowerCase().includes(needle))
+      ?? companies[0];
+
+  if (!match)
     throw new Error('Yarn company missing from response');
-  return company;
+  return match;
 }
 
 export type YarnSearchPage = {
@@ -1223,39 +1264,125 @@ export type YarnSearchPage = {
   totalResults: number | null;
 };
 
-/** Yarns for a dyer — `GET yarns/search.json` filtered by company id. */
-export async function fetchCompanyYarns(
-  companyId: number,
-  options?: { page?: number; pageSize?: number },
-): Promise<YarnSearchPage> {
-  const page = options?.page ?? 1;
-  const pageSize = options?.pageSize ?? 48;
-  const { data } = await client.get('yarns/search.json', {
-    params: {
-      page,
-      page_size: pageSize,
-      yarn_company_id: companyId,
-      sort: 'projects',
-    },
-  });
+function yarnBelongsToCompany(
+  yarn: RavelryYarn,
+  company: { id: number; name?: string | null; permalink?: string | null },
+): boolean {
+  if (company.id > 0 && yarn.yarn_company_id != null)
+    return yarn.yarn_company_id === company.id;
+
+  const wantName = company.name?.trim().toLowerCase() || '';
+  const gotName = yarn.yarn_company_name?.trim().toLowerCase() || '';
+  if (wantName && gotName)
+    return gotName === wantName;
+
+  const wantPermalink = company.permalink?.trim().toLowerCase() || '';
+  const gotPermalink = yarn.yarn_company_permalink?.trim().toLowerCase() || '';
+  if (wantPermalink && gotPermalink)
+    return gotPermalink === wantPermalink;
+
+  // Search already scoped by brand/query — keep rows that omit company fields.
+  return true;
+}
+
+function yarnSearchPageFromPayload(
+  data: any,
+  options: {
+    page: number;
+    pageSize: number;
+    company: { id: number; name?: string | null; permalink?: string | null };
+  },
+): YarnSearchPage {
   const list = Array.isArray(data.yarns) ? data.yarns : [];
   const yarns = list
     .map(normalizeYarn)
-    .filter((entry: RavelryYarn | null): entry is RavelryYarn => entry != null);
+    .filter((entry: RavelryYarn | null): entry is RavelryYarn =>
+      entry != null && yarnBelongsToCompany(entry, options.company));
   const paginator = data.paginator ?? {};
   const pageCountRaw = paginator.page_count ?? paginator.last_page ?? 1;
   const pageCount = Number(pageCountRaw);
   const totalRaw = paginator.results;
   return {
     yarns,
-    page,
-    pageSize,
+    page: options.page,
+    pageSize: options.pageSize,
     pageCount: Number.isFinite(pageCount) && pageCount > 0 ? pageCount : 1,
     totalResults:
       typeof totalRaw === 'number' && Number.isFinite(totalRaw)
         ? totalRaw
         : null,
   };
+}
+
+/** Site brand facet uses the company permalink (`/yarns/brands/{permalink}`). */
+function companyBrandKey(company: {
+  permalink?: string | null;
+  name?: string | null;
+}): string {
+  const permalink = company.permalink?.trim();
+  if (permalink)
+    return permalink;
+  const name = company.name?.trim();
+  if (!name)
+    return '';
+  return name
+    .toLowerCase()
+    .replace(/&/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * Yarns for a dyer / brand.
+ *
+ * Prefer `GET yarns/search.json` with the site `brand` facet (company
+ * permalink), same family as pattern search’s `designer=` and project
+ * search’s `yarn=`. Fall back to full-text `query` + client company filter.
+ *
+ * Avoid `ya` (yarn-*attribute* facet) and numeric `yarn_company_id` (ignored).
+ */
+export async function fetchCompanyYarns(
+  company: {
+    id: number;
+    permalink?: string | null;
+    name?: string | null;
+  },
+  options?: { page?: number; pageSize?: number },
+): Promise<YarnSearchPage> {
+  const page = options?.page ?? 1;
+  const pageSize = options?.pageSize ?? 48;
+  const brandKey = companyBrandKey(company);
+  const companyName = company.name?.trim() || brandKey;
+  if (!brandKey && !companyName)
+    throw new Error('Yarn company name or permalink required for yarn search');
+
+  if (brandKey) {
+    const { data } = await client.get('yarns/search.json', {
+      params: {
+        page,
+        page_size: pageSize,
+        // Website yarn search brand filter (`#brand=` / brands/{permalink}).
+        brand: brandKey,
+        sort: 'projects',
+      },
+    });
+    const branded = yarnSearchPageFromPayload(data, { page, pageSize, company });
+    // Only trust the facet when rows actually match this company. An ignored
+    // `brand=` returns the global corpus; client filter then yields [].
+    if (branded.yarns.length > 0)
+      return branded;
+  }
+
+  // Fall back to full-text company name + strict company match.
+  const { data: fallback } = await client.get('yarns/search.json', {
+    params: {
+      page,
+      page_size: pageSize,
+      query: companyName,
+      sort: 'best',
+    },
+  });
+  return yarnSearchPageFromPayload(fallback, { page, pageSize, company });
 }
 
 export async function fetchProject(

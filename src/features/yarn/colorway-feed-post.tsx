@@ -44,14 +44,20 @@ export function ColorwayFeedPost({ yarnId, colorway }: Props) {
     = yarn?.yarn_company_id
       ?? yarn?.yarn_company?.id
       ?? null;
-  const companyQuery = useYarnCompany({
-    variables: { id: companyId ?? 0 },
-    enabled: companyId != null && companyId > 0,
-  });
-  const dyerName
+  const companyName
     = yarn?.yarn_company_name?.trim()
       || yarn?.yarn_company?.name?.trim()
-      || companyQuery.data?.name?.trim()
+      || '';
+  const companyQuery = useYarnCompany({
+    variables: {
+      query: companyName || String(companyId ?? ''),
+      id: companyId,
+    },
+    enabled: Boolean(companyName || (companyId != null && companyId > 0)),
+  });
+  const dyerName
+    = companyQuery.data?.name?.trim()
+      || companyName
       || null;
   const dyerLogo
     = companyQuery.data?.logo_url?.trim()

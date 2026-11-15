@@ -88,11 +88,16 @@ export const useYarnProjects = createQuery<
 
 export const useYarnCompany = createQuery<
   RavelryYarnCompany,
-  { id: number },
+  { query: string; id?: number | null },
   AxiosError
 >({
-  queryKey: ['yarn-company'],
-  fetcher: variables => fetchYarnCompany(variables.id),
+  // Bump when switching from YarnCompanies#show to yarn_companies/search.
+  queryKey: ['yarn-company', 'v2-search'],
+  fetcher: variables =>
+    fetchYarnCompany({
+      query: variables.query,
+      id: variables.id,
+    }),
 });
 
 export const useYarnColorways = createQuery<
@@ -125,15 +130,27 @@ export const useColorwayStashPhotos = createQuery<
 
 export const useCompanyYarns = createInfiniteQuery<
   CompanyYarnsPage,
-  { companyId: number },
+  { companyId?: number | null; query: string },
   AxiosError
 >({
-  queryKey: ['company-yarns', `page-${PAGE_SIZE}`],
+  // Bump when switching to brand= permalink facet (+ query fallback).
+  queryKey: ['company-yarns', 'v5-brand-facet', `page-${PAGE_SIZE}`],
   fetcher: async (variables, { pageParam }) => {
-    const page = await fetchCompanyYarns(variables.companyId, {
-      page: pageParam as number,
-      pageSize: PAGE_SIZE,
+    const company = await fetchYarnCompany({
+      query: variables.query,
+      id: variables.companyId,
     });
+    const page = await fetchCompanyYarns(
+      {
+        id: company.id,
+        permalink: company.permalink,
+        name: company.name,
+      },
+      {
+        page: pageParam as number,
+        pageSize: PAGE_SIZE,
+      },
+    );
     return {
       yarns: page.yarns,
       page: page.page,

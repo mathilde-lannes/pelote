@@ -52,6 +52,8 @@ export type RavelryYarn = {
   machine_washable?: boolean | null;
   discontinued?: boolean | null;
   texture?: string | null;
+  /** Catalog notes from Yarn#full (`notes` / `notes_html`). */
+  notes_html?: string | null;
 };
 
 /**

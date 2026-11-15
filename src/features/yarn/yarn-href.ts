@@ -37,6 +37,11 @@ export function yarnColorwayFeedHref(
 export function dyerHref(
   companyId: number,
   pathname?: string | null,
+  companyName?: string | null,
 ): string {
-  return `${dyerBasePath(pathname)}/${companyId}`;
+  const base = `${dyerBasePath(pathname)}/${companyId}`;
+  const name = companyName?.trim();
+  if (!name)
+    return base;
+  return `${base}?name=${encodeURIComponent(name)}`;
 }

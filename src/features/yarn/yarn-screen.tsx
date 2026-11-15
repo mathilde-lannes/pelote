@@ -1,6 +1,6 @@
 import type { RavelryColorway, RavelryProject } from './api';
 import { Image } from 'expo-image';
-import { Link, useLocalSearchParams, usePathname } from 'expo-router';
+import { Link, useLocalSearchParams, useNavigation, usePathname } from 'expo-router';
 import * as React from 'react';
 import {
   ActivityIndicator,
@@ -13,8 +13,10 @@ import {
   FocusAwareStatusBar,
   SafeAreaView,
   Text,
+  useModal,
   View,
 } from '@/components/ui';
+import { PatternInfo } from '@/components/ui/icons';
 import { formatCompactCount } from '@/features/feed/format-compact-count';
 import { bestPhotoUrl } from '@/lib/ravelry/api';
 import {
@@ -23,6 +25,7 @@ import {
   useYarnColorways,
   useYarnProjects,
 } from './api';
+import { YarnInfoSheet } from './yarn-info-sheet';
 import {
   dyerHref,
   yarnColorwayFeedHref,
@@ -266,11 +269,37 @@ function ColorwayTile({
 }
 
 export function YarnScreen() {
+  const navigation = useNavigation();
   const pathname = usePathname();
   const params = useLocalSearchParams<{ id: string }>();
   const yarnId = Number(String(params.id ?? '').trim());
   const enabled = Number.isFinite(yarnId) && yarnId > 0;
   const [tab, setTab] = React.useState<YarnTab>('projects');
+  const infoModal = useModal();
+  const [infoOpened, setInfoOpened] = React.useState(false);
+
+  const onInfoPress = React.useCallback(() => {
+    setInfoOpened(true);
+    infoModal.present();
+  }, [infoModal]);
+
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: enabled
+        ? () => (
+            <Pressable
+              onPress={onInfoPress}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Yarn info"
+              className="mr-1"
+            >
+              <PatternInfo color="#ffffff" />
+            </Pressable>
+          )
+        : undefined,
+    });
+  }, [enabled, navigation, onInfoPress]);
 
   const yarnQuery = useYarn({
     variables: { id: yarnId },
@@ -298,12 +327,26 @@ export function YarnScreen() {
     : (colorwaysQuery.data?.length ?? null);
   const photoUrl = bestPhotoUrl(yarn?.photo ?? yarn?.photos?.[0] ?? null);
   const name = yarn?.name ?? 'Yarn';
-  const dyerName = yarn?.yarn_company_name?.trim() || null;
+  const dyerName
+    = yarn?.yarn_company_name?.trim()
+      || yarn?.yarn_company?.name?.trim()
+      || null;
   const dyerId = yarn?.yarn_company_id ?? yarn?.yarn_company?.id ?? null;
   const dyerLink
     = dyerId != null && dyerId > 0
-      ? dyerHref(dyerId, pathname)
+      ? dyerHref(dyerId, pathname, dyerName)
       : null;
+
+  const infoSheet = enabled
+    ? (
+        <YarnInfoSheet
+          ref={infoModal.ref}
+          yarnId={yarnId}
+          yarnName={yarn?.name}
+          enabled={infoOpened}
+        />
+      )
+    : null;
 
   if (!enabled) {
     return (
@@ -319,6 +362,7 @@ export function YarnScreen() {
       <SafeAreaView className="flex-1 items-center justify-center bg-black" edges={['bottom']}>
         <FocusAwareStatusBar />
         <ActivityIndicator color="#ffffff" size="large" />
+        {infoSheet}
       </SafeAreaView>
     );
   }
@@ -372,6 +416,7 @@ export function YarnScreen() {
             <ColorwayTile yarnId={yarnId} colorway={item} />
           )}
         />
+        {infoSheet}
       </SafeAreaView>
     );
   }
@@ -403,6 +448,7 @@ export function YarnScreen() {
           <ProjectTile yarnId={yarnId} project={item} />
         )}
       />
+      {infoSheet}
     </SafeAreaView>
   );
 }

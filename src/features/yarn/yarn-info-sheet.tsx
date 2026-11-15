@@ -56,21 +56,21 @@ function DyerLinkRow({
           accessibilityLabel={`Dyer ${name}`}
           className="flex-row items-center gap-3 px-5 pt-2 pb-3.5"
         >
-          <View className="size-12 items-center justify-center overflow-hidden rounded-md bg-ink-200">
-            {photoUri
-              ? (
-                  <Image
-                    source={{ uri: photoUri }}
-                    style={{ width: '100%', height: '100%' }}
-                    contentFit="cover"
-                  />
-                )
-              : (
-                  <Text className="text-base font-semibold text-fog-400">
+          {photoUri
+            ? (
+                <Image
+                  source={{ uri: photoUri }}
+                  style={{ width: 48, height: 48, borderRadius: 24 }}
+                  contentFit="cover"
+                />
+              )
+            : (
+                <View className="size-12 items-center justify-center rounded-full bg-ink-300">
+                  <Text className="font-semibold text-white">
                     {initial}
                   </Text>
-                )}
-          </View>
+                </View>
+              )}
           <View className="min-w-0 flex-1">
             <Text className="text-base text-white" numberOfLines={1}>
               {name}
@@ -108,6 +108,10 @@ function formatPutUp(yarn: RavelryYarn): string | null {
   return null;
 }
 
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 function rowsForYarn(yarn: RavelryYarn): { label: string; value: string }[] {
   const rows: { label: string; value: string }[] = [];
   if (yarn.yarn_weight_name)
@@ -134,6 +138,9 @@ function rowsForYarn(yarn: RavelryYarn): { label: string; value: string }[] {
       label: 'Availability',
       value: yarn.discontinued ? 'Discontinued' : 'Available',
     });
+  const notes = yarn.notes_html ? stripHtml(yarn.notes_html) : '';
+  if (notes)
+    rows.push({ label: 'Notes', value: notes });
   return rows;
 }
 
@@ -160,14 +167,20 @@ export function YarnInfoSheet({
     = yarn?.yarn_company_id
       ?? yarn?.yarn_company?.id
       ?? null;
-  const companyQuery = useYarnCompany({
-    variables: { id: companyId ?? 0 },
-    enabled: enabled && companyId != null && companyId > 0,
-  });
-  const dyerName
+  const companyName
     = yarn?.yarn_company_name?.trim()
       || yarn?.yarn_company?.name?.trim()
-      || companyQuery.data?.name?.trim()
+      || '';
+  const companyQuery = useYarnCompany({
+    variables: {
+      query: companyName || String(companyId ?? ''),
+      id: companyId,
+    },
+    enabled: enabled && Boolean(companyName || (companyId != null && companyId > 0)),
+  });
+  const dyerName
+    = companyQuery.data?.name?.trim()
+      || companyName
       || null;
   const dyerLogo
     = companyQuery.data?.logo_url?.trim()
@@ -175,7 +188,7 @@ export function YarnInfoSheet({
       || null;
   const dyerLink
     = companyId != null && companyId > 0
-      ? dyerHref(companyId, pathname)
+      ? dyerHref(companyId, pathname, dyerName)
       : null;
   const title = yarn?.name || yarnName || 'Yarn info';
   const rows = yarn ? rowsForYarn(yarn) : [];
