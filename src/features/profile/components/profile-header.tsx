@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import * as React from 'react';
 import { Pressable } from 'react-native';
 
+import { ExpandableText } from '@/components/expandable-text';
 import { Text, View } from '@/components/ui';
 import { Settings as SettingsIcon } from '@/components/ui/icons';
 import { ProfileCountSkeleton } from './profile-skeletons';
@@ -23,6 +24,8 @@ type Props = {
   onTabChange: (tab: ProfileTab) => void;
   showFavouritesTab: boolean;
   showDesignsTab: boolean;
+  /** When true, Designs is the leading tab (designer profiles). */
+  designsTabFirst?: boolean;
   showSettings: boolean;
 };
 
@@ -111,15 +114,22 @@ export function ProfileHeader({
   onTabChange,
   showFavouritesTab,
   showDesignsTab,
+  designsTabFirst = false,
   showSettings,
 }: Props) {
   const router = useRouter();
   const initial = username.slice(0, 1).toUpperCase() || '?';
-  const tabs: ProfileTab[] = [
-    'projects',
-    ...(showFavouritesTab ? (['favourites'] as const) : []),
-    ...(showDesignsTab ? (['designs'] as const) : []),
-  ];
+  const tabs: ProfileTab[] = designsTabFirst && showDesignsTab
+    ? [
+        'designs',
+        'projects',
+        ...(showFavouritesTab ? (['favourites'] as const) : []),
+      ]
+    : [
+        'projects',
+        ...(showFavouritesTab ? (['favourites'] as const) : []),
+        ...(showDesignsTab ? (['designs'] as const) : []),
+      ];
   const showDesignsStat
     = designsLoading || (designCount != null && designCount > 0);
 
@@ -161,6 +171,9 @@ export function ProfileHeader({
               : null}
           </View>
           <View className="mt-3 flex-row gap-6">
+            {designsTabFirst && showDesignsStat
+              ? <Stat count={designCount} label="designs" loading={designsLoading} />
+              : null}
             <Stat count={projectCount} label="projects" loading={projectsLoading} />
             {showFavouritesTab
               ? (
@@ -171,7 +184,7 @@ export function ProfileHeader({
                   />
                 )
               : null}
-            {showDesignsStat
+            {!designsTabFirst && showDesignsStat
               ? <Stat count={designCount} label="designs" loading={designsLoading} />
               : null}
           </View>
@@ -179,9 +192,14 @@ export function ProfileHeader({
       </View>
       {about
         ? (
-            <Text className="mt-2 mb-3 px-4 text-sm/5 text-fog-300">
-              {about}
-            </Text>
+            <View className="mt-2 mb-3 px-4">
+              <ExpandableText
+                text={about}
+                numberOfLines={2}
+                className="text-sm/5 text-fog-300"
+                moreClassName="text-sm font-semibold text-fog-500"
+              />
+            </View>
           )
         : null}
       <ProfileTabs tabs={tabs} tab={tab} onTabChange={onTabChange} />

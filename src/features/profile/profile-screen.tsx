@@ -22,11 +22,14 @@ export function ProfileScreen() {
     );
   }
 
+  // Tab profile needs top inset; nested stack profiles already have a header + tab bar.
+  const edges = profile.isTabProfile ? (['top'] as const) : [];
+
   if (profile.personPending && !profile.person) {
     return (
       <SafeAreaView
         className="flex-1 bg-black"
-        edges={profile.isTabProfile ? ['top'] : ['bottom']}
+        edges={edges}
       >
         <FocusAwareStatusBar />
         <ProfileScreenSkeleton showSettings={profile.isOwnProfile} />
@@ -59,7 +62,8 @@ export function ProfileScreen() {
       tab={profile.activeTab}
       onTabChange={profile.setTab}
       showFavouritesTab={profile.isOwnProfile}
-      showDesignsTab={profile.hasDesigns}
+      showDesignsTab={profile.showDesignsTab}
+      designsTabFirst={profile.isDesignerProfile}
       showSettings={profile.isOwnProfile}
     />
   );
@@ -67,7 +71,7 @@ export function ProfileScreen() {
   return (
     <SafeAreaView
       className="flex-1 bg-black"
-      edges={profile.isTabProfile ? ['top'] : ['bottom']}
+      edges={edges}
     >
       <FocusAwareStatusBar />
       <ProfileTabLists

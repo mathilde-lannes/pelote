@@ -1,13 +1,17 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import type { RavelryPattern } from '@/lib/ravelry/types';
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { Image } from 'expo-image';
+import { Link, usePathname } from 'expo-router';
 import * as React from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Pressable, View } from 'react-native';
 
 import colors from '@/components/ui/colors';
 import { Modal, Text } from '@/components/ui';
+import { ArrowRight } from '@/components/ui/icons';
 import { usePattern } from '@/features/explore/api';
 import { formatYardage } from '@/features/feed/format-yardage';
+import { designerProfileHref } from '@/features/profile/designer-profile-href';
 
 type Props = {
   patternId: number;
@@ -74,6 +78,57 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function DesignerLinkRow({
+  href,
+  name,
+  photoUri,
+  onPress,
+}: {
+  href: string;
+  name: string;
+  photoUri: string | null;
+  onPress?: () => void;
+}) {
+  const initial = (name || '?').slice(0, 1).toUpperCase();
+  return (
+    <View className="border-b border-ink-300">
+      <Text className="px-5 pt-3.5 text-xs font-medium uppercase tracking-wide text-fog-500">
+        Designer
+      </Text>
+      <Link href={href as never} asChild>
+        <Pressable
+          onPress={onPress}
+          accessibilityRole="button"
+          accessibilityLabel={`Designer ${name}`}
+          className="flex-row items-center gap-3 px-5 pt-2 pb-3.5"
+        >
+          {photoUri
+            ? (
+                <Image
+                  source={{ uri: photoUri }}
+                  style={{ width: 48, height: 48, borderRadius: 24 }}
+                  contentFit="cover"
+                />
+              )
+            : (
+                <View className="size-12 items-center justify-center rounded-full bg-ink-300">
+                  <Text className="font-semibold text-white">
+                    {initial}
+                  </Text>
+                </View>
+              )}
+          <View className="min-w-0 flex-1">
+            <Text className="text-base text-white" numberOfLines={1}>
+              {name}
+            </Text>
+          </View>
+          <ArrowRight color={colors.fog[400]} />
+        </Pressable>
+      </Link>
+    </View>
+  );
+}
+
 function rowsForPattern(pattern: RavelryPattern): { label: string; value: string }[] {
   const needles = (pattern.pattern_needle_sizes ?? [])
     .map(needle => needle.name.trim())
@@ -112,6 +167,7 @@ export function PatternInfoSheet({
   patternName,
   enabled = false,
 }: Props & { ref?: React.RefObject<BottomSheetModal | null> }) {
+  const pathname = usePathname();
   const query = usePattern({
     variables: { id: patternId },
     enabled: enabled && patternId > 0,
@@ -124,6 +180,16 @@ export function PatternInfoSheet({
   });
 
   const pattern = query.data;
+  const author = pattern?.pattern_author;
+  const designerName
+    = author?.name?.trim()
+      || author?.users?.[0]?.username?.trim()
+      || null;
+  const designerPhoto
+    = author?.users?.[0]?.small_photo_url?.trim()
+      || author?.users?.[0]?.photo_url?.trim()
+      || null;
+  const designerLink = designerProfileHref(author, pathname);
   const title = pattern?.name || patternName || 'Pattern info';
   const rows = pattern ? rowsForPattern(pattern) : [];
 
@@ -171,7 +237,22 @@ export function PatternInfoSheet({
             )
           : null}
 
-        {pattern && !rows.length
+        {designerName && designerLink
+          ? (
+              <DesignerLinkRow
+                href={designerLink}
+                name={designerName}
+                photoUri={designerPhoto}
+                onPress={() => ref?.current?.dismiss()}
+              />
+            )
+          : designerName
+            ? (
+                <InfoRow label="Designer" value={designerName} />
+              )
+            : null}
+
+        {pattern && !rows.length && !designerName
           ? (
               <View className="px-5 py-8">
                 <Text className="text-center text-sm text-fog-400">

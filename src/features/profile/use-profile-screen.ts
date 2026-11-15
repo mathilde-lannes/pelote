@@ -60,11 +60,18 @@ export function useProfileScreen() {
   const hasDesigns
     = designs.length > 0
       || ((designsQuery.data?.totalCount ?? 0) > 0);
+  /** Opened via designer link (`?designer=` / `designer_id`). */
+  const isDesignerProfile
+    = Boolean(designerPermalink) || designerId != null;
+  const showDesignsTab
+    = hasDesigns || (isDesignerProfile && designsQuery.isPending);
 
-  const [tab, setTab] = React.useState<ProfileTab>('projects');
+  const [tab, setTab] = React.useState<ProfileTab>(
+    isDesignerProfile ? 'designs' : 'projects',
+  );
   const activeTab
     = (tab === 'favourites' && !isOwnProfile)
-      || (tab === 'designs' && !hasDesigns)
+      || (tab === 'designs' && !hasDesigns && !designsQuery.isPending)
       ? 'projects'
       : tab;
 
@@ -74,11 +81,13 @@ export function useProfileScreen() {
     designerId,
     isTabProfile,
     isOwnProfile,
+    isDesignerProfile,
     person,
     projects,
     favorites,
     designs,
     hasDesigns,
+    showDesignsTab,
     activeTab,
     setTab,
     personPending: personQuery.isPending,
