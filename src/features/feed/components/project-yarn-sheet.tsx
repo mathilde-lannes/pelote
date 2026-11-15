@@ -1,22 +1,24 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
-import type { RavelryProjectPack } from '@/lib/ravelry/types';
-import type { RavelryYarnSummary } from '@/lib/ravelry/api';
+import type { RavelryProjectPack, RavelryYarn } from '@/lib/ravelry/types';
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Image } from 'expo-image';
+import { Link, usePathname } from 'expo-router';
 import * as React from 'react';
 import {
   ActivityIndicator,
   Dimensions,
   FlatList,
+  Pressable,
   View,
 } from 'react-native';
 
 import colors from '@/components/ui/colors';
 import { Modal, Text } from '@/components/ui';
-import { Yarn } from '@/components/ui/icons';
+import { ArrowRight, Yarn } from '@/components/ui/icons';
 import { usePattern } from '@/features/explore/api';
 import { useProject, useYarnsByIds } from '@/features/feed/api';
+import { yarnHref } from '@/features/yarn/yarn-href';
 import { bestPhotoUrl } from '@/lib/ravelry/api';
 
 type ProjectSource = {
@@ -182,13 +184,17 @@ function YarnUsedRow({
   name,
   dyer,
   photoUri,
+  href,
+  onPress,
 }: {
   name: string;
   dyer: string | null;
   photoUri: string | null;
+  href?: string | null;
+  onPress?: () => void;
 }) {
-  return (
-    <View className="flex-row items-center gap-3 border-b border-ink-300 px-5 py-3.5">
+  const body = (
+    <>
       <View className="size-12 overflow-hidden rounded-md bg-ink-200">
         {photoUri
           ? (
@@ -212,19 +218,52 @@ function YarnUsedRow({
             )
           : null}
       </View>
+      {href
+        ? <ArrowRight color={colors.fog[400]} />
+        : null}
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link href={href as never} asChild>
+        <Pressable
+          onPress={onPress}
+          accessibilityRole="button"
+          accessibilityLabel={
+            dyer ? `Yarn ${name} by ${dyer}` : `Yarn ${name}`
+          }
+          className="flex-row items-center gap-3 border-b border-ink-300 px-5 py-3.5"
+        >
+          {body}
+        </Pressable>
+      </Link>
+    );
+  }
+
+  return (
+    <View
+      accessibilityLabel={
+        dyer ? `Yarn ${name} by ${dyer}` : `Yarn ${name}`
+      }
+      className="flex-row items-center gap-3 border-b border-ink-300 px-5 py-3.5"
+    >
+      {body}
     </View>
   );
 }
 
 function resolveCatalogYarn(
   pack: RavelryProjectPack,
-  yarnsById: Map<number, RavelryYarnSummary>,
+  yarnsById: Map<number, RavelryYarn>,
 ): {
+  yarnId: number | null;
   name: string;
   dyer: string | null;
   photoUri: string | null;
 } | null {
-  const catalog = pack.yarn_id != null ? yarnsById.get(pack.yarn_id) : null;
+  const yarnId = pack.yarn_id != null && pack.yarn_id > 0 ? pack.yarn_id : null;
+  const catalog = yarnId != null ? yarnsById.get(yarnId) : null;
   const name
     = catalog?.name?.trim()
       || pack.yarn_name?.trim()
@@ -237,6 +276,7 @@ function resolveCatalogYarn(
   if (!name && !dyer && !photoUri)
     return null;
   return {
+    yarnId,
     name: name ?? 'Yarn',
     dyer,
     photoUri,
@@ -246,13 +286,18 @@ function resolveCatalogYarn(
 function ActivePackDetails({
   pack,
   catalogYarn,
+  yarnLink,
+  onYarnPress,
 }: {
   pack: RavelryProjectPack;
   catalogYarn: {
+    yarnId: number | null;
     name: string;
     dyer: string | null;
     photoUri: string | null;
   } | null;
+  yarnLink?: string | null;
+  onYarnPress?: () => void;
 }) {
   const rows = rowsForPack(pack);
   return (
@@ -269,6 +314,8 @@ function ActivePackDetails({
                 name={catalogYarn.name}
                 dyer={catalogYarn.dyer}
                 photoUri={catalogYarn.photoUri}
+                href={yarnLink}
+                onPress={onYarnPress}
               />
             </View>
           )
@@ -360,6 +407,7 @@ export function YarnPackSheet({
   enabled = false,
   ...source
 }: YarnPackSheetProps & { ref?: React.RefObject<BottomSheetModal | null> }) {
+  const pathname = usePathname();
   const [activeIndex, setActiveIndex] = React.useState(0);
   const {
     packs,
@@ -390,7 +438,7 @@ export function YarnPackSheet({
     },
   });
   const yarnsById = React.useMemo(() => {
-    const map = new Map<number, RavelryYarnSummary>();
+    const map = new Map<number, RavelryYarn>();
     for (const yarn of yarnsQuery.data ?? [])
       map.set(yarn.id, yarn);
     return map;
@@ -403,6 +451,10 @@ export function YarnPackSheet({
   const catalogYarn = activePack
     ? resolveCatalogYarn(activePack, yarnsById)
     : null;
+  const yarnLink
+    = catalogYarn?.yarnId != null
+      ? yarnHref(catalogYarn.yarnId, pathname)
+      : null;
 
   React.useEffect(() => {
     setActiveIndex(0);
@@ -475,6 +527,8 @@ export function YarnPackSheet({
                       <ActivePackDetails
                         pack={activePack}
                         catalogYarn={catalogYarn}
+                        yarnLink={yarnLink}
+                        onYarnPress={() => ref?.current?.dismiss()}
                       />
                     )
                   : null}

@@ -13,6 +13,8 @@ import type {
   RavelryPhoto,
   RavelryProject,
   RavelryProjectPack,
+  RavelryYarn,
+  RavelryYarnCompany,
 } from './types';
 
 import { client } from '@/lib/api';
@@ -755,13 +757,8 @@ export async function fetchFriendsActivity(
   };
 }
 
-/** Yarn catalog row from Yarns#full (`GET yarns.json?ids=`). */
-export type RavelryYarnSummary = {
-  id: number;
-  name: string | null;
-  yarn_company_name: string | null;
-  photo: RavelryPhoto | null;
-};
+/** @deprecated Prefer `RavelryYarn` from types. */
+export type RavelryYarnSummary = RavelryYarn;
 
 function yarnsFromListPayload(data: unknown): unknown[] {
   if (!data || typeof data !== 'object')
@@ -774,7 +771,7 @@ function yarnsFromListPayload(data: unknown): unknown[] {
   return [];
 }
 
-function normalizeYarnSummary(raw: any): RavelryYarnSummary | null {
+function normalizeYarnCompany(raw: any): RavelryYarnCompany | null {
   const id = Number(raw?.id);
   if (!Number.isFinite(id) || id <= 0)
     return null;
@@ -782,25 +779,74 @@ function normalizeYarnSummary(raw: any): RavelryYarnSummary | null {
     = typeof raw?.name === 'string' && raw.name.trim()
       ? raw.name.trim()
       : null;
-  const company
-    = (typeof raw?.yarn_company_name === 'string' && raw.yarn_company_name.trim())
-      || (typeof raw?.yarn_company?.name === 'string' && raw.yarn_company.name.trim())
-      || null;
-  const photo
-    = normalizePhoto(raw?.first_photo)
-      ?? normalizePhoto(Array.isArray(raw?.photos) ? raw.photos[0] : null);
+  if (!name)
+    return null;
+  const yarnCountRaw = Number(raw?.yarn_count ?? raw?.yarns_count);
   return {
     id,
     name,
-    yarn_company_name: company,
+    permalink:
+      typeof raw?.permalink === 'string' && raw.permalink.trim()
+        ? raw.permalink.trim()
+        : null,
+    yarn_count:
+      Number.isFinite(yarnCountRaw) && yarnCountRaw >= 0
+        ? yarnCountRaw
+        : null,
+  };
+}
+
+function normalizeYarn(raw: any): RavelryYarn | null {
+  const id = Number(raw?.id);
+  if (!Number.isFinite(id) || id <= 0)
+    return null;
+  const name
+    = typeof raw?.name === 'string' && raw.name.trim()
+      ? raw.name.trim()
+      : null;
+  if (!name)
+    return null;
+  const company = normalizeYarnCompany(raw?.yarn_company);
+  const companyName
+    = (typeof raw?.yarn_company_name === 'string' && raw.yarn_company_name.trim())
+      || company?.name
+      || null;
+  const companyIdRaw = Number(raw?.yarn_company_id ?? company?.id);
+  const companyId
+    = Number.isFinite(companyIdRaw) && companyIdRaw > 0 ? companyIdRaw : null;
+  const photos = Array.isArray(raw?.photos)
+    ? raw.photos.map(normalizePhoto).filter(Boolean) as RavelryPhoto[]
+    : [];
+  const photo
+    = normalizePhoto(raw?.first_photo)
+      ?? photos[0]
+      ?? null;
+  const projectsRaw = Number(raw?.projects_count);
+  const weight
+    = (typeof raw?.yarn_weight?.name === 'string' && raw.yarn_weight.name.trim())
+      || (typeof raw?.yarn_weight_name === 'string' && raw.yarn_weight_name.trim())
+      || null;
+  return {
+    id,
+    name,
+    permalink:
+      typeof raw?.permalink === 'string' && raw.permalink.trim()
+        ? raw.permalink.trim()
+        : null,
+    yarn_company_name: companyName,
+    yarn_company_id: companyId,
+    yarn_company_permalink: company?.permalink ?? null,
+    yarn_company: company,
+    projects_count:
+      Number.isFinite(projectsRaw) && projectsRaw >= 0 ? projectsRaw : null,
     photo,
+    photos: photos.length ? photos : undefined,
+    yarn_weight_name: weight,
   };
 }
 
 /** Documented: `GET yarns.json?ids=` → Yarn#full map (same id shape as patterns.json). */
-export async function fetchYarnsByIds(
-  ids: number[],
-): Promise<RavelryYarnSummary[]> {
+export async function fetchYarnsByIds(ids: number[]): Promise<RavelryYarn[]> {
   const unique = [...new Set(ids.filter(id => Number.isFinite(id) && id > 0))];
   if (!unique.length)
     return [];
@@ -812,11 +858,105 @@ export async function fetchYarnsByIds(
   const pages = await Promise.all(chunks.map(async (chunk) => {
     const { data } = await client.get(`yarns.json?ids=${chunk.join('+')}`);
     return yarnsFromListPayload(data).flatMap((raw) => {
-      const yarn = normalizeYarnSummary(raw);
+      const yarn = normalizeYarn(raw);
       return yarn ? [yarn] : [];
     });
   }));
   return pages.flat();
+}
+
+/** Documented: `GET yarns/{id}.json` → Yarn#full (fallback yarns.json?ids=). */
+export async function fetchYarn(id: number): Promise<RavelryYarn> {
+  if (!Number.isFinite(id) || id <= 0)
+    throw new Error('Invalid yarn id');
+  try {
+    const { data } = await client.get(`yarns/${id}.json`);
+    const yarn = normalizeYarn(data.yarn ?? data);
+    if (yarn)
+      return yarn;
+  }
+  catch {
+    // Fall through to multi-get.
+  }
+  const [yarn] = await fetchYarnsByIds([id]);
+  if (!yarn)
+    throw new Error('Yarn missing from response');
+  return yarn;
+}
+
+/** Projects that list this catalog yarn — `GET projects/search.json?yarn_id=`. */
+export async function fetchYarnProjects(
+  yarnId: number,
+  options?: { page?: number; pageSize?: number },
+): Promise<ProjectsListPage> {
+  const page = options?.page ?? 1;
+  const pageSize = options?.pageSize ?? 48;
+  const { data } = await client.get('projects/search.json', {
+    params: {
+      page,
+      page_size: pageSize,
+      yarn_id: yarnId,
+    },
+  });
+  return projectsPageFromPayload(data, page, pageSize);
+}
+
+/** Documented: `GET yarn_companies/{id}.json` → yarn_company. */
+export async function fetchYarnCompany(
+  id: number,
+): Promise<RavelryYarnCompany> {
+  if (!Number.isFinite(id) || id <= 0)
+    throw new Error('Invalid yarn company id');
+  const { data } = await client.get(`yarn_companies/${id}.json`);
+  const company = normalizeYarnCompany(
+    data.yarn_company ?? data.company ?? data,
+  );
+  if (!company)
+    throw new Error('Yarn company missing from response');
+  return company;
+}
+
+export type YarnSearchPage = {
+  yarns: RavelryYarn[];
+  page: number;
+  pageSize: number;
+  pageCount: number;
+  totalResults: number | null;
+};
+
+/** Yarns for a dyer — `GET yarns/search.json` filtered by company id. */
+export async function fetchCompanyYarns(
+  companyId: number,
+  options?: { page?: number; pageSize?: number },
+): Promise<YarnSearchPage> {
+  const page = options?.page ?? 1;
+  const pageSize = options?.pageSize ?? 48;
+  const { data } = await client.get('yarns/search.json', {
+    params: {
+      page,
+      page_size: pageSize,
+      yarn_company_id: companyId,
+      sort: 'projects',
+    },
+  });
+  const list = Array.isArray(data.yarns) ? data.yarns : [];
+  const yarns = list
+    .map(normalizeYarn)
+    .filter((entry: RavelryYarn | null): entry is RavelryYarn => entry != null);
+  const paginator = data.paginator ?? {};
+  const pageCountRaw = paginator.page_count ?? paginator.last_page ?? 1;
+  const pageCount = Number(pageCountRaw);
+  const totalRaw = paginator.results;
+  return {
+    yarns,
+    page,
+    pageSize,
+    pageCount: Number.isFinite(pageCount) && pageCount > 0 ? pageCount : 1,
+    totalResults:
+      typeof totalRaw === 'number' && Number.isFinite(totalRaw)
+        ? totalRaw
+        : null,
+  };
 }
 
 export async function fetchProject(

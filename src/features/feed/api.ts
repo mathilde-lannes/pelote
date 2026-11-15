@@ -1,9 +1,10 @@
 import type { AxiosError } from 'axios';
+import type { FriendsActivityPage } from '@/lib/ravelry/api';
 import type {
-  FriendsActivityPage,
-  RavelryYarnSummary,
-} from '@/lib/ravelry/api';
-import type { FriendActivity, RavelryProject } from '@/lib/ravelry/types';
+  FriendActivity,
+  RavelryProject,
+  RavelryYarn,
+} from '@/lib/ravelry/types';
 import { createInfiniteQuery, createQuery } from 'react-query-kit';
 
 import { useAuthStore } from '@/features/auth/use-auth-store';
@@ -58,7 +59,7 @@ export const useProject = createQuery<
 
 /** Yarn#full rows for project pack photos (`GET yarns.json?ids=`). */
 export const useYarnsByIds = createQuery<
-  RavelryYarnSummary[],
+  RavelryYarn[],
   { ids: number[] },
   AxiosError
 >({

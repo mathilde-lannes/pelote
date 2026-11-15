@@ -18,6 +18,29 @@ export type RavelryPhoto = {
   shelved_url?: string | null;
 };
 
+/** Yarn company (dyer / brand) from Yarn#full `yarn_company` / YarnCompanies#show. */
+export type RavelryYarnCompany = {
+  id: number;
+  name: string;
+  permalink?: string | null;
+  yarn_count?: number | null;
+};
+
+/** Catalog yarn from Yarns#show / yarns.json / yarns/search. */
+export type RavelryYarn = {
+  id: number;
+  name: string;
+  permalink?: string | null;
+  yarn_company_name?: string | null;
+  yarn_company_id?: number | null;
+  yarn_company_permalink?: string | null;
+  yarn_company?: RavelryYarnCompany | null;
+  projects_count?: number | null;
+  photo?: RavelryPhoto | null;
+  photos?: RavelryPhoto[];
+  yarn_weight_name?: string | null;
+};
+
 /** Yarn pack summary from Pattern#full / Project#full `packs`. */
 export type RavelryProjectPack = {
   /** Linked catalog yarn id for Yarns#show / yarns.json?ids=. */

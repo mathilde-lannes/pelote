@@ -29,6 +29,14 @@ export default function SearchStackLayout() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
+        name="yarn/[id]"
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="dyer/[id]"
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
         name="user/[username]"
         options={{ headerShown: false }}
       />
