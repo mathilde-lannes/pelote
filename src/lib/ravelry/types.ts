@@ -16,6 +16,13 @@ export type RavelryPhoto = {
   shelved_url?: string | null;
 };
 
+/** Yarn pack summary from Project#full `packs`. */
+export type RavelryProjectPack = {
+  yarn_name?: string | null;
+  colorway?: string | null;
+  yarn_weight_name?: string | null;
+};
+
 export type RavelryProject = {
   id: number;
   name: string;
@@ -42,6 +49,16 @@ export type RavelryProject = {
   craft_name?: string | null;
   /** Ravelry favorites count — mapped to Instagram “likes” in the feed. */
   favorites_count?: number | null;
+  /** Size label from Project#full when present. */
+  size?: string | null;
+  made_for?: string | null;
+  gauge_description?: string | null;
+  gauge?: number | null;
+  gauge_divisor?: number | null;
+  row_gauge?: number | null;
+  gauge_pattern?: string | null;
+  needle_sizes?: RavelryNeedleSize[];
+  packs?: RavelryProjectPack[];
 };
 
 export type ActivityType

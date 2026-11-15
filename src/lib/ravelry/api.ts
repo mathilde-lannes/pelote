@@ -7,10 +7,12 @@ import type {
   PeopleSearchResponse,
   RavelryFavorite,
   RavelryFavoriteType,
+  RavelryNeedleSize,
   RavelryPattern,
   RavelryPerson,
   RavelryPhoto,
   RavelryProject,
+  RavelryProjectPack,
 } from './types';
 
 import { client } from '@/lib/api';
@@ -190,6 +192,45 @@ async function enrichFriendPhotos(
   });
 }
 
+function normalizeProjectNeedle(raw: any): RavelryNeedleSize | null {
+  const name = typeof raw?.name === 'string' ? raw.name.trim() : '';
+  if (!name)
+    return null;
+  return {
+    id: Number(raw?.id ?? 0) || 0,
+    name,
+    metric: typeof raw?.metric === 'number' ? raw.metric : null,
+    us: typeof raw?.us === 'string' ? raw.us : null,
+    crochet: typeof raw?.crochet === 'boolean' ? raw.crochet : null,
+    knitting: typeof raw?.knitting === 'boolean' ? raw.knitting : null,
+  };
+}
+
+function normalizeProjectPack(raw: any): RavelryProjectPack | null {
+  if (!raw || typeof raw !== 'object')
+    return null;
+  const yarnName
+    = (typeof raw.yarn_name === 'string' && raw.yarn_name.trim())
+      || (typeof raw.yarn?.name === 'string' && raw.yarn.name.trim())
+      || null;
+  const colorway
+    = typeof raw.colorway === 'string' && raw.colorway.trim()
+      ? raw.colorway.trim()
+      : null;
+  const yarnWeight
+    = (typeof raw.yarn_weight?.name === 'string' && raw.yarn_weight.name.trim())
+      || (typeof raw.yarn?.yarn_weight?.name === 'string'
+        && raw.yarn.yarn_weight.name.trim())
+      || null;
+  if (!yarnName && !colorway && !yarnWeight)
+    return null;
+  return {
+    yarn_name: yarnName,
+    colorway,
+    yarn_weight_name: yarnWeight,
+  };
+}
+
 function normalizeProject(raw: any): RavelryProject {
   const userRaw = raw.user ?? raw.person ?? null;
   const patternIdRaw = Number(raw.pattern_id ?? raw.pattern?.id);
@@ -198,6 +239,30 @@ function normalizeProject(raw: any): RavelryProject {
   const nestedPattern = raw.pattern != null && patternId != null
     ? normalizePattern({ ...raw.pattern, id: patternId })
     : null;
+  const needleSource
+    = raw.needle_sizes
+      ?? raw.project_needle_sizes
+      ?? raw.pattern_needle_sizes
+      ?? [];
+  const needles = (Array.isArray(needleSource) ? needleSource : [])
+    .map(normalizeProjectNeedle)
+    .filter((entry: RavelryNeedleSize | null): entry is RavelryNeedleSize =>
+      entry != null,
+    );
+  const packs = (Array.isArray(raw.packs) ? raw.packs : [])
+    .map(normalizeProjectPack)
+    .filter((entry: RavelryProjectPack | null): entry is RavelryProjectPack =>
+      entry != null,
+    );
+  const size
+    = (typeof raw.size === 'string' && raw.size.trim())
+      || (typeof raw.size_name === 'string' && raw.size_name.trim())
+      || null;
+  const statusName
+    = raw.status_name
+      ?? (typeof raw.status?.name === 'string' ? raw.status.name : null)
+      ?? null;
+
   return {
     id: raw.id,
     name: raw.name,
@@ -205,7 +270,7 @@ function normalizeProject(raw: any): RavelryProject {
     pattern_name: raw.pattern_name ?? nestedPattern?.name ?? raw.pattern?.name ?? null,
     pattern_id: patternId,
     pattern_author: nestedPattern?.pattern_author ?? null,
-    status_name: raw.status_name ?? null,
+    status_name: statusName,
     progress: raw.progress ?? null,
     notes_html: raw.notes_html ?? raw.notes ?? null,
     started: raw.started ?? null,
@@ -221,6 +286,24 @@ function normalizeProject(raw: any): RavelryProject {
     photos: Array.isArray(raw.photos)
       ? raw.photos.map(normalizePhoto).filter(Boolean) as RavelryPhoto[]
       : undefined,
+    size,
+    made_for:
+      typeof raw.made_for === 'string' && raw.made_for.trim()
+        ? raw.made_for.trim()
+        : null,
+    gauge_description:
+      typeof raw.gauge_description === 'string' && raw.gauge_description.trim()
+        ? raw.gauge_description.trim()
+        : null,
+    gauge: typeof raw.gauge === 'number' ? raw.gauge : null,
+    gauge_divisor: typeof raw.gauge_divisor === 'number' ? raw.gauge_divisor : null,
+    row_gauge: typeof raw.row_gauge === 'number' ? raw.row_gauge : null,
+    gauge_pattern:
+      typeof raw.gauge_pattern === 'string' && raw.gauge_pattern.trim()
+        ? raw.gauge_pattern.trim()
+        : null,
+    needle_sizes: needles.length ? needles : undefined,
+    packs: packs.length ? packs : undefined,
   };
 }
 

@@ -18,6 +18,7 @@ import {
 import { patternProjectsHref } from '@/features/explore/pattern-href';
 import { PatternInfoSheet } from '@/features/feed/components/pattern-info-sheet';
 import { PhotoCarousel } from '@/features/feed/components/photo-carousel';
+import { ProjectInfoSheet } from '@/features/feed/components/project-info-sheet';
 import { UnfavoriteConfirmSheet } from '@/features/feed/components/unfavorite-confirm-sheet';
 import { formatCompactCount } from '@/features/feed/format-compact-count';
 import { formatRelative } from '@/features/feed/format-relative';
@@ -203,12 +204,14 @@ export type ProjectPostProps = PostBase & {
   variant: 'project';
   projectId: number;
   projectName: string;
+  /** Owner username for Project#show (usually same as authorName). */
+  ownerUsername: string;
+  /** Linked pattern when known. */
+  patternId?: number | null;
   /** Pattern the project is based on, when known. */
   patternName?: string | null;
   /** Designer display name shown next to the pattern name. */
   designerName?: string | null;
-  /** Opens designer designs feed scrolled to this pattern. */
-  designerHref?: string | null;
 };
 
 export type PostProps = PatternPostProps | ProjectPostProps;
@@ -363,17 +366,47 @@ function PatternInfoTrailing({
   );
 }
 
-function DesignerDesignsTrailing({ href }: { href: string }) {
+function ProjectInfoTrailing({
+  username,
+  projectId,
+  projectName,
+  patternId,
+  patternName,
+}: {
+  username: string;
+  projectId: number;
+  projectName: string;
+  patternId?: number | null;
+  patternName?: string | null;
+}) {
+  const modal = useModal();
+  const [opened, setOpened] = React.useState(false);
+
+  const onPress = React.useCallback(() => {
+    setOpened(true);
+    modal.present();
+  }, [modal]);
+
   return (
-    <Link href={href as never} asChild>
+    <>
       <Pressable
+        onPress={onPress}
         hitSlop={8}
         accessibilityRole="button"
-        accessibilityLabel="View designer pattern"
+        accessibilityLabel="Project info"
       >
         <PatternInfo color="#ffffff" />
       </Pressable>
-    </Link>
+      <ProjectInfoSheet
+        ref={modal.ref}
+        username={username}
+        projectId={projectId}
+        projectName={projectName}
+        patternId={patternId}
+        patternName={patternName}
+        enabled={opened}
+      />
+    </>
   );
 }
 
@@ -401,6 +434,32 @@ function favoriteTargetFor(props: PostProps): FavoriteTarget {
   return { type: 'project', id: props.projectId };
 }
 
+function postTrailing(props: PostProps) {
+  if (props.variant === 'pattern') {
+    return (
+      <PatternInfoTrailing
+        patternId={props.patternId}
+        patternName={props.patternName}
+      />
+    );
+  }
+  return (
+    <ProjectInfoTrailing
+      username={props.ownerUsername}
+      projectId={props.projectId}
+      projectName={props.projectName}
+      patternId={props.patternId}
+      patternName={props.patternName}
+    />
+  );
+}
+
+function postSubtitle(props: PostProps): string {
+  if (props.variant === 'pattern')
+    return props.patternName;
+  return projectSubtitle(props);
+}
+
 export function Post(props: PostProps) {
   const {
     authorName,
@@ -412,17 +471,7 @@ export function Post(props: PostProps) {
     commentsCount,
   } = props;
   const pathname = usePathname();
-  const favoriteTarget = favoriteTargetFor(props);
-  const favorite = usePostFavorite(favoriteTarget, favoritesCount);
-
-  const subtitle
-    = props.variant === 'pattern'
-      ? props.patternName
-      : projectSubtitle({
-          patternName: props.patternName,
-          designerName: props.designerName,
-          projectName: props.projectName,
-        });
+  const favorite = usePostFavorite(favoriteTargetFor(props), favoritesCount);
   const notes = notesHtml ? stripHtml(notesHtml) : '';
   const relative
     = props.relative?.trim()
@@ -433,17 +482,6 @@ export function Post(props: PostProps) {
     = props.variant === 'pattern'
       ? props.patternName
       : props.projectName;
-  const trailing
-    = props.variant === 'pattern'
-      ? (
-          <PatternInfoTrailing
-            patternId={props.patternId}
-            patternName={props.patternName}
-          />
-        )
-      : props.designerHref
-        ? <DesignerDesignsTrailing href={props.designerHref} />
-        : null;
   const projectsHref
     = props.variant === 'pattern'
       ? patternProjectsHref(props.patternId, pathname)
@@ -457,10 +495,10 @@ export function Post(props: PostProps) {
     <View className="bg-black pb-4">
       <PostHeader
         name={authorName}
-        subtitle={subtitle}
+        subtitle={postSubtitle(props)}
         profileHref={authorHref}
         avatar={authorAvatar}
-        trailing={trailing}
+        trailing={postTrailing(props)}
       />
       <PhotoCarousel
         photos={photos}

@@ -11,10 +11,7 @@ import { POST_ITEM_HEIGHT } from '@/features/feed/components/post-layout';
 import { PostSkeleton } from '@/features/feed/components/post-skeleton';
 import { collectProjectPhotos } from '@/features/feed/components/collect-project-photos';
 import { formatRelative } from '@/features/feed/format-relative';
-import {
-  designerDesignsFeedHref,
-  userProfileHref,
-} from '@/features/profile/designer-profile-href';
+import { userProfileHref } from '@/features/profile/designer-profile-href';
 import { bestPhotoUrl } from '@/lib/ravelry/api';
 
 type Props = {
@@ -93,11 +90,6 @@ export function ProfileProjectPost({ username, person, project }: Props) {
     = author?.name?.trim()
       || author?.users[0]?.username?.trim()
       || null;
-  const designerHref
-    = patternId != null
-      ? designerDesignsFeedHref(author, patternId, pathname)
-      : null;
-
   if (!ready && !photos.length) {
     return (
       <PostSkeleton
@@ -117,9 +109,10 @@ export function ProfileProjectPost({ username, person, project }: Props) {
         authorHref={userProfileHref(displayName, pathname)}
         projectId={data.id}
         projectName={data.name}
+        ownerUsername={username}
+        patternId={patternId}
         patternName={data.pattern_name ?? patternQuery.data?.name}
         designerName={designerName}
-        designerHref={designerHref}
         photos={photos}
         notesHtml={data.notes_html}
         relative={projectDateLabel(data)}
