@@ -66,12 +66,6 @@ export function useProfileScreen() {
       ? 'projects'
       : tab;
 
-  const loading
-    = personQuery.isPending
-      || projectsQuery.isPending
-      || favoritesQuery.isPending
-      || designsQuery.isPending;
-
   return {
     username,
     designerPermalink,
@@ -85,7 +79,7 @@ export function useProfileScreen() {
     hasDesigns,
     activeTab,
     setTab,
-    loading,
+    personPending: personQuery.isPending,
     failed: personQuery.isError && !person,
     displayName: person?.username || username,
     avatarUrl: person?.photo_url ?? person?.small_photo_url ?? null,

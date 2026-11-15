@@ -5,6 +5,7 @@ import { Pressable } from 'react-native';
 
 import { Text, View } from '@/components/ui';
 import { Settings as SettingsIcon } from '@/components/ui/icons';
+import { ProfileCountSkeleton } from './profile-skeletons';
 
 export type ProfileTab = 'projects' | 'favourites' | 'designs';
 
@@ -15,6 +16,9 @@ type Props = {
   projectCount: number | null;
   favouriteCount: number | null;
   designCount: number | null;
+  projectsLoading: boolean;
+  favouritesLoading: boolean;
+  designsLoading: boolean;
   tab: ProfileTab;
   onTabChange: (tab: ProfileTab) => void;
   showDesignsTab: boolean;
@@ -24,10 +28,15 @@ type Props = {
 function Stat({
   count,
   label,
+  loading,
 }: {
   count: number | null;
   label: string;
+  loading?: boolean;
 }) {
+  if (loading)
+    return <ProfileCountSkeleton />;
+
   return (
     <View>
       <Text className="text-base font-semibold text-white">
@@ -48,6 +57,45 @@ function tabLabel(key: ProfileTab): string {
   return 'Designs';
 }
 
+function ProfileTabs({
+  tabs,
+  tab,
+  onTabChange,
+}: {
+  tabs: ProfileTab[];
+  tab: ProfileTab;
+  onTabChange: (tab: ProfileTab) => void;
+}) {
+  return (
+    <View className="mt-2 flex-row">
+      {tabs.map((key) => {
+        const selected = tab === key;
+        return (
+          <Pressable
+            key={key}
+            accessibilityRole="button"
+            accessibilityState={{ selected }}
+            onPress={() => onTabChange(key)}
+            className={`flex-1 items-center pt-3 pb-0 ${
+              selected
+                ? 'border-b-2 border-white'
+                : 'border-b-2 border-transparent'
+            }`}
+          >
+            <Text
+              className={`pb-3 text-sm font-semibold ${
+                selected ? 'text-white' : 'text-fog-500'
+              }`}
+            >
+              {tabLabel(key)}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 export function ProfileHeader({
   username,
   avatarUrl,
@@ -55,6 +103,9 @@ export function ProfileHeader({
   projectCount,
   favouriteCount,
   designCount,
+  projectsLoading,
+  favouritesLoading,
+  designsLoading,
   tab,
   onTabChange,
   showDesignsTab,
@@ -65,6 +116,8 @@ export function ProfileHeader({
   const tabs: ProfileTab[] = showDesignsTab
     ? ['projects', 'favourites', 'designs']
     : ['projects', 'favourites'];
+  const showDesignsStat
+    = designsLoading || (designCount != null && designCount > 0);
 
   return (
     <View className="pt-2">
@@ -104,10 +157,10 @@ export function ProfileHeader({
               : null}
           </View>
           <View className="mt-3 flex-row gap-6">
-            <Stat count={projectCount} label="projects" />
-            <Stat count={favouriteCount} label="favourites" />
-            {designCount != null && designCount > 0
-              ? <Stat count={designCount} label="designs" />
+            <Stat count={projectCount} label="projects" loading={projectsLoading} />
+            <Stat count={favouriteCount} label="favourites" loading={favouritesLoading} />
+            {showDesignsStat
+              ? <Stat count={designCount} label="designs" loading={designsLoading} />
               : null}
           </View>
         </View>
@@ -119,32 +172,7 @@ export function ProfileHeader({
             </Text>
           )
         : null}
-      <View className="mt-2 flex-row">
-        {tabs.map((key) => {
-          const selected = tab === key;
-          return (
-            <Pressable
-              key={key}
-              accessibilityRole="button"
-              accessibilityState={{ selected }}
-              onPress={() => onTabChange(key)}
-              className={`flex-1 items-center pt-3 pb-0 ${
-                selected
-                  ? 'border-b-2 border-white'
-                  : 'border-b-2 border-transparent'
-              }`}
-            >
-              <Text
-                className={`pb-3 text-sm font-semibold ${
-                  selected ? 'text-white' : 'text-fog-500'
-                }`}
-              >
-                {tabLabel(key)}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      <ProfileTabs tabs={tabs} tab={tab} onTabChange={onTabChange} />
     </View>
   );
 }

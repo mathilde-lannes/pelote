@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { ActivityIndicator } from 'react-native';
 
 import {
   FocusAwareStatusBar,
@@ -7,6 +6,7 @@ import {
   Text,
 } from '@/components/ui';
 import { ProfileHeader } from './components/profile-header';
+import { ProfileScreenSkeleton } from './components/profile-skeletons';
 import { ProfileTabLists } from './components/profile-tab-lists';
 import { useProfileScreen } from './use-profile-screen';
 
@@ -22,11 +22,14 @@ export function ProfileScreen() {
     );
   }
 
-  if (profile.loading && !profile.person) {
+  if (profile.personPending && !profile.person) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-black" edges={['top']}>
+      <SafeAreaView
+        className="flex-1 bg-black"
+        edges={profile.isTabProfile ? ['top'] : ['bottom']}
+      >
         <FocusAwareStatusBar />
-        <ActivityIndicator color="#ffffff" size="large" />
+        <ProfileScreenSkeleton showSettings={profile.isOwnProfile} />
       </SafeAreaView>
     );
   }
@@ -50,6 +53,9 @@ export function ProfileScreen() {
       projectCount={profile.projectCount}
       favouriteCount={profile.favouriteCount}
       designCount={profile.designCount}
+      projectsLoading={profile.projectsPending}
+      favouritesLoading={profile.favoritesPending}
+      designsLoading={profile.designsPending}
       tab={profile.activeTab}
       onTabChange={profile.setTab}
       showDesignsTab={profile.hasDesigns}

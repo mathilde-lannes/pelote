@@ -1,9 +1,9 @@
 import type { RavelryFavorite, RavelryPattern, RavelryProject } from '../api';
 import type { ProfileTab } from './profile-header';
 import * as React from 'react';
-import { ActivityIndicator, FlatList } from 'react-native';
+import { FlatList } from 'react-native';
 
-import { Text, View } from '@/components/ui';
+import { Text } from '@/components/ui';
 import {
   PROFILE_GRID_COLS,
   PROFILE_GRID_GAP,
@@ -13,15 +13,11 @@ import {
   FavoriteTile,
   ProjectTile,
 } from './profile-grid-tiles';
+import { ProfileGridSkeleton } from './profile-skeletons';
 
 function EmptyState({ pending, label }: { pending: boolean; label: string }) {
-  if (pending) {
-    return (
-      <View className="items-center py-10">
-        <ActivityIndicator color="#ffffff" />
-      </View>
-    );
-  }
+  if (pending)
+    return <ProfileGridSkeleton />;
   return (
     <Text className="mt-10 text-center text-sm text-fog-400">
       {label}
@@ -67,7 +63,7 @@ export function ProfileTabLists({
     return (
       <FlatList
         {...listProps}
-        data={favorites}
+        data={favoritesPending ? [] : favorites}
         keyExtractor={item => `fav-${item.type}-${item.id}`}
         ListEmptyComponent={(
           <EmptyState pending={favoritesPending} label="No favourites yet." />
@@ -81,7 +77,7 @@ export function ProfileTabLists({
     return (
       <FlatList
         {...listProps}
-        data={designs}
+        data={designsPending ? [] : designs}
         keyExtractor={item => String(item.id)}
         ListEmptyComponent={(
           <EmptyState
@@ -104,7 +100,7 @@ export function ProfileTabLists({
   return (
     <FlatList
       {...listProps}
-      data={projects}
+      data={projectsPending ? [] : projects}
       keyExtractor={item => String(item.id)}
       ListEmptyComponent={(
         <EmptyState pending={projectsPending} label="No public projects yet." />
