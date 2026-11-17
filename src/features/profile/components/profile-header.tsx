@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import * as React from 'react';
-import { ActivityIndicator, Pressable, ScrollView } from 'react-native';
+import { Pressable, ScrollView } from 'react-native';
 
 import { ExpandableText } from '@/components/expandable-text';
 import { Text, View } from '@/components/ui';
@@ -25,77 +25,7 @@ type Props = {
   /** Designs chip leads the row and is the default selection. */
   showDesignsChip?: boolean;
   showSettings: boolean;
-  showActions?: boolean;
-  followed?: boolean;
-  followPending?: boolean;
-  onFollow?: () => void;
 };
-
-function ActionButton({
-  label,
-  tone,
-  pending = false,
-  onPress,
-  testID,
-}: {
-  label: string;
-  tone: 'primary' | 'secondary';
-  pending?: boolean;
-  onPress: () => void;
-  testID: string;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ disabled: pending, busy: pending }}
-      accessibilityLabel={label}
-      disabled={pending}
-      onPress={onPress}
-      testID={testID}
-      className={`h-9 flex-1 items-center justify-center rounded-lg ${
-        tone === 'primary' ? 'bg-[#0095F6]' : 'bg-ink-300'
-      }`}
-    >
-      {pending
-        ? <ActivityIndicator color="#ffffff" size="small" />
-        : (
-            <Text className="text-sm font-semibold text-white">
-              {label}
-            </Text>
-          )}
-    </Pressable>
-  );
-}
-
-function ProfileActions({
-  followed,
-  pending,
-  onFollow,
-  onMessage,
-}: {
-  followed: boolean;
-  pending: boolean;
-  onFollow: () => void;
-  onMessage: () => void;
-}) {
-  return (
-    <View className="mt-3 flex-row gap-2">
-      <ActionButton
-        label={followed ? 'Followed' : 'Follow'}
-        tone={followed ? 'secondary' : 'primary'}
-        pending={pending}
-        onPress={onFollow}
-        testID="profile-follow"
-      />
-      <ActionButton
-        label="Message"
-        tone="secondary"
-        onPress={onMessage}
-        testID="profile-message"
-      />
-    </View>
-  );
-}
 
 function ProfileChips({
   tab,
@@ -154,10 +84,6 @@ export function ProfileHeader({
   onTabChange,
   showDesignsChip = false,
   showSettings,
-  showActions = false,
-  followed = false,
-  followPending = false,
-  onFollow,
 }: Props) {
   const router = useRouter();
   const initial = username.slice(0, 1).toUpperCase() || '?';
@@ -199,16 +125,6 @@ export function ProfileHeader({
                 )
               : null}
           </View>
-          {showActions && onFollow
-            ? (
-                <ProfileActions
-                  followed={followed}
-                  pending={followPending}
-                  onFollow={onFollow}
-                  onMessage={() => router.push('/messages')}
-                />
-              )
-            : null}
         </View>
       </View>
       {about

@@ -87,14 +87,6 @@ export function ProfileScreenSkeleton({
               ? <SkeletonBlock className="size-6 rounded-sm bg-ink-300" delay={80} />
               : null}
           </View>
-          {!showSettings
-            ? (
-                <View className="mt-3 flex-row gap-2">
-                  <SkeletonBlock className="h-9 flex-1 rounded-lg bg-ink-300" delay={50} />
-                  <SkeletonBlock className="h-9 flex-1 rounded-lg bg-ink-300" delay={70} />
-                </View>
-              )
-            : null}
         </View>
       </View>
       <View className="mt-2 mb-3 gap-1.5 px-4">

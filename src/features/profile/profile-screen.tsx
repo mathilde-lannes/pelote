@@ -1,3 +1,4 @@
+import { useNavigation } from 'expo-router';
 import * as React from 'react';
 
 import {
@@ -6,17 +7,74 @@ import {
   Text,
 } from '@/components/ui';
 import { ProfileHeader } from './components/profile-header';
+import { ProfileNavigationHeader } from './components/profile-navigation-header';
 import { ProfileScreenSkeleton } from './components/profile-skeletons';
 import { ProfileTabLists } from './components/profile-tab-lists';
 import { useProfileFollow } from './use-profile-follow';
 import { useProfileScreen } from './use-profile-screen';
 
+function useProfileNavigationHeader({
+  isTabProfile,
+  displayName,
+  isOwnProfile,
+  followed,
+  followPending,
+  onFollow,
+}: {
+  isTabProfile: boolean;
+  displayName: string;
+  isOwnProfile: boolean;
+  followed: boolean;
+  followPending: boolean;
+  onFollow: () => void;
+}) {
+  const navigation = useNavigation();
+
+  React.useLayoutEffect(() => {
+    if (isTabProfile)
+      return;
+
+    navigation.setOptions({
+      title: displayName,
+      headerRight: undefined,
+      header: () => (
+        <ProfileNavigationHeader
+          title={displayName}
+          showFollow={!isOwnProfile}
+          followed={followed}
+          followPending={followPending}
+          onFollow={() => {
+            void onFollow();
+          }}
+        />
+      ),
+    });
+  }, [
+    displayName,
+    followPending,
+    followed,
+    isOwnProfile,
+    isTabProfile,
+    navigation,
+    onFollow,
+  ]);
+}
+
 export function ProfileScreen() {
   const profile = useProfileScreen();
-  const follow = useProfileFollow({
+  const { followed, followPending, onFollow } = useProfileFollow({
     username: profile.username,
     person: profile.person,
     enabled: Boolean(profile.username) && !profile.isOwnProfile,
+  });
+
+  useProfileNavigationHeader({
+    isTabProfile: profile.isTabProfile,
+    displayName: profile.displayName,
+    isOwnProfile: profile.isOwnProfile,
+    followed,
+    followPending,
+    onFollow,
   });
 
   if (!profile.username) {
@@ -66,10 +124,6 @@ export function ProfileScreen() {
       onTabChange={profile.setTab}
       showDesignsChip={profile.showDesignsChip}
       showSettings={profile.isOwnProfile}
-      showActions={!profile.isOwnProfile}
-      followed={follow.followed}
-      followPending={follow.followPending}
-      onFollow={follow.onFollow}
     />
   );
 

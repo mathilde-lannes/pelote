@@ -25,5 +25,7 @@ export * from './share';
 export * from './sliders-horizontal';
 export * from './style';
 export * from './support';
+export * from './user-round-check';
+export * from './user-round-plus';
 export * from './website';
 export * from './yarn';
