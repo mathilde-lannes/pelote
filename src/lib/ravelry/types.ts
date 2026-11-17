@@ -134,6 +134,45 @@ export type RavelryProject = {
   packs?: RavelryProjectPack[];
 };
 
+/** One notebook row from `GET people/{username}/stash/list.json` → `stash`. */
+export type RavelryStash = {
+  id: number;
+  /** User label, or yarn and colorway when the stash name is blank. */
+  name: string;
+  yarn_id?: number | null;
+  yarn_name?: string | null;
+  colorway_name?: string | null;
+  first_photo?: RavelryPhoto | null;
+  photos?: RavelryPhoto[];
+  notes_html?: string | null;
+  favorites_count?: number | null;
+  comments_count?: number | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+/** One row from `GET people/{username}/queue/list.json` → `queued_projects`. */
+export type RavelryQueuedProject = {
+  id: number;
+  /** Queue label, or the pattern name when the queue name is blank. */
+  name: string;
+  pattern_id?: number | null;
+  pattern_name?: string | null;
+  designer_name?: string | null;
+  yarn_id?: number | null;
+  yarn_name?: string | null;
+  skeins?: number | null;
+  sort_order?: number | null;
+  best_photo?: RavelryPhoto | null;
+  photos?: RavelryPhoto[];
+  notes_html?: string | null;
+  /** From the nested pattern on QueuedProject#full. */
+  favorites_count?: number | null;
+  comments_count?: number | null;
+  projects_count?: number | null;
+  created_at?: string | null;
+};
+
 export type ActivityType
   = | 'project_photo'
     | 'stash_photo'

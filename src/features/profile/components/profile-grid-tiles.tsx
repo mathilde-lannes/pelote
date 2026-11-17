@@ -1,4 +1,4 @@
-import type { RavelryFavorite, RavelryPattern, RavelryProject } from '../api';
+import type { RavelryFavorite, RavelryPattern, RavelryProject, RavelryQueuedProject, RavelryStash } from '../api';
 import { Image } from 'expo-image';
 import { Link, usePathname } from 'expo-router';
 import * as React from 'react';
@@ -10,6 +10,8 @@ import { bestPhotoUrl } from '@/lib/ravelry/api';
 import {
   designerDesignsFeedHref,
   userProjectFeedHref,
+  userQueueFeedHref,
+  userStashFeedHref,
 } from '../designer-profile-href';
 import { PROFILE_GRID_TILE } from '../profile-grid-layout';
 
@@ -136,6 +138,68 @@ export function DesignTile({
               />
             )
           : <TileFallback label={pattern.name} />}
+      </Pressable>
+    </Link>
+  );
+}
+
+export function StashTile({
+  username,
+  stash,
+}: {
+  username: string;
+  stash: RavelryStash;
+}) {
+  const pathname = usePathname();
+  const uri = bestPhotoUrl(stash.first_photo);
+  const href = userStashFeedHref(username, stash.id, pathname);
+  return (
+    <Link href={href as never} asChild>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={stash.name}
+        style={{ width: PROFILE_GRID_TILE, height: PROFILE_GRID_TILE }}
+      >
+        {uri
+          ? (
+              <Image
+                source={{ uri }}
+                style={{ width: '100%', height: '100%' }}
+                contentFit="cover"
+              />
+            )
+          : <TileFallback label={stash.name} />}
+      </Pressable>
+    </Link>
+  );
+}
+
+export function QueueTile({
+  username,
+  queued,
+}: {
+  username: string;
+  queued: RavelryQueuedProject;
+}) {
+  const pathname = usePathname();
+  const uri = bestPhotoUrl(queued.best_photo);
+  const href = userQueueFeedHref(username, queued.id, pathname);
+  return (
+    <Link href={href as never} asChild>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={queued.name}
+        style={{ width: PROFILE_GRID_TILE, height: PROFILE_GRID_TILE }}
+      >
+        {uri
+          ? (
+              <Image
+                source={{ uri }}
+                style={{ width: '100%', height: '100%' }}
+                contentFit="cover"
+              />
+            )
+          : <TileFallback label={queued.name} />}
       </Pressable>
     </Link>
   );

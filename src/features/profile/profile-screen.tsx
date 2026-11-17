@@ -147,9 +147,13 @@ export function ProfileScreen() {
         projects={profile.projects}
         favorites={profile.favorites}
         designs={profile.designs}
+        stash={profile.stash}
+        queue={profile.queue}
         projectsPending={profile.projectsPending}
         favoritesPending={profile.favoritesPending}
         designsPending={profile.designsPending}
+        stashPending={profile.stashPending}
+        queuePending={profile.queuePending}
       />
     </SafeAreaView>
   );

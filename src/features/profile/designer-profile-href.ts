@@ -73,3 +73,25 @@ export function userProjectFeedHref(
 ): string {
   return `${userBasePath(pathname)}/${username}/feed/${projectId}`;
 }
+
+/** Stash feed scrolled to one yarn. The profile tab keeps its own stack. */
+export function userStashFeedHref(
+  username: string,
+  stashId: number,
+  pathname?: string | null,
+): string {
+  if (pathname?.startsWith('/profile'))
+    return `/profile/stash/${stashId}`;
+  return `${userBasePath(pathname)}/${username}/stash/${stashId}`;
+}
+
+/** Queue feed scrolled to one queued pattern. The profile tab keeps its own stack. */
+export function userQueueFeedHref(
+  username: string,
+  queuedProjectId: number,
+  pathname?: string | null,
+): string {
+  if (pathname?.startsWith('/profile'))
+    return `/profile/queue/${queuedProjectId}`;
+  return `${userBasePath(pathname)}/${username}/queue/${queuedProjectId}`;
+}

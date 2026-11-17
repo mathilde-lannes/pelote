@@ -10,6 +10,8 @@ import {
   usePersonFavorites,
   usePersonFriendCount,
   usePersonProjects,
+  usePersonQueue,
+  usePersonStash,
 } from './api';
 
 function designerLabel(
@@ -21,6 +23,59 @@ function designerLabel(
     ?.name
     ?.trim();
   return fromDesigns || person?.designer_name?.trim() || null;
+}
+
+function useProfileLists({
+  username,
+  activeTab,
+  isOwnProfile,
+  isDesignerProfile,
+  designerPermalink,
+  designerId,
+}: {
+  username: string;
+  activeTab: ProfileTab;
+  isOwnProfile: boolean;
+  isDesignerProfile: boolean;
+  designerPermalink: string;
+  designerId?: number;
+}) {
+  const enabled = Boolean(username);
+  const projectsQuery = usePersonProjects({
+    variables: { username },
+    // Non-designers show this total beside the photo, so keep it loaded.
+    enabled: enabled && (activeTab === 'projects' || !isDesignerProfile),
+  });
+  const favoritesQuery = usePersonFavorites({
+    variables: { username },
+    // Favourites are only loaded for the signed-in user's own profile.
+    enabled: enabled && isOwnProfile && activeTab === 'favourites',
+  });
+  const designsQuery = useDesignerPatterns({
+    variables: {
+      username,
+      ...(designerPermalink ? { designerPermalink } : {}),
+      ...(designerId != null ? { designerId } : {}),
+    },
+    // Designers show this total beside the photo, so keep it loaded.
+    enabled: enabled && (activeTab === 'designs' || isDesignerProfile),
+  });
+  const stashQuery = usePersonStash({
+    variables: { username },
+    enabled: enabled && activeTab === 'stash',
+  });
+  const queueQuery = usePersonQueue({
+    variables: { username },
+    enabled: enabled && activeTab === 'queued',
+  });
+
+  return {
+    projectsQuery,
+    favoritesQuery,
+    designsQuery,
+    stashQuery,
+    queueQuery,
+  };
 }
 
 export function useProfileScreen() {
@@ -59,28 +114,23 @@ export function useProfileScreen() {
     variables: { username },
     enabled: Boolean(username),
   });
-  const projectsQuery = usePersonProjects({
-    variables: { username },
-    // Non-designers show this total beside the photo, so keep it loaded.
-    enabled: Boolean(username) && (activeTab === 'projects' || !isDesignerProfile),
-  });
-  const favoritesQuery = usePersonFavorites({
-    variables: { username },
-    // Favourites are only loaded for the signed-in user's own profile.
-    enabled: Boolean(username) && isOwnProfile && activeTab === 'favourites',
-  });
-  const designsQuery = useDesignerPatterns({
-    variables: {
-      username,
-      ...(designerPermalink ? { designerPermalink } : {}),
-      ...(designerId != null ? { designerId } : {}),
-    },
-    // Designers show this total beside the photo, so keep it loaded.
-    enabled: Boolean(username) && (activeTab === 'designs' || isDesignerProfile),
-  });
   const friendCountQuery = usePersonFriendCount({
     variables: { username },
     enabled: Boolean(username),
+  });
+  const {
+    projectsQuery,
+    favoritesQuery,
+    designsQuery,
+    stashQuery,
+    queueQuery,
+  } = useProfileLists({
+    username,
+    activeTab,
+    isOwnProfile,
+    isDesignerProfile,
+    designerPermalink,
+    designerId,
   });
 
   const person = personQuery.data;
@@ -100,6 +150,8 @@ export function useProfileScreen() {
     projects,
     favorites,
     designs,
+    stash: stashQuery.data?.stashes ?? [],
+    queue: queueQuery.data?.queuedProjects ?? [],
     activeTab,
     setTab,
     personPending: personQuery.isPending,
@@ -124,5 +176,7 @@ export function useProfileScreen() {
     favoritesPending:
       activeTab === 'favourites' && isOwnProfile && favoritesQuery.isPending,
     designsPending: activeTab === 'designs' && designsQuery.isPending,
+    stashPending: activeTab === 'stash' && stashQuery.isPending,
+    queuePending: activeTab === 'queued' && queueQuery.isPending,
   };
 }

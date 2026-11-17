@@ -4,6 +4,8 @@ import type {
   RavelryPattern,
   RavelryPerson,
   RavelryProject,
+  RavelryQueuedProject,
+  RavelryStash,
 } from '@/lib/ravelry/types';
 import { createQuery } from 'react-query-kit';
 
@@ -13,10 +15,14 @@ import {
   fetchPerson,
   fetchPersonFavorites,
   fetchProjectsList,
+  fetchQueuedProject,
+  fetchQueueList,
+  fetchStash,
+  fetchStashList,
   resolveDesignerPermalinkForProfile,
 } from '@/lib/ravelry/api';
 
-export type { RavelryFavorite, RavelryPattern, RavelryPerson, RavelryProject };
+export type { RavelryFavorite, RavelryPattern, RavelryPerson, RavelryProject, RavelryQueuedProject, RavelryStash };
 
 export type PersonProjectsResult = {
   projects: RavelryProject[];
@@ -118,6 +124,132 @@ export const usePersonFavorites = createQuery<
 >({
   queryKey: ['person-favorites'],
   fetcher: variables => fetchPersonFavorites(variables.username),
+});
+
+export type PersonStashResult = {
+  stashes: RavelryStash[];
+  totalCount: number;
+};
+
+const STASH_PAGE_SIZE = 48;
+/** Cap pages so a large notebook doesn’t fan out unbounded requests. */
+const STASH_MAX_PAGES = 5;
+
+function stashRecencyMs(stash: RavelryStash): number {
+  for (const value of [stash.updated_at, stash.created_at]) {
+    if (typeof value !== 'string' || !value.trim())
+      continue;
+    const normalized = value.includes('/')
+      ? value.replace(/\//g, '-')
+      : value;
+    const time = new Date(normalized).getTime();
+    if (Number.isFinite(time))
+      return time;
+  }
+  return 0;
+}
+
+function sortStashByRecent(stashes: RavelryStash[]): RavelryStash[] {
+  return [...stashes].sort((a, b) => {
+    const delta = stashRecencyMs(b) - stashRecencyMs(a);
+    if (delta !== 0)
+      return delta;
+    return b.id - a.id;
+  });
+}
+
+export const usePersonStash = createQuery<
+  PersonStashResult,
+  { username: string },
+  AxiosError
+>({
+  queryKey: ['person-stash'],
+  fetcher: async (variables) => {
+    const first = await fetchStashList(variables.username, {
+      page: 1,
+      pageSize: STASH_PAGE_SIZE,
+    });
+    const all = [...first.stashes];
+    const lastPage = Math.min(first.pageCount, STASH_MAX_PAGES);
+
+    for (let page = 2; page <= lastPage; page += 1) {
+      const next = await fetchStashList(variables.username, {
+        page,
+        pageSize: STASH_PAGE_SIZE,
+      });
+      all.push(...next.stashes);
+    }
+
+    return {
+      stashes: sortStashByRecent(all),
+      totalCount: first.totalResults ?? all.length,
+    };
+  },
+});
+
+export const useStash = createQuery<
+  RavelryStash,
+  { username: string; id: number },
+  AxiosError
+>({
+  queryKey: ['stash'],
+  fetcher: variables => fetchStash(variables.username, variables.id),
+});
+
+export type PersonQueueResult = {
+  queuedProjects: RavelryQueuedProject[];
+  totalCount: number;
+};
+
+const QUEUE_PAGE_SIZE = 48;
+const QUEUE_MAX_PAGES = 5;
+
+function sortQueue(items: RavelryQueuedProject[]): RavelryQueuedProject[] {
+  return [...items].sort((a, b) => {
+    const aOrder = a.sort_order ?? Number.MAX_SAFE_INTEGER;
+    const bOrder = b.sort_order ?? Number.MAX_SAFE_INTEGER;
+    if (aOrder !== bOrder)
+      return aOrder - bOrder;
+    return a.id - b.id;
+  });
+}
+
+export const usePersonQueue = createQuery<
+  PersonQueueResult,
+  { username: string },
+  AxiosError
+>({
+  queryKey: ['person-queue'],
+  fetcher: async (variables) => {
+    const first = await fetchQueueList(variables.username, {
+      page: 1,
+      pageSize: QUEUE_PAGE_SIZE,
+    });
+    const all = [...first.queuedProjects];
+    const lastPage = Math.min(first.pageCount, QUEUE_MAX_PAGES);
+
+    for (let page = 2; page <= lastPage; page += 1) {
+      const next = await fetchQueueList(variables.username, {
+        page,
+        pageSize: QUEUE_PAGE_SIZE,
+      });
+      all.push(...next.queuedProjects);
+    }
+
+    return {
+      queuedProjects: sortQueue(all),
+      totalCount: first.totalResults ?? all.length,
+    };
+  },
+});
+
+export const useQueuedProject = createQuery<
+  RavelryQueuedProject,
+  { username: string; id: number },
+  AxiosError
+>({
+  queryKey: ['queued-project'],
+  fetcher: variables => fetchQueuedProject(variables.username, variables.id),
 });
 
 const DESIGNS_PAGE_SIZE = 48;

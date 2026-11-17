@@ -1,9 +1,9 @@
-import type { RavelryFavorite, RavelryPattern, RavelryProject } from '../api';
+import type { RavelryFavorite, RavelryPattern, RavelryProject, RavelryQueuedProject, RavelryStash } from '../api';
 import type { ProfileTab } from './profile-header';
 import * as React from 'react';
 import { FlatList } from 'react-native';
 
-import { Text, View } from '@/components/ui';
+import { Text } from '@/components/ui';
 import {
   PROFILE_GRID_COLS,
   PROFILE_GRID_GAP,
@@ -12,6 +12,8 @@ import {
   DesignTile,
   FavoriteTile,
   ProjectTile,
+  QueueTile,
+  StashTile,
 } from './profile-grid-tiles';
 import { ProfileGridSkeleton } from './profile-skeletons';
 
@@ -22,19 +24,6 @@ function EmptyState({ pending, label }: { pending: boolean; label: string }) {
     <Text className="mt-10 text-center text-sm text-fog-400">
       {label}
     </Text>
-  );
-}
-
-function PlaceholderEmpty({ title, message }: { title: string; message: string }) {
-  return (
-    <View className="items-center px-8 pt-16">
-      <Text className="text-center text-base font-semibold text-white">
-        {title}
-      </Text>
-      <Text className="mt-1.5 text-center text-sm text-fog-400">
-        {message}
-      </Text>
-    </View>
   );
 }
 
@@ -70,26 +59,6 @@ function ProfileGrid<T>({
   );
 }
 
-function ChipPlaceholder({
-  header,
-  title,
-  message,
-}: {
-  header: React.ReactElement;
-  title: string;
-  message: string;
-}) {
-  return (
-    <FlatList
-      data={[]}
-      renderItem={() => null}
-      ListHeaderComponent={header}
-      ListEmptyComponent={<PlaceholderEmpty title={title} message={message} />}
-      contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }}
-    />
-  );
-}
-
 type Props = {
   tab: ProfileTab;
   header: React.ReactElement;
@@ -99,9 +68,13 @@ type Props = {
   projects: RavelryProject[];
   favorites: RavelryFavorite[];
   designs: RavelryPattern[];
+  stash: RavelryStash[];
+  queue: RavelryQueuedProject[];
   projectsPending: boolean;
   favoritesPending: boolean;
   designsPending: boolean;
+  stashPending: boolean;
+  queuePending: boolean;
 };
 
 export function ProfileTabLists({
@@ -113,26 +86,42 @@ export function ProfileTabLists({
   projects,
   favorites,
   designs,
+  stash,
+  queue,
   projectsPending,
   favoritesPending,
   designsPending,
+  stashPending,
+  queuePending,
 }: Props) {
   if (tab === 'queued') {
     return (
-      <ChipPlaceholder
+      <ProfileGrid
+        listKey="queued"
         header={header}
-        title="Nothing queued yet"
-        message="Patterns you queue will show up here."
+        data={queue}
+        pending={queuePending}
+        emptyLabel="Nothing queued yet."
+        keyExtractor={item => String(item.id)}
+        renderItem={item => (
+          <QueueTile username={displayName} queued={item} />
+        )}
       />
     );
   }
 
   if (tab === 'stash') {
     return (
-      <ChipPlaceholder
+      <ProfileGrid
+        listKey="stash"
         header={header}
-        title="Stash is empty"
-        message="Yarn you stash will show up here."
+        data={stash}
+        pending={stashPending}
+        emptyLabel="No stash yet."
+        keyExtractor={item => String(item.id)}
+        renderItem={item => (
+          <StashTile username={displayName} stash={item} />
+        )}
       />
     );
   }

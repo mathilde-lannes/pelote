@@ -55,6 +55,20 @@ export function UserStackLayout({ fallbackHref }: Props) {
           headerLeft: backToApp,
         }}
       />
+      <Stack.Screen
+        name="stash/[id]"
+        options={{
+          title: 'Yarn',
+          headerLeft: backToApp,
+        }}
+      />
+      <Stack.Screen
+        name="queue/[id]"
+        options={{
+          title: 'Queue',
+          headerLeft: backToApp,
+        }}
+      />
     </Stack>
   );
 }

@@ -14,6 +14,8 @@ import type {
   RavelryPhoto,
   RavelryProject,
   RavelryProjectPack,
+  RavelryQueuedProject,
+  RavelryStash,
   RavelryYarn,
   RavelryYarnCompany,
 } from './types';
@@ -430,6 +432,218 @@ export async function fetchProjectsList(
     pageCount: Number.isFinite(pageCount) && pageCount > 0 ? pageCount : 1,
     totalResults,
   };
+}
+
+function stashText(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function finiteCount(value: unknown): number | null {
+  const count = Number(value);
+  return Number.isFinite(count) && count >= 0 ? count : null;
+}
+
+function normalizeStash(raw: any): RavelryStash | null {
+  const id = Number(raw?.id);
+  if (!Number.isFinite(id) || id <= 0)
+    return null;
+  const yarnIdRaw = Number(raw?.yarn_id ?? raw?.yarn?.id);
+  const yarnName = stashText(raw?.yarn?.name) ?? stashText(raw?.yarn_name);
+  const colorwayName = stashText(raw?.colorway_name);
+  const customName = stashText(raw?.name);
+  const name
+    = customName
+      || [yarnName, colorwayName].filter(Boolean).join(' · ')
+      || 'Stash';
+  const photo
+    = normalizePhoto(raw?.first_photo)
+      ?? (Array.isArray(raw?.photos) ? normalizePhoto(raw.photos[0]) : null);
+  const photos = (Array.isArray(raw?.photos) ? raw.photos : [])
+    .map(normalizePhoto)
+    .filter((entry: RavelryPhoto | null): entry is RavelryPhoto => entry != null);
+  return {
+    id,
+    name,
+    yarn_id: Number.isFinite(yarnIdRaw) && yarnIdRaw > 0 ? yarnIdRaw : null,
+    yarn_name: yarnName,
+    colorway_name: colorwayName,
+    first_photo: photo,
+    photos: photos.length ? photos : (photo ? [photo] : []),
+    notes_html: stashText(raw?.notes_html) ?? stashText(raw?.notes),
+    favorites_count: finiteCount(raw?.favorites_count),
+    comments_count: finiteCount(raw?.comments_count),
+    created_at: stashText(raw?.created_at),
+    updated_at: stashText(raw?.updated_at),
+  };
+}
+
+export type StashListPage = {
+  stashes: RavelryStash[];
+  page: number;
+  pageSize: number;
+  pageCount: number;
+  totalResults: number | null;
+};
+
+export async function fetchStashList(
+  username: string,
+  options?: { page?: number; pageSize?: number },
+): Promise<StashListPage> {
+  const page = options?.page ?? 1;
+  const pageSize = options?.pageSize ?? 48;
+  // Documented: GET people/{username}/stash/list.json → { stash: [...] }
+  // Search uses `stashes`; this list method uses the singular root.
+  const { data } = await client.get(
+    `people/${encodeURIComponent(username)}/stash/list.json`,
+    { params: { page, page_size: pageSize } },
+  );
+  const list = data.stash ?? [];
+  const stashes = (Array.isArray(list) ? list : [])
+    .map(normalizeStash)
+    .filter((entry: RavelryStash | null): entry is RavelryStash => entry != null);
+  const paginator = data.paginator ?? {};
+  const pageCountRaw = paginator.page_count ?? paginator.last_page ?? 1;
+  const pageCount = Number(pageCountRaw);
+  const totalRaw = paginator.results;
+  const totalResults
+    = typeof totalRaw === 'number' && Number.isFinite(totalRaw)
+      ? totalRaw
+      : null;
+
+  return {
+    stashes,
+    page,
+    pageSize,
+    pageCount: Number.isFinite(pageCount) && pageCount > 0 ? pageCount : 1,
+    totalResults,
+  };
+}
+
+/** Documented: GET people/{username}/stash/{id}.json → { stash }. */
+export async function fetchStash(
+  username: string,
+  id: number,
+): Promise<RavelryStash> {
+  const { data } = await client.get(
+    `people/${encodeURIComponent(username)}/stash/${id}.json`,
+  );
+  const stash = normalizeStash(data.stash ?? data);
+  if (!stash)
+    throw new Error('Stash missing from response');
+  return stash;
+}
+
+function positiveId(value: unknown): number | null {
+  const id = Number(value);
+  return Number.isFinite(id) && id > 0 ? id : null;
+}
+
+function queuedPhotos(raw: any): RavelryPhoto[] {
+  const raws = [
+    raw?.best_photo,
+    raw?.pattern?.first_photo,
+    ...(Array.isArray(raw?.pattern?.photos) ? raw.pattern.photos : []),
+  ];
+  const photos: RavelryPhoto[] = [];
+  const seen = new Set<string>();
+  for (const entry of raws) {
+    const photo = normalizePhoto(entry);
+    const key
+      = photo?.medium2_url
+        || photo?.medium_url
+        || photo?.square_url
+        || photo?.small_url;
+    if (!photo || !key || seen.has(key))
+      continue;
+    seen.add(key);
+    photos.push(photo);
+  }
+  return photos;
+}
+
+function normalizeQueuedProject(raw: any): RavelryQueuedProject | null {
+  const id = Number(raw?.id);
+  if (!Number.isFinite(id) || id <= 0)
+    return null;
+  const patternName
+    = stashText(raw?.pattern_name) ?? stashText(raw?.pattern?.name);
+  const photos = queuedPhotos(raw);
+  const sortOrder = Number(raw?.sort_order ?? raw?.position_in_queue);
+  return {
+    id,
+    name: stashText(raw?.name) || patternName || 'Queued',
+    pattern_id: positiveId(raw?.pattern_id ?? raw?.pattern?.id),
+    pattern_name: patternName,
+    designer_name:
+      stashText(raw?.pattern_author_name)
+      ?? stashText(raw?.pattern?.pattern_author?.name),
+    yarn_id: positiveId(raw?.yarn_id ?? raw?.yarn?.id),
+    yarn_name: stashText(raw?.yarn_name) ?? stashText(raw?.yarn?.name),
+    skeins: finiteCount(raw?.skeins),
+    sort_order: Number.isFinite(sortOrder) ? sortOrder : null,
+    best_photo: photos[0] ?? null,
+    photos,
+    notes_html: stashText(raw?.notes_html) ?? stashText(raw?.notes),
+    favorites_count: finiteCount(raw?.pattern?.favorites_count),
+    comments_count: finiteCount(raw?.pattern?.comments_count),
+    projects_count: finiteCount(raw?.pattern?.projects_count),
+    created_at: stashText(raw?.created_at),
+  };
+}
+
+export type QueueListPage = {
+  queuedProjects: RavelryQueuedProject[];
+  page: number;
+  pageSize: number;
+  pageCount: number;
+  totalResults: number | null;
+};
+
+/** Documented: GET people/{username}/queue/list.json → { queued_projects, paginator }. */
+export async function fetchQueueList(
+  username: string,
+  options?: { page?: number; pageSize?: number },
+): Promise<QueueListPage> {
+  const page = options?.page ?? 1;
+  const pageSize = options?.pageSize ?? 48;
+  const { data } = await client.get(
+    `people/${encodeURIComponent(username)}/queue/list.json`,
+    { params: { page, page_size: pageSize } },
+  );
+  const list = data.queued_projects ?? [];
+  const queuedProjects = (Array.isArray(list) ? list : [])
+    .map(normalizeQueuedProject)
+    .filter((entry: RavelryQueuedProject | null): entry is RavelryQueuedProject => entry != null);
+  const paginator = data.paginator ?? {};
+  const pageCountRaw = paginator.page_count ?? paginator.last_page ?? 1;
+  const pageCount = Number(pageCountRaw);
+  const totalRaw = paginator.results;
+  const totalResults
+    = typeof totalRaw === 'number' && Number.isFinite(totalRaw)
+      ? totalRaw
+      : null;
+
+  return {
+    queuedProjects,
+    page,
+    pageSize,
+    pageCount: Number.isFinite(pageCount) && pageCount > 0 ? pageCount : 1,
+    totalResults,
+  };
+}
+
+/** Documented: GET people/{username}/queue/{id}.json → { queued_project }. */
+export async function fetchQueuedProject(
+  username: string,
+  id: number,
+): Promise<RavelryQueuedProject> {
+  const { data } = await client.get(
+    `people/${encodeURIComponent(username)}/queue/${id}.json`,
+  );
+  const queued = normalizeQueuedProject(data.queued_project ?? data);
+  if (!queued)
+    throw new Error('Queued project missing from response');
+  return queued;
 }
 
 export type DesignerPatternsPage = {

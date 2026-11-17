@@ -24,6 +24,7 @@ import { UnfavoriteConfirmSheet } from '@/features/feed/components/unfavorite-co
 import { formatCompactCount } from '@/features/feed/format-compact-count';
 import { formatRelative } from '@/features/feed/format-relative';
 import { usePostFavorite } from '@/features/feed/use-post-favorite';
+import { YarnInfoSheet } from '@/features/yarn/yarn-info-sheet';
 
 function stripHtml(html: string): string {
   return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -217,7 +218,31 @@ export type ProjectPostProps = PostBase & {
   packsCount?: number | null;
 };
 
-export type PostProps = PatternPostProps | ProjectPostProps;
+/** A skein from the user’s stash — their yarn, not the catalog page. */
+export type YarnPostProps = PostBase & {
+  variant: 'yarn';
+  stashId: number;
+  yarnId?: number | null;
+  yarnName: string;
+  /** Colorway and catalog yarn, shown under the user. */
+  yarnSubtitle: string;
+  ownerUsername: string;
+};
+
+/** A pattern the user has queued — their queue entry, not the catalog page. */
+export type QueuePostProps = PostBase & {
+  variant: 'queue';
+  queuedProjectId: number;
+  patternId?: number | null;
+  patternName: string;
+  designerName?: string | null;
+  yarnId?: number | null;
+  yarnName?: string | null;
+  skeins?: number | null;
+  projectsCount?: number | null;
+};
+
+export type PostProps = PatternPostProps | ProjectPostProps | YarnPostProps | QueuePostProps;
 
 function PostStats({
   variant,
@@ -245,6 +270,8 @@ function PostStats({
   yarnAction?: React.ReactNode;
 }) {
   const heartColor = favorited ? colors.danger[500] : '#ffffff';
+  const showProjects
+    = (variant === 'pattern' || variant === 'queue') && patternId != null;
   return (
     <View className="flex-row items-center justify-between px-[18px] pt-1">
       <View className="flex-row items-center gap-[19px]">
@@ -258,7 +285,7 @@ function PostStats({
             disabled: favoriteDisabled,
           }}
         />
-        {variant === 'pattern' && patternId != null
+        {showProjects
           ? (
               <Stat
                 icon={<Projects color="#ffffff" />}
@@ -372,6 +399,41 @@ function PatternInfoTrailing({
   );
 }
 
+function YarnInfoTrailing({
+  yarnId,
+  yarnName,
+}: {
+  yarnId: number;
+  yarnName: string;
+}) {
+  const modal = useModal();
+  const [opened, setOpened] = React.useState(false);
+
+  const onPress = React.useCallback(() => {
+    setOpened(true);
+    modal.present();
+  }, [modal]);
+
+  return (
+    <>
+      <Pressable
+        onPress={onPress}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel="Yarn info"
+      >
+        <PatternInfo color="#ffffff" />
+      </Pressable>
+      <YarnInfoSheet
+        ref={modal.ref}
+        yarnId={yarnId}
+        yarnName={yarnName}
+        enabled={opened}
+      />
+    </>
+  );
+}
+
 function ProjectInfoTrailing({
   username,
   projectId,
@@ -410,6 +472,41 @@ function ProjectInfoTrailing({
         projectName={projectName}
         patternId={patternId}
         patternName={patternName}
+        enabled={opened}
+      />
+    </>
+  );
+}
+
+function CatalogYarnStat({
+  yarnId,
+  yarnName,
+  count,
+}: {
+  yarnId: number;
+  yarnName: string;
+  count: string | null;
+}) {
+  const modal = useModal();
+  const [opened, setOpened] = React.useState(false);
+
+  const onPress = React.useCallback(() => {
+    setOpened(true);
+    modal.present();
+  }, [modal]);
+
+  return (
+    <>
+      <Stat
+        icon={<Yarn color="#ffffff" />}
+        count={count}
+        label="Yarn"
+        onPress={onPress}
+      />
+      <YarnInfoSheet
+        ref={modal.ref}
+        yarnId={yarnId}
+        yarnName={yarnName}
         enabled={opened}
       />
     </>
@@ -491,10 +588,14 @@ function projectSubtitle({
   return projectName;
 }
 
-function favoriteTargetFor(props: PostProps): FavoriteTarget {
+function favoriteTargetFor(props: PostProps): FavoriteTarget | null {
   if (props.variant === 'pattern')
     return { type: 'pattern', id: props.patternId };
-  return { type: 'project', id: props.projectId };
+  if (props.variant === 'project')
+    return { type: 'project', id: props.projectId };
+  if (props.variant === 'queue' && props.patternId != null && props.patternId > 0)
+    return { type: 'pattern', id: props.patternId };
+  return null;
 }
 
 function postTrailing(props: PostProps) {
@@ -504,6 +605,23 @@ function postTrailing(props: PostProps) {
         patternId={props.patternId}
         patternName={props.patternName}
       />
+    );
+  }
+  if (props.variant === 'queue') {
+    if (props.patternId == null || props.patternId <= 0)
+      return null;
+    return (
+      <PatternInfoTrailing
+        patternId={props.patternId}
+        patternName={props.patternName}
+      />
+    );
+  }
+  if (props.variant === 'yarn') {
+    if (props.yarnId == null || props.yarnId <= 0)
+      return null;
+    return (
+      <YarnInfoTrailing yarnId={props.yarnId} yarnName={props.yarnName} />
     );
   }
   return (
@@ -520,7 +638,67 @@ function postTrailing(props: PostProps) {
 function postSubtitle(props: PostProps): string {
   if (props.variant === 'pattern')
     return props.patternName;
+  if (props.variant === 'yarn')
+    return props.yarnSubtitle;
+  if (props.variant === 'queue') {
+    return projectSubtitle({
+      patternName: props.patternName,
+      designerName: props.designerName,
+      projectName: props.patternName,
+    });
+  }
   return projectSubtitle(props);
+}
+
+function postCaptionTitle(props: PostProps): string {
+  if (props.variant === 'pattern' || props.variant === 'queue')
+    return props.patternName;
+  if (props.variant === 'yarn')
+    return props.yarnName;
+  return props.projectName;
+}
+
+function postProjectsHref(props: PostProps, pathname: string): string | null {
+  if (props.variant === 'pattern')
+    return patternProjectsHref(props.patternId, pathname);
+  if (props.variant === 'queue' && props.patternId != null && props.patternId > 0)
+    return patternProjectsHref(props.patternId, pathname);
+  return null;
+}
+
+function postYarnAction(props: PostProps) {
+  if (props.variant === 'yarn')
+    return null;
+  if (props.variant === 'queue') {
+    if (props.yarnId == null || props.yarnId <= 0)
+      return null;
+    return (
+      <CatalogYarnStat
+        yarnId={props.yarnId}
+        yarnName={props.yarnName || props.patternName}
+        count={countLabel(props.skeins)}
+      />
+    );
+  }
+  if (props.variant === 'pattern') {
+    return (
+      <YarnStat
+        source="pattern"
+        patternId={props.patternId}
+        title={props.patternName}
+        count={countLabel(props.packsCount)}
+      />
+    );
+  }
+  return (
+    <YarnStat
+      source="project"
+      username={props.ownerUsername}
+      projectId={props.projectId}
+      title={props.projectName}
+      count={countLabel(props.packsCount)}
+    />
+  );
 }
 
 export function Post(props: PostProps) {
@@ -541,18 +719,9 @@ export function Post(props: PostProps) {
       || (props.variant === 'pattern'
         ? relativeDate(props.timelineDate)
         : '');
-  const captionFallbackTitle
-    = props.variant === 'pattern'
-      ? props.patternName
-      : props.projectName;
-  const projectsHref
-    = props.variant === 'pattern'
-      ? patternProjectsHref(props.patternId, pathname)
-      : null;
-  const unfavoriteTitle
-    = props.variant === 'pattern'
-      ? `Remove “${props.patternName}” from favorites?`
-      : `Remove “${props.projectName}” from favorites?`;
+  const captionFallbackTitle = postCaptionTitle(props);
+  const projectsHref = postProjectsHref(props, pathname);
+  const unfavoriteTitle = `Remove “${captionFallbackTitle}” from favorites?`;
 
   return (
     <View className="bg-black pb-4">
@@ -572,39 +741,24 @@ export function Post(props: PostProps) {
       />
       <PostStats
         variant={props.variant}
-        patternId={props.variant === 'pattern' ? props.patternId : undefined}
+        patternId={
+          props.variant === 'pattern' || props.variant === 'queue'
+            ? (props.patternId ?? undefined)
+            : undefined
+        }
         favorites={countLabel(favorite.displayCount)}
         favorited={favorite.isFavorited}
         onFavoritePress={favorite.requestToggle}
         favoriteDisabled={favorite.pending}
         projects={
-          props.variant === 'pattern'
+          props.variant === 'pattern' || props.variant === 'queue'
             ? countLabel(props.projectsCount)
             : null
         }
         comments={countLabel(commentsCount)}
         yarns={null}
         projectsHref={projectsHref}
-        yarnAction={
-          props.variant === 'pattern'
-            ? (
-                <YarnStat
-                  source="pattern"
-                  patternId={props.patternId}
-                  title={props.patternName}
-                  count={countLabel(props.packsCount)}
-                />
-              )
-            : (
-                <YarnStat
-                  source="project"
-                  username={props.ownerUsername}
-                  projectId={props.projectId}
-                  title={props.projectName}
-                  count={countLabel(props.packsCount)}
-                />
-              )
-        }
+        yarnAction={postYarnAction(props)}
       />
       <PostCaption
         authorName={authorName}

@@ -2,13 +2,22 @@
  * Yarn / dyer URLs differ by tab stack:
  * - Home → `/yarn/:id`, `/dyer/:id`
  * - Search → `/search/yarn/:id`, `/search/dyer/:id`
+ * - Profile → `/profile/yarn/:id`, `/profile/dyer/:id`
  */
 export function yarnBasePath(pathname?: string | null): string {
-  return pathname?.startsWith('/search') ? '/search/yarn' : '/yarn';
+  if (pathname?.startsWith('/search'))
+    return '/search/yarn';
+  if (pathname?.startsWith('/profile'))
+    return '/profile/yarn';
+  return '/yarn';
 }
 
 export function dyerBasePath(pathname?: string | null): string {
-  return pathname?.startsWith('/search') ? '/search/dyer' : '/dyer';
+  if (pathname?.startsWith('/search'))
+    return '/search/dyer';
+  if (pathname?.startsWith('/profile'))
+    return '/profile/dyer';
+  return '/dyer';
 }
 
 export function yarnHref(
