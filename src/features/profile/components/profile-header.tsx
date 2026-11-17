@@ -1,14 +1,21 @@
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import * as React from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, ScrollView } from 'react-native';
 
 import { ExpandableText } from '@/components/expandable-text';
 import { Text, View } from '@/components/ui';
 import { Settings as SettingsIcon } from '@/components/ui/icons';
 import { ProfileCountSkeleton } from './profile-skeletons';
 
-export type ProfileTab = 'projects' | 'favourites' | 'designs';
+export type ProfileTab = 'designs' | 'projects' | 'queued' | 'favourites' | 'stash';
+
+const PROFILE_CHIPS: { key: ProfileTab; label: string }[] = [
+  { key: 'projects', label: 'Projects' },
+  { key: 'queued', label: 'Queued' },
+  { key: 'favourites', label: 'Favourites' },
+  { key: 'stash', label: 'Stash' },
+];
 
 type Props = {
   username: string;
@@ -23,8 +30,9 @@ type Props = {
   tab: ProfileTab;
   onTabChange: (tab: ProfileTab) => void;
   showFavouritesTab: boolean;
-  showDesignsTab: boolean;
-  /** When true, Designs is the leading tab (designer profiles). */
+  /** Designs chip leads the row and is the default selection. */
+  showDesignsChip?: boolean;
+  /** When true, the designs count leads the stats (designer profiles). */
   designsTabFirst?: boolean;
   showSettings: boolean;
 };
@@ -53,50 +61,52 @@ function Stat({
   );
 }
 
-function tabLabel(key: ProfileTab): string {
-  if (key === 'projects')
-    return 'Projects';
-  if (key === 'favourites')
-    return 'Favourites';
-  return 'Designs';
-}
-
-function ProfileTabs({
-  tabs,
+function ProfileChips({
   tab,
   onTabChange,
+  showDesignsChip,
 }: {
-  tabs: ProfileTab[];
   tab: ProfileTab;
   onTabChange: (tab: ProfileTab) => void;
+  showDesignsChip: boolean;
 }) {
+  const chips = showDesignsChip
+    ? [{ key: 'designs' as const, label: 'Designs' }, ...PROFILE_CHIPS]
+    : PROFILE_CHIPS;
+
   return (
-    <View className="mt-2 flex-row">
-      {tabs.map((key) => {
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      directionalLockEnabled
+      className="mt-3"
+      contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingBottom: 12 }}
+    >
+      {chips.map(({ key, label }) => {
         const selected = tab === key;
         return (
           <Pressable
             key={key}
             accessibilityRole="button"
             accessibilityState={{ selected }}
+            accessibilityLabel={label}
             onPress={() => onTabChange(key)}
-            className={`flex-1 items-center pt-3 pb-0 ${
-              selected
-                ? 'border-b-2 border-white'
-                : 'border-b-2 border-transparent'
+            testID={`profile-chip-${key}`}
+            className={`rounded-full px-3.5 py-1.5 ${
+              selected ? 'bg-white' : 'bg-ink-300'
             }`}
           >
             <Text
-              className={`pb-3 text-sm font-semibold ${
-                selected ? 'text-white' : 'text-fog-500'
+              className={`text-sm font-semibold ${
+                selected ? 'text-black' : 'text-white'
               }`}
             >
-              {tabLabel(key)}
+              {label}
             </Text>
           </Pressable>
         );
       })}
-    </View>
+    </ScrollView>
   );
 }
 
@@ -113,23 +123,12 @@ export function ProfileHeader({
   tab,
   onTabChange,
   showFavouritesTab,
-  showDesignsTab,
+  showDesignsChip = false,
   designsTabFirst = false,
   showSettings,
 }: Props) {
   const router = useRouter();
   const initial = username.slice(0, 1).toUpperCase() || '?';
-  const tabs: ProfileTab[] = designsTabFirst && showDesignsTab
-    ? [
-        'designs',
-        'projects',
-        ...(showFavouritesTab ? (['favourites'] as const) : []),
-      ]
-    : [
-        'projects',
-        ...(showFavouritesTab ? (['favourites'] as const) : []),
-        ...(showDesignsTab ? (['designs'] as const) : []),
-      ];
   const showDesignsStat
     = designsLoading || (designCount != null && designCount > 0);
 
@@ -202,7 +201,11 @@ export function ProfileHeader({
             </View>
           )
         : null}
-      <ProfileTabs tabs={tabs} tab={tab} onTabChange={onTabChange} />
+      <ProfileChips
+        tab={tab}
+        onTabChange={onTabChange}
+        showDesignsChip={showDesignsChip}
+      />
     </View>
   );
 }

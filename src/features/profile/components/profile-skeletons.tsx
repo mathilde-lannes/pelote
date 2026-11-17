@@ -77,9 +77,14 @@ export function ProfileGridSkeleton({ rows = GRID_ROWS }: { rows?: number }) {
 
 export function ProfileScreenSkeleton({
   showSettings = false,
+  showDesignsChip = false,
 }: {
   showSettings?: boolean;
+  showDesignsChip?: boolean;
 }) {
+  const chipWidths = showDesignsChip
+    ? [76, 72, 64, 88, 56]
+    : [72, 64, 88, 56];
   return (
     <View className="flex-1 bg-black pt-2">
       <View className="flex-row items-center gap-5 px-4 pb-2">
@@ -98,14 +103,14 @@ export function ProfileScreenSkeleton({
           </View>
         </View>
       </View>
-      <View className="mt-2 flex-row">
-        {['a', 'b'].map((key, index) => (
-          <View key={key} className="flex-1 items-center border-b-2 border-transparent pt-3">
-            <SkeletonBlock
-              className="mb-3 h-4 w-16 rounded-sm bg-ink-300"
-              delay={100 + index * 40}
-            />
-          </View>
+      <View className="mt-3 flex-row gap-2 px-4 pb-3">
+        {chipWidths.map((width, index) => (
+          <SkeletonBlock
+            key={width}
+            className="h-8 rounded-full bg-ink-300"
+            delay={100 + index * 40}
+            style={{ width }}
+          />
         ))}
       </View>
       <ProfileGridSkeleton />

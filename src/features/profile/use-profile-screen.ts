@@ -41,7 +41,7 @@ export function useProfileScreen() {
   });
   const favoritesQuery = usePersonFavorites({
     variables: { username },
-    // Favourites tab is only for the signed-in user's own profile.
+    // Favourites are only loaded for the signed-in user's own profile.
     enabled: Boolean(username) && isOwnProfile,
   });
   const designsQuery = useDesignerPatterns({
@@ -63,17 +63,13 @@ export function useProfileScreen() {
   /** Opened via designer link (`?designer=` / `designer_id`). */
   const isDesignerProfile
     = Boolean(designerPermalink) || designerId != null;
-  const showDesignsTab
-    = hasDesigns || (isDesignerProfile && designsQuery.isPending);
+  const showDesignsChip = isDesignerProfile || hasDesigns;
 
-  const [tab, setTab] = React.useState<ProfileTab>(
-    isDesignerProfile ? 'designs' : 'projects',
-  );
-  const activeTab
-    = (tab === 'favourites' && !isOwnProfile)
-      || (tab === 'designs' && !hasDesigns && !designsQuery.isPending)
-      ? 'projects'
-      : tab;
+  const [tab, setTab] = React.useState<ProfileTab | null>(null);
+  const activeTab: ProfileTab
+    = tab != null && (tab !== 'designs' || showDesignsChip)
+      ? tab
+      : (showDesignsChip ? 'designs' : 'projects');
 
   return {
     username,
@@ -82,12 +78,11 @@ export function useProfileScreen() {
     isTabProfile,
     isOwnProfile,
     isDesignerProfile,
+    showDesignsChip,
     person,
     projects,
     favorites,
     designs,
-    hasDesigns,
-    showDesignsTab,
     activeTab,
     setTab,
     personPending: personQuery.isPending,

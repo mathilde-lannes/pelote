@@ -32,7 +32,10 @@ export function ProfileScreen() {
         edges={edges}
       >
         <FocusAwareStatusBar />
-        <ProfileScreenSkeleton showSettings={profile.isOwnProfile} />
+        <ProfileScreenSkeleton
+          showSettings={profile.isOwnProfile}
+          showDesignsChip={profile.isDesignerProfile}
+        />
       </SafeAreaView>
     );
   }
@@ -62,7 +65,7 @@ export function ProfileScreen() {
       tab={profile.activeTab}
       onTabChange={profile.setTab}
       showFavouritesTab={profile.isOwnProfile}
-      showDesignsTab={profile.showDesignsTab}
+      showDesignsChip={profile.showDesignsChip}
       designsTabFirst={profile.isDesignerProfile}
       showSettings={profile.isOwnProfile}
     />

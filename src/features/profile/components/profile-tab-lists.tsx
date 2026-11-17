@@ -3,7 +3,7 @@ import type { ProfileTab } from './profile-header';
 import * as React from 'react';
 import { FlatList } from 'react-native';
 
-import { Text } from '@/components/ui';
+import { Text, View } from '@/components/ui';
 import {
   PROFILE_GRID_COLS,
   PROFILE_GRID_GAP,
@@ -22,6 +22,71 @@ function EmptyState({ pending, label }: { pending: boolean; label: string }) {
     <Text className="mt-10 text-center text-sm text-fog-400">
       {label}
     </Text>
+  );
+}
+
+function PlaceholderEmpty({ title, message }: { title: string; message: string }) {
+  return (
+    <View className="items-center px-8 pt-16">
+      <Text className="text-center text-base font-semibold text-white">
+        {title}
+      </Text>
+      <Text className="mt-1.5 text-center text-sm text-fog-400">
+        {message}
+      </Text>
+    </View>
+  );
+}
+
+function ProfileGrid<T>({
+  listKey,
+  header,
+  data,
+  pending,
+  emptyLabel,
+  keyExtractor,
+  renderItem,
+}: {
+  listKey: string;
+  header: React.ReactElement;
+  data: T[];
+  pending: boolean;
+  emptyLabel: string;
+  keyExtractor: (item: T) => string;
+  renderItem: (item: T) => React.ReactElement;
+}) {
+  return (
+    <FlatList
+      key={listKey}
+      numColumns={PROFILE_GRID_COLS}
+      columnWrapperStyle={{ gap: PROFILE_GRID_GAP }}
+      contentContainerStyle={{ gap: PROFILE_GRID_GAP, paddingBottom: 24 }}
+      ListHeaderComponent={header}
+      data={pending ? [] : data}
+      keyExtractor={keyExtractor}
+      ListEmptyComponent={<EmptyState pending={pending} label={emptyLabel} />}
+      renderItem={({ item }) => renderItem(item)}
+    />
+  );
+}
+
+function ChipPlaceholder({
+  header,
+  title,
+  message,
+}: {
+  header: React.ReactElement;
+  title: string;
+  message: string;
+}) {
+  return (
+    <FlatList
+      data={[]}
+      renderItem={() => null}
+      ListHeaderComponent={header}
+      ListEmptyComponent={<PlaceholderEmpty title={title} message={message} />}
+      contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }}
+    />
   );
 }
 
@@ -52,40 +117,36 @@ export function ProfileTabLists({
   favoritesPending,
   designsPending,
 }: Props) {
-  const listProps = {
-    numColumns: PROFILE_GRID_COLS,
-    columnWrapperStyle: { gap: PROFILE_GRID_GAP },
-    contentContainerStyle: { gap: PROFILE_GRID_GAP, paddingBottom: 24 },
-    ListHeaderComponent: header,
-  } as const;
-
-  if (tab === 'favourites') {
+  if (tab === 'queued') {
     return (
-      <FlatList
-        {...listProps}
-        data={favoritesPending ? [] : favorites}
-        keyExtractor={item => `fav-${item.type}-${item.id}`}
-        ListEmptyComponent={(
-          <EmptyState pending={favoritesPending} label="No favourites yet." />
-        )}
-        renderItem={({ item }) => <FavoriteTile item={item} />}
+      <ChipPlaceholder
+        header={header}
+        title="Nothing queued yet"
+        message="Patterns you queue will show up here."
+      />
+    );
+  }
+
+  if (tab === 'stash') {
+    return (
+      <ChipPlaceholder
+        header={header}
+        title="Stash is empty"
+        message="Yarn you stash will show up here."
       />
     );
   }
 
   if (tab === 'designs') {
     return (
-      <FlatList
-        {...listProps}
-        data={designsPending ? [] : designs}
+      <ProfileGrid
+        listKey="designs"
+        header={header}
+        data={designs}
+        pending={designsPending}
+        emptyLabel="No published designs yet."
         keyExtractor={item => String(item.id)}
-        ListEmptyComponent={(
-          <EmptyState
-            pending={designsPending}
-            label="No published designs yet."
-          />
-        )}
-        renderItem={({ item }) => (
+        renderItem={item => (
           <DesignTile
             username={displayName}
             pattern={item}
@@ -97,15 +158,29 @@ export function ProfileTabLists({
     );
   }
 
+  if (tab === 'favourites') {
+    return (
+      <ProfileGrid
+        listKey="favourites"
+        header={header}
+        data={favorites}
+        pending={favoritesPending}
+        emptyLabel="No favourites yet."
+        keyExtractor={item => `fav-${item.type}-${item.id}`}
+        renderItem={item => <FavoriteTile item={item} />}
+      />
+    );
+  }
+
   return (
-    <FlatList
-      {...listProps}
-      data={projectsPending ? [] : projects}
+    <ProfileGrid
+      listKey="projects"
+      header={header}
+      data={projects}
+      pending={projectsPending}
+      emptyLabel="No public projects yet."
       keyExtractor={item => String(item.id)}
-      ListEmptyComponent={(
-        <EmptyState pending={projectsPending} label="No public projects yet." />
-      )}
-      renderItem={({ item }) => (
+      renderItem={item => (
         <ProjectTile username={displayName} project={item} />
       )}
     />
