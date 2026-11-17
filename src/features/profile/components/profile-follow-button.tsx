@@ -11,26 +11,30 @@ type Props = {
 };
 
 export function ProfileFollowButton({ followed, pending, onPress }: Props) {
-  const label = followed ? 'friend' : 'add friend';
+  const label = followed ? null : 'Add';
   const Icon = followed ? UserRoundCheck : UserRoundPlus;
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={label ?? 'Followed'}
       accessibilityState={{ disabled: pending, busy: pending }}
       disabled={pending}
       hitSlop={8}
       onPress={onPress}
       testID="profile-follow"
-      className="flex-row items-center gap-1.5"
+      className="flex-row items-center gap-1.5 rounded-full bg-ink-300 px-3 py-1.5"
     >
-      <Text className="text-base font-semibold text-white">
-        {label}
-      </Text>
+      {label && (
+        <Text className="text-base font-semibold text-white">{label}</Text>
+      )}
       {pending
-        ? <ActivityIndicator color="#ffffff" size="small" />
-        : <Icon color="#ffffff" />}
+        ? (
+            <ActivityIndicator color="#ffffff" size="small" />
+          )
+        : (
+            <Icon color="#ffffff" />
+          )}
     </Pressable>
   );
 }
