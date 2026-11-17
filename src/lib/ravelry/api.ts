@@ -378,6 +378,23 @@ function normalizeActivity(raw: any, index: number): FriendActivity {
       ?? payload.pattern_name
       ?? payload.pattern?.name
       ?? null,
+    pattern_id: positiveId(
+      raw.pattern_id
+      ?? raw.pattern?.id
+      ?? payload.pattern_id
+      ?? payload.pattern?.id
+      ?? payload.queued_project?.pattern_id
+      ?? payload.queued_project?.pattern?.id
+      ?? project?.pattern_id,
+    ),
+    target_id: positiveId(
+      raw.target_id
+      ?? payload.target_id
+      ?? raw.project_id
+      ?? payload.project_id
+      ?? raw.project?.id
+      ?? payload.project?.id,
+    ),
   };
 }
 
@@ -976,6 +993,101 @@ export async function fetchFriendsActivity(
     page,
     pageSize,
   };
+}
+
+const TITLE_SEARCH_TYPES = new Set([
+  'favorite',
+  'queued',
+  'project_photo',
+  'unknown',
+]);
+
+function mergeActivityLink(base: ActivityLink, extra: ActivityLink): ActivityLink {
+  return {
+    patternId: base.patternId ?? extra.patternId,
+    patternName: base.patternName ?? extra.patternName,
+    projectId: base.projectId ?? extra.projectId,
+    projectUsername: base.projectUsername ?? extra.projectUsername,
+    projectName: base.projectName ?? extra.projectName,
+  };
+}
+
+async function patternFromActivityTitle(title: string): Promise<ActivityLink | null> {
+  const hint = patternHintFromTitle(title);
+  if (!hint)
+    return null;
+  const page = await fetchPatternsByQuery(hint.name, {
+    pageSize: 20,
+    enrich: false,
+  });
+  const match = matchPatternFromTitle(
+    page.patterns.map(pattern => ({
+      id: pattern.id,
+      name: pattern.name,
+      designerName: pattern.pattern_author?.name ?? null,
+    })),
+    title,
+  );
+  if (!match)
+    return null;
+  return {
+    patternId: match.id,
+    patternName: match.name,
+    projectId: null,
+    projectUsername: null,
+    projectName: null,
+  };
+}
+
+/**
+ * Resolve the pattern behind an activity.
+ * Friends activity only includes `target_uri` / `title`, so a favorite such as
+ * "Dreaming of Spring Shawl by Leela Frankcombe" has no pattern id until we
+ * load the target (or match the title).
+ */
+export async function fetchActivityTarget(options: {
+  uri?: string | null;
+  title?: string | null;
+  type?: string | null;
+}): Promise<ActivityLink> {
+  const parsed = parseActivityTargetUri(options.uri);
+  let link = parsed;
+  const path = activityTargetPath(options.uri);
+  if (path && parsed.patternId == null) {
+    try {
+      const { data } = await client.get(path);
+      link = mergeActivityLink(activityLinkFromPayload(data), parsed);
+    }
+    catch {
+      link = parsed;
+    }
+  }
+  if (link.patternId == null && link.projectId != null && link.projectUsername) {
+    try {
+      const project = await fetchProject(link.projectUsername, link.projectId);
+      link = {
+        ...link,
+        patternId: project.pattern_id ?? null,
+        patternName: link.patternName ?? project.pattern_name ?? null,
+        projectName: link.projectName ?? project.name ?? null,
+      };
+    }
+    catch {
+      // Title search below can still find the pattern.
+    }
+  }
+  const type = options.type ?? 'unknown';
+  if (link.patternId == null && options.title && TITLE_SEARCH_TYPES.has(type)) {
+    try {
+      const found = await patternFromActivityTitle(options.title);
+      if (found)
+        link = mergeActivityLink(link, found);
+    }
+    catch {
+      // A search miss leaves the sheet without a pattern link.
+    }
+  }
+  return link;
 }
 
 /** @deprecated Prefer `RavelryYarn` from types. */

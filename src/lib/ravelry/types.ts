@@ -193,6 +193,9 @@ export type FriendActivity = {
   project?: RavelryProject | null;
   photo?: RavelryPhoto | null;
   pattern_name?: string | null;
+  pattern_id?: number | null;
+  /** Activity target id. For a project photo this is the project id. */
+  target_id?: number | null;
 };
 
 export type FriendsActivityResponse = {

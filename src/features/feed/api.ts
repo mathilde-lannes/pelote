@@ -15,31 +15,22 @@ import {
 } from '@/lib/ravelry/api';
 
 export type { FriendActivity, FriendsActivityPage, RavelryProject };
-export { isHomeFeedActivity } from './is-home-feed-activity';
-
-/** Subset of Ravelry `activity_type_keys` used for the Home feed. */
-export const HOME_FEED_ACTIVITY_TYPE_KEYS = [
-  'added-project-photo',
-  'added-stash-photo',
-  'queued-pattern',
-] as const;
 
 export const useFriendsActivity = createInfiniteQuery<
   FriendsActivityPage,
   void,
   AxiosError
 >({
-  queryKey: ['friends-activity'],
+  queryKey: ['friends-activity', 'all'],
   fetcher: (_variables, { pageParam }) => {
     const username = useAuthStore.getState().user?.username;
     if (!username)
       throw new Error('Not signed in');
     return fetchFriendsActivity(username, {
-      activityTypeKeys: [...HOME_FEED_ACTIVITY_TYPE_KEYS],
       page: pageParam as number,
     });
   },
-  getNextPageParam: (lastPage) =>
+  getNextPageParam: lastPage =>
     lastPage.activities.length < lastPage.pageSize
       ? undefined
       : lastPage.page + 1,

@@ -6,10 +6,11 @@ import { Link, usePathname } from 'expo-router';
 import * as React from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 
-import colors from '@/components/ui/colors';
 import { Modal, Text } from '@/components/ui';
+import colors from '@/components/ui/colors';
 import { ArrowRight } from '@/components/ui/icons';
 import { usePattern } from '@/features/explore/api';
+import { patternHref } from '@/features/explore/pattern-href';
 import { formatYardage } from '@/features/feed/format-yardage';
 import { designerProfileHref } from '@/features/profile/designer-profile-href';
 
@@ -68,7 +69,7 @@ function formatPrice(pattern: RavelryPattern): string | null {
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <View className="border-b border-ink-300 px-5 py-3.5">
-      <Text className="text-xs font-medium uppercase tracking-wide text-fog-500">
+      <Text className="text-xs font-medium tracking-wide text-fog-500 uppercase">
         {label}
       </Text>
       <Text className="mt-1 text-base text-white">
@@ -92,7 +93,7 @@ function DesignerLinkRow({
   const initial = (name || '?').slice(0, 1).toUpperCase();
   return (
     <View className="border-b border-ink-300">
-      <Text className="px-5 pt-3.5 text-xs font-medium uppercase tracking-wide text-fog-500">
+      <Text className="px-5 pt-3.5 text-xs font-medium tracking-wide text-fog-500 uppercase">
         Designer
       </Text>
       <Link href={href as never} asChild>
@@ -129,6 +130,38 @@ function DesignerLinkRow({
   );
 }
 
+function PatternPageLink({
+  patternId,
+  name,
+  onPress,
+}: {
+  patternId: number;
+  name: string;
+  onPress?: () => void;
+}) {
+  const pathname = usePathname();
+  return (
+    <Link href={patternHref(patternId, pathname) as never} asChild>
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={`Pattern ${name}`}
+        className="flex-row items-center gap-3 border-b border-ink-300 px-5 py-3.5"
+      >
+        <View className="min-w-0 flex-1">
+          <Text className="text-xs font-medium tracking-wide text-fog-500 uppercase">
+            Pattern
+          </Text>
+          <Text className="mt-1 text-base text-white" numberOfLines={1}>
+            {name}
+          </Text>
+        </View>
+        <ArrowRight color={colors.fog[400]} />
+      </Pressable>
+    </Link>
+  );
+}
+
 function rowsForPattern(pattern: RavelryPattern): { label: string; value: string }[] {
   const needles = (pattern.pattern_needle_sizes ?? [])
     .map(needle => needle.name.trim())
@@ -159,6 +192,84 @@ function rowsForPattern(pattern: RavelryPattern): { label: string; value: string
     rows.push({ label: 'Difficulty', value: difficulty });
 
   return rows;
+}
+
+function PatternInfoBody({
+  patternId,
+  title,
+  pattern,
+  rows,
+  pending,
+  failed,
+  designerName,
+  designerPhoto,
+  designerLink,
+  onDismiss,
+}: {
+  patternId: number;
+  title: string;
+  pattern: RavelryPattern | undefined;
+  rows: { label: string; value: string }[];
+  pending: boolean;
+  failed: boolean;
+  designerName: string | null;
+  designerPhoto: string | null;
+  designerLink: string | null;
+  onDismiss: () => void;
+}) {
+  return (
+    <>
+      {pending && !pattern
+        ? (
+            <View className="items-center py-10">
+              <ActivityIndicator color="#ffffff" />
+            </View>
+          )
+        : null}
+      {failed && !pattern
+        ? (
+            <View className="px-5 py-8">
+              <Text className="text-center text-sm text-fog-400">
+                Couldn't load pattern details.
+              </Text>
+            </View>
+          )
+        : null}
+      {patternId > 0
+        ? (
+            <PatternPageLink
+              patternId={patternId}
+              name={title}
+              onPress={onDismiss}
+            />
+          )
+        : null}
+      {designerName && designerLink
+        ? (
+            <DesignerLinkRow
+              href={designerLink}
+              name={designerName}
+              photoUri={designerPhoto}
+              onPress={onDismiss}
+            />
+          )
+        : designerName
+          ? <InfoRow label="Designer" value={designerName} />
+          : null}
+      {pattern && !rows.length && !designerName
+        ? (
+            <View className="px-5 py-8">
+              <Text className="text-center text-sm text-fog-400">
+                No craft details listed for this pattern.
+              </Text>
+            </View>
+          )
+        : null}
+      {rows.map(row => (
+        <InfoRow key={row.label} label={row.label} value={row.value} />
+      ))}
+    </>
+  );
 }
 
 export function PatternInfoSheet({
@@ -219,52 +330,18 @@ export function PatternInfoSheet({
         contentContainerStyle={{ paddingBottom: 32 }}
         className="bg-black"
       >
-        {query.isPending && !pattern
-          ? (
-              <View className="items-center py-10">
-                <ActivityIndicator color="#ffffff" />
-              </View>
-            )
-          : null}
-
-        {query.isError && !pattern
-          ? (
-              <View className="px-5 py-8">
-                <Text className="text-center text-sm text-fog-400">
-                  Couldn't load pattern details.
-                </Text>
-              </View>
-            )
-          : null}
-
-        {designerName && designerLink
-          ? (
-              <DesignerLinkRow
-                href={designerLink}
-                name={designerName}
-                photoUri={designerPhoto}
-                onPress={() => ref?.current?.dismiss()}
-              />
-            )
-          : designerName
-            ? (
-                <InfoRow label="Designer" value={designerName} />
-              )
-            : null}
-
-        {pattern && !rows.length && !designerName
-          ? (
-              <View className="px-5 py-8">
-                <Text className="text-center text-sm text-fog-400">
-                  No craft details listed for this pattern.
-                </Text>
-              </View>
-            )
-          : null}
-
-        {rows.map(row => (
-          <InfoRow key={row.label} label={row.label} value={row.value} />
-        ))}
+        <PatternInfoBody
+          patternId={patternId}
+          title={title}
+          pattern={pattern}
+          rows={rows}
+          pending={query.isPending}
+          failed={query.isError}
+          designerName={designerName}
+          designerPhoto={designerPhoto}
+          designerLink={designerLink}
+          onDismiss={() => ref?.current?.dismiss()}
+        />
       </BottomSheetScrollView>
     </Modal>
   );

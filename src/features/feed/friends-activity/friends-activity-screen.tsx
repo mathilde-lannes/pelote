@@ -1,8 +1,8 @@
+import type { FlashListRef } from '@shopify/flash-list';
 import type { FriendActivity } from '../api';
 import type { FeedMode } from '../feed-mode';
-import type { FlashListRef } from '@shopify/flash-list';
-import { FlashList } from '@shopify/flash-list';
 import { useScrollToTop } from '@react-navigation/native';
+import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import * as React from 'react';
 
@@ -17,7 +17,7 @@ import {
 } from '@/components/ui';
 import { useAuthStore } from '@/features/auth/use-auth-store';
 import { ForYouHeader } from '@/features/feed/for-you/for-you-header';
-import { isHomeFeedActivity, useFriendsActivity } from '../api';
+import { useFriendsActivity } from '../api';
 import { ActivityCard } from '../components/activity-card';
 
 function FeedFooter({ loading }: { loading: boolean }) {
@@ -84,11 +84,8 @@ export function FriendsActivityScreen({
     isFetchingNextPage,
   } = useFriendsActivity({ enabled: Boolean(user) });
 
-  const photoFirst = React.useMemo(
-    () =>
-      (data?.pages ?? [])
-        .flatMap(page => page.activities)
-        .filter(isHomeFeedActivity),
+  const activities = React.useMemo(
+    () => (data?.pages ?? []).flatMap(page => page.activities),
     [data],
   );
 
@@ -132,7 +129,7 @@ export function FriendsActivityScreen({
     );
   }
 
-  if (!photoFirst.length) {
+  if (!activities.length) {
     return (
       <FriendsEmptyState
         feedMode={feedMode}
@@ -148,7 +145,7 @@ export function FriendsActivityScreen({
       <View className="flex-1">
         <FlashList
           ref={listRef}
-          data={photoFirst}
+          data={activities}
           renderItem={renderItem}
           keyExtractor={item => item.id}
           onEndReached={onEndReached}

@@ -11,6 +11,7 @@ import {
   captionText,
   likesLabel,
 } from './activity-card-copy';
+import { ActivityInfoButton } from './activity-info-button';
 
 function CardHeader({
   item,
@@ -25,45 +26,48 @@ function CardHeader({
   const profileHref = `/user/${item.person.username}`;
   return (
     <View className="flex-row items-center gap-3 p-3">
-      <Link href={profileHref as any} asChild>
-        <Pressable className="flex-1 flex-row items-center gap-3">
-          {avatar
-            ? (
-                <Image
-                  source={{ uri: avatar }}
-                  style={{ width: 32, height: 32, borderRadius: 16 }}
-                  contentFit="cover"
-                />
-              )
-            : (
-                <View className="size-8 items-center justify-center rounded-full bg-ink-300">
-                  <Text className="text-sm font-semibold text-white">
-                    {item.person.username.slice(0, 1).toUpperCase()}
-                  </Text>
-                </View>
-              )}
-          <View className="flex-1">
-            <Text className="text-sm font-semibold text-white">
-              {item.person.username}
-              {verb
+      <View className="min-w-0 flex-1">
+        <Link href={profileHref as any} asChild>
+          <Pressable className="flex-row items-center gap-3">
+            {avatar
+              ? (
+                  <Image
+                    source={{ uri: avatar }}
+                    style={{ width: 32, height: 32, borderRadius: 16 }}
+                    contentFit="cover"
+                  />
+                )
+              : (
+                  <View className="size-8 items-center justify-center rounded-full bg-ink-300">
+                    <Text className="text-sm font-semibold text-white">
+                      {item.person.username.slice(0, 1).toUpperCase()}
+                    </Text>
+                  </View>
+                )}
+            <View className="flex-1">
+              <Text className="text-sm font-semibold text-white">
+                {item.person.username}
+                {verb
+                  ? (
+                      <Text className="font-normal text-fog-400">
+                        {' '}
+                        {verb}
+                      </Text>
+                    )
+                  : null}
+              </Text>
+              {relative
                 ? (
-                    <Text className="font-normal text-fog-400">
-                      {' '}
-                      {verb}
+                    <Text className="text-xs text-fog-500">
+                      {relative}
                     </Text>
                   )
                 : null}
-            </Text>
-            {relative
-              ? (
-                  <Text className="text-xs text-fog-500">
-                    {relative}
-                  </Text>
-                )
-              : null}
-          </View>
-        </Pressable>
-      </Link>
+            </View>
+          </Pressable>
+        </Link>
+      </View>
+      <ActivityInfoButton item={item} />
     </View>
   );
 }
