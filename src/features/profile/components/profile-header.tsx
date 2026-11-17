@@ -18,7 +18,8 @@ const PROFILE_CHIPS: { key: ProfileTab; label: string }[] = [
 ];
 
 type Props = {
-  username: string;
+  /** Name beside the photo. Designers use the same name as their posts. */
+  firstName: string;
   avatarUrl: string | null;
   about: string | null;
   workCount: number | null;
@@ -107,7 +108,7 @@ function ProfileChips({
 }
 
 export function ProfileHeader({
-  username,
+  firstName,
   avatarUrl,
   about,
   workCount,
@@ -121,7 +122,7 @@ export function ProfileHeader({
   showSettings,
 }: Props) {
   const router = useRouter();
-  const initial = username.slice(0, 1).toUpperCase() || '?';
+  const initial = firstName.slice(0, 1).toUpperCase() || '?';
 
   return (
     <View className="pt-2">
@@ -144,7 +145,7 @@ export function ProfileHeader({
         <View className="min-w-0 flex-1">
           <View className="flex-row items-start justify-between gap-3">
             <Text className="flex-1 text-xl font-semibold text-white">
-              {username}
+              {firstName}
             </Text>
             {showSettings
               ? (

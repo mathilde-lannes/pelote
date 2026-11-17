@@ -105,6 +105,11 @@ function pickPersonPhotos(raw: any): {
   };
 }
 
+function designerNameFromPerson(raw: any): string | null {
+  const name = raw?.pattern_author?.name;
+  return typeof name === 'string' && name.trim() ? name.trim() : null;
+}
+
 function normalizePerson(raw: any): RavelryPerson {
   const photos = pickPersonPhotos(raw);
   return {
@@ -114,6 +119,7 @@ function normalizePerson(raw: any): RavelryPerson {
     small_photo_url: photos.small_photo_url,
     photo_url: photos.photo_url,
     about_me: raw?.about_me ?? null,
+    designer_name: designerNameFromPerson(raw),
   };
 }
 

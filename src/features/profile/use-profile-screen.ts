@@ -1,4 +1,5 @@
 import type { ProfileTab } from './components/profile-header';
+import type { RavelryPattern, RavelryPerson } from '@/lib/ravelry/types';
 import { useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 
@@ -10,6 +11,17 @@ import {
   usePersonFriendCount,
   usePersonProjects,
 } from './api';
+
+function designerLabel(
+  person: RavelryPerson | undefined,
+  designs: RavelryPattern[],
+): string | null {
+  const fromDesigns = designs.find(pattern => pattern.pattern_author?.name?.trim())
+    ?.pattern_author
+    ?.name
+    ?.trim();
+  return fromDesigns || person?.designer_name?.trim() || null;
+}
 
 export function useProfileScreen() {
   const params = useLocalSearchParams<{
@@ -93,8 +105,12 @@ export function useProfileScreen() {
     personPending: personQuery.isPending,
     failed: personQuery.isError && !person,
     displayName: person?.username || username,
+    profileName: (isDesignerProfile ? designerLabel(person, designs) : null)
+      || person?.first_name?.trim()
+      || person?.username
+      || username,
     avatarUrl: person?.photo_url ?? person?.small_photo_url ?? null,
-    about: person?.about_me?.trim() || person?.first_name?.trim() || null,
+    about: person?.about_me?.trim() || null,
     workCount: isDesignerProfile
       ? (designsQuery.data?.totalCount ?? null)
       : (projectsQuery.data?.totalCount ?? null),

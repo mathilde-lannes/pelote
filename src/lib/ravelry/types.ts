@@ -5,6 +5,8 @@ export type RavelryPerson = {
   small_photo_url?: string | null;
   photo_url?: string | null;
   about_me?: string | null;
+  /** Designer name from User `pattern_author.name`, when this person is a designer. */
+  designer_name?: string | null;
 };
 
 export type RavelryPhoto = {
