@@ -7,8 +7,8 @@ import { FlatList } from 'react-native';
 import { FocusAwareStatusBar, Text, View } from '@/components/ui';
 import { POST_ITEM_HEIGHT } from '@/features/feed/components/post-layout';
 import { FeedSkeletonScreen } from '@/features/feed/components/post-skeleton';
-import { ColorwayFeedPost } from './colorway-feed-post';
 import { useYarnColorways } from './api';
+import { ColorwayFeedPost } from './colorway-feed-post';
 
 function FeedStatus({ message }: { message: string }) {
   return (
@@ -83,9 +83,9 @@ function useColorwaysFeedScroll(
 }
 
 export function YarnColorwaysFeedScreen() {
-  const params = useLocalSearchParams<{ id: string; colorwayId: string }>();
+  const params = useLocalSearchParams<{ 'id': string; 'colorway-id': string }>();
   const yarnIdRaw = String(params.id ?? '').trim();
-  const startId = String(params.colorwayId ?? '').trim();
+  const startId = String(params['colorway-id'] ?? '').trim();
   const yarnId = Number(yarnIdRaw);
   const enabled = Number.isFinite(yarnId) && yarnId > 0;
 

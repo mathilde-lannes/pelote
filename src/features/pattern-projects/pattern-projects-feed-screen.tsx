@@ -85,9 +85,9 @@ function useProjectsFeedScroll(
 }
 
 export function PatternProjectsFeedScreen() {
-  const params = useLocalSearchParams<{ id: string; projectId: string }>();
+  const params = useLocalSearchParams<{ 'id': string; 'project-id': string }>();
   const patternIdRaw = String(params.id ?? '').trim();
-  const startId = String(params.projectId ?? '').trim();
+  const startId = String(params['project-id'] ?? '').trim();
   const patternId = Number(patternIdRaw);
   const enabled = Number.isFinite(patternId) && patternId > 0;
 

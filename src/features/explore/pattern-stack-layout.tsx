@@ -49,7 +49,7 @@ export function PatternStackLayout({ fallbackHref }: Props) {
         }}
       />
       <Stack.Screen
-        name="projects/[projectId]"
+        name="projects/[project-id]"
         options={{
           title: 'Posts',
         }}

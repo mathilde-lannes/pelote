@@ -85,9 +85,9 @@ function useProjectsFeedScroll(
 }
 
 export function YarnProjectsFeedScreen() {
-  const params = useLocalSearchParams<{ id: string; projectId: string }>();
+  const params = useLocalSearchParams<{ 'id': string; 'project-id': string }>();
   const yarnIdRaw = String(params.id ?? '').trim();
-  const startId = String(params.projectId ?? '').trim();
+  const startId = String(params['project-id'] ?? '').trim();
   const yarnId = Number(yarnIdRaw);
   const enabled = Number.isFinite(yarnId) && yarnId > 0;
 

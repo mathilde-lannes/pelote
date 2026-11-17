@@ -42,13 +42,13 @@ export function YarnStackLayout({ fallbackHref }: Props) {
         }}
       />
       <Stack.Screen
-        name="[projectId]"
+        name="[project-id]"
         options={{
           title: 'Posts',
         }}
       />
       <Stack.Screen
-        name="colorway/[colorwayId]"
+        name="colorway/[colorway-id]"
         options={{
           title: 'Colorways',
         }}
