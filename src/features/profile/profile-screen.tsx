@@ -117,6 +117,7 @@ export function ProfileScreen() {
 
   const header = (
     <ProfileHeader
+      username={profile.username}
       firstName={profile.profileName}
       avatarUrl={profile.avatarUrl}
       about={profile.about}

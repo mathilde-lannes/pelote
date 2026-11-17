@@ -1,5 +1,6 @@
 import type { AxiosError } from 'axios';
 import type {
+  FriendEntry,
   RavelryFavorite,
   RavelryPattern,
   RavelryPerson,
@@ -11,6 +12,7 @@ import { createQuery } from 'react-query-kit';
 
 import {
   fetchFriendCount,
+  fetchFriends,
   fetchPatternsByDesignerCandidates,
   fetchPerson,
   fetchPersonFavorites,
@@ -115,6 +117,18 @@ export const usePersonFriendCount = createQuery<
 >({
   queryKey: ['person-friend-count'],
   fetcher: variables => fetchFriendCount(variables.username),
+});
+
+export const usePersonFriends = createQuery<
+  FriendEntry[],
+  { username: string },
+  AxiosError
+>({
+  queryKey: ['person-friends'],
+  fetcher: async (variables) => {
+    const res = await fetchFriends(variables.username);
+    return res.friends;
+  },
 });
 
 export const usePersonFavorites = createQuery<

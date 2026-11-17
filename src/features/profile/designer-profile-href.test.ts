@@ -1,8 +1,10 @@
 import {
   designerDesignsFeedHref,
   designerProfileHref,
+  userFriendsHref,
   userProfileHref,
   userProjectFeedHref,
+  userStashFeedHref,
 } from './designer-profile-href';
 
 describe('designerProfileHref', () => {
@@ -86,6 +88,19 @@ describe('user profile href helpers', () => {
     expect(userProfileHref('ada', '/search/pattern/1')).toBe('/search/user/ada');
     expect(userProjectFeedHref('ada', 7, '/search/user/ada')).toBe(
       '/search/user/ada/feed/7',
+    );
+  });
+
+  it('keeps the profile tab when opening a friend', () => {
+    expect(userProfileHref('ada', '/profile')).toBe('/profile/user/ada');
+    expect(userFriendsHref('ada', '/profile')).toBe('/profile/user/ada/friends');
+    expect(userFriendsHref('ada', '/user/ada')).toBe('/user/ada/friends');
+    expect(userFriendsHref('ada', '/search/user/ada')).toBe(
+      '/search/user/ada/friends',
+    );
+    expect(userStashFeedHref('ada', 3, '/profile')).toBe('/profile/stash/3');
+    expect(userStashFeedHref('ada', 3, '/profile/user/ada')).toBe(
+      '/profile/user/ada/stash/3',
     );
   });
 });

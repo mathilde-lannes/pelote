@@ -1,11 +1,12 @@
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import * as React from 'react';
 import { Pressable } from 'react-native';
 
 import { ExpandableText } from '@/components/expandable-text';
 import { Text, View } from '@/components/ui';
 import { Settings as SettingsIcon } from '@/components/ui/icons';
+import { userFriendsHref } from '../designer-profile-href';
 import { ProfileCountSkeleton } from './profile-skeletons';
 
 export type ProfileTab = 'designs' | 'projects' | 'queued' | 'favourites' | 'stash';
@@ -18,6 +19,7 @@ const PROFILE_TABS: { key: ProfileTab; label: string }[] = [
 ];
 
 type Props = {
+  username: string;
   /** Name beside the photo. Designers use the same name as their posts. */
   firstName: string;
   avatarUrl: string | null;
@@ -38,23 +40,37 @@ function Stat({
   count,
   label,
   loading,
+  onPress,
 }: {
   count: number | null;
   label: string;
   loading?: boolean;
+  onPress?: () => void;
 }) {
-  if (loading)
-    return <ProfileCountSkeleton />;
+  const body = loading
+    ? <ProfileCountSkeleton />
+    : (
+        <View>
+          <Text className="text-base font-semibold text-white">
+            {count == null ? '—' : count}
+          </Text>
+          <Text className="text-sm text-fog-400">
+            {label}
+          </Text>
+        </View>
+      );
+
+  if (!onPress)
+    return body;
 
   return (
-    <View>
-      <Text className="text-base font-semibold text-white">
-        {count == null ? '—' : count}
-      </Text>
-      <Text className="text-sm text-fog-400">
-        {label}
-      </Text>
-    </View>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+    >
+      {body}
+    </Pressable>
   );
 }
 
@@ -105,6 +121,7 @@ function ProfileTabs({
 }
 
 export function ProfileHeader({
+  username,
   firstName,
   avatarUrl,
   about,
@@ -119,6 +136,7 @@ export function ProfileHeader({
   showSettings,
 }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
   const initial = firstName.slice(0, 1).toUpperCase() || '?';
 
   return (
@@ -160,7 +178,14 @@ export function ProfileHeader({
           </View>
           <View className="mt-3 flex-row gap-6">
             <Stat count={workCount} label={workLabel} loading={workLoading} />
-            <Stat count={friendCount} label="friends" loading={friendsLoading} />
+            <Stat
+              count={friendCount}
+              label="friends"
+              loading={friendsLoading}
+              onPress={() => {
+                router.push(userFriendsHref(username, pathname) as never);
+              }}
+            />
           </View>
         </View>
       </View>

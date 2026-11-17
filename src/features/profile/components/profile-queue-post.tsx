@@ -8,7 +8,7 @@ import { Post } from '@/features/feed/components/post';
 import { POST_ITEM_HEIGHT } from '@/features/feed/components/post-layout';
 import { PostSkeleton } from '@/features/feed/components/post-skeleton';
 import { formatRelative } from '@/features/feed/format-relative';
-import { userProfileHref } from '@/features/profile/designer-profile-href';
+import { postAuthorHref } from '@/features/profile/designer-profile-href';
 import { bestPhotoUrl } from '@/lib/ravelry/api';
 import { useQueuedProject } from '../api';
 
@@ -49,9 +49,7 @@ export function ProfileQueuePost({ username, person, queued }: Props) {
   );
   const pathname = usePathname();
   const displayName = person?.username || username;
-  const authorHref = pathname?.startsWith('/profile')
-    ? '/profile'
-    : userProfileHref(displayName, pathname);
+  const authorHref = postAuthorHref(displayName, pathname);
   const patternName = data.pattern_name?.trim() || data.name;
 
   if (detailQuery.isPending && !photos.length) {

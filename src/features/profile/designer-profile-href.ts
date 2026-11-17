@@ -4,9 +4,21 @@ import type { RavelryPatternAuthor } from '@/lib/ravelry/types';
  * User profile URLs differ by tab stack:
  * - Home → `/user/:username`
  * - Search → `/search/user/:username` (keeps Search tab focused on back)
+ * - Profile → `/profile/user/:username` (keeps the Profile tab focused on back)
  */
 export function userBasePath(pathname?: string | null): string {
-  return pathname?.startsWith('/search') ? '/search/user' : '/user';
+  if (pathname?.startsWith('/search'))
+    return '/search/user';
+  if (pathname?.startsWith('/profile'))
+    return '/profile/user';
+  return '/user';
+}
+
+/** Signed-in profile tab, not a friend opened inside that tab. */
+function isProfileTabRoot(pathname?: string | null): boolean {
+  if (!pathname?.startsWith('/profile'))
+    return false;
+  return !pathname.startsWith('/profile/user/');
 }
 
 function designerRouteParts(
@@ -66,6 +78,23 @@ export function userProfileHref(
   return `${userBasePath(pathname)}/${username}`;
 }
 
+/** Post author. The signed-in profile tab links back to itself. */
+export function postAuthorHref(
+  username: string,
+  pathname?: string | null,
+): string {
+  if (isProfileTabRoot(pathname))
+    return '/profile';
+  return userProfileHref(username, pathname);
+}
+
+export function userFriendsHref(
+  username: string,
+  pathname?: string | null,
+): string {
+  return `${userBasePath(pathname)}/${username}/friends`;
+}
+
 export function userProjectFeedHref(
   username: string,
   projectId: number,
@@ -80,7 +109,7 @@ export function userStashFeedHref(
   stashId: number,
   pathname?: string | null,
 ): string {
-  if (pathname?.startsWith('/profile'))
+  if (isProfileTabRoot(pathname))
     return `/profile/stash/${stashId}`;
   return `${userBasePath(pathname)}/${username}/stash/${stashId}`;
 }
@@ -91,7 +120,7 @@ export function userQueueFeedHref(
   queuedProjectId: number,
   pathname?: string | null,
 ): string {
-  if (pathname?.startsWith('/profile'))
+  if (isProfileTabRoot(pathname))
     return `/profile/queue/${queuedProjectId}`;
   return `${userBasePath(pathname)}/${username}/queue/${queuedProjectId}`;
 }

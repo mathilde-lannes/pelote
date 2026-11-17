@@ -69,6 +69,13 @@ export function UserStackLayout({ fallbackHref }: Props) {
           headerLeft: backToApp,
         }}
       />
+      <Stack.Screen
+        name="friends"
+        options={{
+          title: 'Friends',
+          headerLeft: backToApp,
+        }}
+      />
     </Stack>
   );
 }

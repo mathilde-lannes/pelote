@@ -16,6 +16,7 @@ export default function ProfileStackLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="yarn/[id]" />
       <Stack.Screen name="dyer/[id]" />
+      <Stack.Screen name="user/[username]" options={{ headerShown: false }} />
       <Stack.Screen
         name="stash/[id]"
         options={{
