@@ -127,7 +127,7 @@ export function ProfileScreen() {
       friendsLoading={profile.friendsPending}
       tab={profile.activeTab}
       onTabChange={profile.setTab}
-      showDesignsChip={profile.showDesignsChip}
+      showDesignsTab={profile.showDesignsChip}
       showSettings={profile.isOwnProfile}
     />
   );

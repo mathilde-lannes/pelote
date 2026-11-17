@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import * as React from 'react';
-import { Pressable, ScrollView } from 'react-native';
+import { Pressable } from 'react-native';
 
 import { ExpandableText } from '@/components/expandable-text';
 import { Text, View } from '@/components/ui';
@@ -10,10 +10,10 @@ import { ProfileCountSkeleton } from './profile-skeletons';
 
 export type ProfileTab = 'designs' | 'projects' | 'queued' | 'favourites' | 'stash';
 
-const PROFILE_CHIPS: { key: ProfileTab; label: string }[] = [
+const PROFILE_TABS: { key: ProfileTab; label: string }[] = [
   { key: 'projects', label: 'Projects' },
-  { key: 'queued', label: 'Queued' },
   { key: 'favourites', label: 'Favourites' },
+  { key: 'queued', label: 'Queued' },
   { key: 'stash', label: 'Stash' },
 ];
 
@@ -29,8 +29,8 @@ type Props = {
   friendsLoading: boolean;
   tab: ProfileTab;
   onTabChange: (tab: ProfileTab) => void;
-  /** Designs chip leads the row and is the default selection. */
-  showDesignsChip?: boolean;
+  /** Designs leads the row and is the default selection. */
+  showDesignsTab?: boolean;
   showSettings: boolean;
 };
 
@@ -58,28 +58,22 @@ function Stat({
   );
 }
 
-function ProfileChips({
+function ProfileTabs({
   tab,
   onTabChange,
-  showDesignsChip,
+  showDesignsTab,
 }: {
   tab: ProfileTab;
   onTabChange: (tab: ProfileTab) => void;
-  showDesignsChip: boolean;
+  showDesignsTab: boolean;
 }) {
-  const chips = showDesignsChip
-    ? [{ key: 'designs' as const, label: 'Designs' }, ...PROFILE_CHIPS]
-    : PROFILE_CHIPS;
+  const tabs = showDesignsTab
+    ? [{ key: 'designs' as const, label: 'Designs' }, ...PROFILE_TABS]
+    : PROFILE_TABS;
 
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      directionalLockEnabled
-      className="mt-3"
-      contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingBottom: 12 }}
-    >
-      {chips.map(({ key, label }) => {
+    <View className="mt-2 flex-row">
+      {tabs.map(({ key, label }) => {
         const selected = tab === key;
         return (
           <Pressable
@@ -88,14 +82,17 @@ function ProfileChips({
             accessibilityState={{ selected }}
             accessibilityLabel={label}
             onPress={() => onTabChange(key)}
-            testID={`profile-chip-${key}`}
-            className={`rounded-full px-3.5 py-1.5 ${
-              selected ? 'bg-white' : 'bg-ink-300'
+            testID={`profile-tab-${key}`}
+            className={`flex-1 items-center pt-3 pb-0 ${
+              selected
+                ? 'border-b-2 border-white'
+                : 'border-b-2 border-transparent'
             }`}
           >
             <Text
-              className={`text-sm font-semibold ${
-                selected ? 'text-black' : 'text-white'
+              numberOfLines={1}
+              className={`pb-3 text-sm font-semibold ${
+                selected ? 'text-white' : 'text-fog-500'
               }`}
             >
               {label}
@@ -103,7 +100,7 @@ function ProfileChips({
           </Pressable>
         );
       })}
-    </ScrollView>
+    </View>
   );
 }
 
@@ -118,7 +115,7 @@ export function ProfileHeader({
   friendsLoading,
   tab,
   onTabChange,
-  showDesignsChip = false,
+  showDesignsTab = false,
   showSettings,
 }: Props) {
   const router = useRouter();
@@ -179,10 +176,10 @@ export function ProfileHeader({
             </View>
           )
         : null}
-      <ProfileChips
+      <ProfileTabs
         tab={tab}
         onTabChange={onTabChange}
-        showDesignsChip={showDesignsChip}
+        showDesignsTab={showDesignsTab}
       />
     </View>
   );
