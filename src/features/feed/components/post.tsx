@@ -27,7 +27,10 @@ import { usePostFavorite } from '@/features/feed/use-post-favorite';
 import { YarnInfoSheet } from '@/features/yarn/yarn-info-sheet';
 
 function stripHtml(html: string): string {
-  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  return html
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function relativeDate(value: string | null | undefined): string {
@@ -64,9 +67,7 @@ function Stat({
       {icon}
       {count
         ? (
-            <Text className="text-sm font-bold text-white">
-              {count}
-            </Text>
+            <Text className="text-sm font-bold text-white">{count}</Text>
           )
         : null}
     </>
@@ -142,9 +143,7 @@ function PostHeader({
           )
         : (
             <View className="size-8 items-center justify-center rounded-full bg-ink-400">
-              <Text className="text-xs font-semibold text-ink-900">
-                {initial}
-              </Text>
+              <Text className="text-xs font-semibold text-ink-900">{initial}</Text>
             </View>
           )}
       <View className="min-w-0 flex-1">
@@ -167,15 +166,13 @@ function PostHeader({
       {profileHref
         ? (
             <Link href={profileHref as never} asChild>
-              <Pressable className="min-w-0 flex-1">
-                {identity}
-              </Pressable>
+              <Pressable className="min-w-0 flex-1">{identity}</Pressable>
             </Link>
           )
-        : identity}
-      {trailing
-        ? <View className="ml-3">{trailing}</View>
-        : null}
+        : (
+            identity
+          )}
+      {trailing ? <View className="ml-3">{trailing}</View> : null}
     </View>
   );
 }
@@ -242,7 +239,8 @@ export type QueuePostProps = PostBase & {
   projectsCount?: number | null;
 };
 
-export type PostProps = PatternPostProps | ProjectPostProps | YarnPostProps | QueuePostProps;
+export type PostProps
+  = PatternPostProps | ProjectPostProps | YarnPostProps | QueuePostProps;
 
 function PostStats({
   variant,
@@ -303,11 +301,7 @@ function PostStats({
         {yarnAction
           ?? (variant === 'pattern'
             ? (
-                <Stat
-                  icon={<Yarn color="#ffffff" />}
-                  count={yarns}
-                  label="Yarn"
-                />
+                <Stat icon={<Yarn color="#ffffff" />} count={yarns} label="Yarn" />
               )
             : null)}
       </View>
@@ -332,7 +326,6 @@ function PostCaption({
       {notes
         ? (
             <ExpandableText
-              prefix={authorName}
               text={notes}
               numberOfLines={1}
               className="text-sm text-fog-300"
@@ -355,9 +348,7 @@ function PostCaption({
           )}
       {relative
         ? (
-            <Text className="text-xs text-fog-500">
-              {relative}
-            </Text>
+            <Text className="text-xs text-fog-500">{relative}</Text>
           )
         : null}
     </View>
@@ -593,8 +584,13 @@ function favoriteTargetFor(props: PostProps): FavoriteTarget | null {
     return { type: 'pattern', id: props.patternId };
   if (props.variant === 'project')
     return { type: 'project', id: props.projectId };
-  if (props.variant === 'queue' && props.patternId != null && props.patternId > 0)
+  if (
+    props.variant === 'queue'
+    && props.patternId != null
+    && props.patternId > 0
+  ) {
     return { type: 'pattern', id: props.patternId };
+  }
   return null;
 }
 
@@ -620,9 +616,7 @@ function postTrailing(props: PostProps) {
   if (props.variant === 'yarn') {
     if (props.yarnId == null || props.yarnId <= 0)
       return null;
-    return (
-      <YarnInfoTrailing yarnId={props.yarnId} yarnName={props.yarnName} />
-    );
+    return <YarnInfoTrailing yarnId={props.yarnId} yarnName={props.yarnName} />;
   }
   return (
     <ProjectInfoTrailing
@@ -661,8 +655,13 @@ function postCaptionTitle(props: PostProps): string {
 function postProjectsHref(props: PostProps, pathname: string): string | null {
   if (props.variant === 'pattern')
     return patternProjectsHref(props.patternId, pathname);
-  if (props.variant === 'queue' && props.patternId != null && props.patternId > 0)
+  if (
+    props.variant === 'queue'
+    && props.patternId != null
+    && props.patternId > 0
+  ) {
     return patternProjectsHref(props.patternId, pathname);
+  }
   return null;
 }
 
@@ -716,9 +715,7 @@ export function Post(props: PostProps) {
   const notes = notesHtml ? stripHtml(notesHtml) : '';
   const relative
     = props.relative?.trim()
-      || (props.variant === 'pattern'
-        ? relativeDate(props.timelineDate)
-        : '');
+      || (props.variant === 'pattern' ? relativeDate(props.timelineDate) : '');
   const captionFallbackTitle = postCaptionTitle(props);
   const projectsHref = postProjectsHref(props, pathname);
   const unfavoriteTitle = `Remove “${captionFallbackTitle}” from favorites?`;
