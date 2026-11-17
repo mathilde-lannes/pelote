@@ -11,7 +11,7 @@ type Props = {
 };
 
 export function ProfileFollowButton({ followed, pending, onPress }: Props) {
-  const label = followed ? null : 'Add';
+  const label = followed ? null : 'Follow';
   const Icon = followed ? UserRoundCheck : UserRoundPlus;
 
   return (

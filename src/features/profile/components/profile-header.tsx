@@ -180,7 +180,7 @@ export function ProfileHeader({
             <Stat count={workCount} label={workLabel} loading={workLoading} />
             <Stat
               count={friendCount}
-              label="friends"
+              label="following"
               loading={friendsLoading}
               onPress={() => {
                 router.push(userFriendsHref(username, pathname) as never);
