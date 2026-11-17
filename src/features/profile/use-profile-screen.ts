@@ -28,14 +28,12 @@ function designerLabel(
 function useProfileLists({
   username,
   activeTab,
-  isOwnProfile,
   isDesignerProfile,
   designerPermalink,
   designerId,
 }: {
   username: string;
   activeTab: ProfileTab;
-  isOwnProfile: boolean;
   isDesignerProfile: boolean;
   designerPermalink: string;
   designerId?: number;
@@ -48,8 +46,7 @@ function useProfileLists({
   });
   const favoritesQuery = usePersonFavorites({
     variables: { username },
-    // Favourites are only loaded for the signed-in user's own profile.
-    enabled: enabled && isOwnProfile && activeTab === 'favourites',
+    enabled: enabled && activeTab === 'favourites',
   });
   const designsQuery = useDesignerPatterns({
     variables: {
@@ -127,7 +124,6 @@ export function useProfileScreen() {
   } = useProfileLists({
     username,
     activeTab,
-    isOwnProfile,
     isDesignerProfile,
     designerPermalink,
     designerId,
@@ -173,8 +169,7 @@ export function useProfileScreen() {
     friendCount: friendCountQuery.data ?? null,
     friendsPending: friendCountQuery.isPending,
     projectsPending: activeTab === 'projects' && projectsQuery.isPending,
-    favoritesPending:
-      activeTab === 'favourites' && isOwnProfile && favoritesQuery.isPending,
+    favoritesPending: activeTab === 'favourites' && favoritesQuery.isPending,
     designsPending: activeTab === 'designs' && designsQuery.isPending,
     stashPending: activeTab === 'stash' && stashQuery.isPending,
     queuePending: activeTab === 'queued' && queueQuery.isPending,
