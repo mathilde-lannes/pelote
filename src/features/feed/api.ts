@@ -1,14 +1,16 @@
 import type { AxiosError } from 'axios';
+import type { ActivityLink } from '@/lib/ravelry/activity-target';
 import type { FriendsActivityPage } from '@/lib/ravelry/api';
 import type {
   FriendActivity,
   RavelryProject,
   RavelryYarn,
 } from '@/lib/ravelry/types';
-import { createInfiniteQuery, createQuery } from 'react-query-kit';
 
+import { createInfiniteQuery, createQuery } from 'react-query-kit';
 import { useAuthStore } from '@/features/auth/use-auth-store';
 import {
+  fetchActivityTarget,
   fetchFriendsActivity,
   fetchProject,
   fetchYarnsByIds,
@@ -35,6 +37,15 @@ export const useFriendsActivity = createInfiniteQuery<
       ? undefined
       : lastPage.page + 1,
   initialPageParam: 1,
+});
+
+export const useActivityTarget = createQuery<
+  ActivityLink,
+  { uri: string; title: string | null; type: string },
+  AxiosError
+>({
+  queryKey: ['activity-target'],
+  fetcher: variables => fetchActivityTarget(variables),
 });
 
 export const useProject = createQuery<

@@ -196,6 +196,8 @@ export type FriendActivity = {
   pattern_id?: number | null;
   /** Activity target id. For a project photo this is the project id. */
   target_id?: number | null;
+  /** Documented URI for the target, e.g. `/projects/janesmith/mittens.json`. */
+  target_uri?: string | null;
 };
 
 export type FriendsActivityResponse = {

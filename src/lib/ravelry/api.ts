@@ -1,3 +1,5 @@
+import type { ActivityLink } from './activity-target';
+
 import type {
   CurrentUserResponse,
   FriendActivity,
@@ -19,8 +21,14 @@ import type {
   RavelryYarn,
   RavelryYarnCompany,
 } from './types';
-
 import { client } from '@/lib/api';
+import {
+  activityLinkFromPayload,
+  activityTargetPath,
+  matchPatternFromTitle,
+  parseActivityTargetUri,
+  patternHintFromTitle,
+} from './activity-target';
 import {
   normalizeCreatedAt,
   normalizeFavoritesCount,
@@ -386,7 +394,7 @@ function normalizeActivity(raw: any, index: number): FriendActivity {
       ?? payload.queued_project?.pattern_id
       ?? payload.queued_project?.pattern?.id
       ?? project?.pattern_id,
-    ),
+    ) ?? parseActivityTargetUri(raw.target_uri ?? payload.target_uri).patternId,
     target_id: positiveId(
       raw.target_id
       ?? payload.target_id
@@ -395,7 +403,12 @@ function normalizeActivity(raw: any, index: number): FriendActivity {
       ?? raw.project?.id
       ?? payload.project?.id,
     ),
+    target_uri: activityTargetUri(raw.target_uri ?? payload.target_uri),
   };
+}
+
+function activityTargetUri(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
 
 export async function fetchCurrentUser(): Promise<RavelryPerson> {

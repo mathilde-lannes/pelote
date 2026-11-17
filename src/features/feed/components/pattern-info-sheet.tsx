@@ -272,12 +272,16 @@ function PatternInfoBody({
   );
 }
 
-export function PatternInfoSheet({
-  ref,
+export function PatternInfoContent({
   patternId,
   patternName,
   enabled = false,
-}: Props & { ref?: React.RefObject<BottomSheetModal | null> }) {
+  onDismiss,
+  onTitle,
+}: Props & {
+  onDismiss: () => void;
+  onTitle?: (title: string) => void;
+}) {
   const pathname = usePathname();
   const query = usePattern({
     variables: { id: patternId },
@@ -304,6 +308,36 @@ export function PatternInfoSheet({
   const title = pattern?.name || patternName || 'Pattern info';
   const rows = pattern ? rowsForPattern(pattern) : [];
 
+  React.useEffect(() => {
+    onTitle?.(title);
+  }, [onTitle, title]);
+
+  return (
+    <PatternInfoBody
+      patternId={patternId}
+      title={title}
+      pattern={pattern}
+      rows={rows}
+      pending={query.isPending}
+      failed={query.isError}
+      designerName={designerName}
+      designerPhoto={designerPhoto}
+      designerLink={designerLink}
+      onDismiss={onDismiss}
+    />
+  );
+}
+
+export function PatternInfoSheet({
+  ref,
+  patternId,
+  patternName,
+  enabled = false,
+}: Props & { ref?: React.RefObject<BottomSheetModal | null> }) {
+  const [title, setTitle] = React.useState(patternName?.trim() || 'Pattern info');
+  const onTitle = React.useCallback((next: string) => {
+    setTitle(next);
+  }, []);
   const renderHandle = React.useCallback(
     () => (
       <View className="items-center border-b border-ink-300 bg-black pt-2 pb-3">
@@ -330,16 +364,11 @@ export function PatternInfoSheet({
         contentContainerStyle={{ paddingBottom: 32 }}
         className="bg-black"
       >
-        <PatternInfoBody
+        <PatternInfoContent
           patternId={patternId}
-          title={title}
-          pattern={pattern}
-          rows={rows}
-          pending={query.isPending}
-          failed={query.isError}
-          designerName={designerName}
-          designerPhoto={designerPhoto}
-          designerLink={designerLink}
+          patternName={patternName}
+          enabled={enabled}
+          onTitle={onTitle}
           onDismiss={() => ref?.current?.dismiss()}
         />
       </BottomSheetScrollView>
