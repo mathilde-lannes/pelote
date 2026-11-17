@@ -7,6 +7,7 @@ import {
   useDesignerPatterns,
   usePerson,
   usePersonFavorites,
+  usePersonFriendCount,
   usePersonProjects,
 } from './api';
 
@@ -48,7 +49,8 @@ export function useProfileScreen() {
   });
   const projectsQuery = usePersonProjects({
     variables: { username },
-    enabled: Boolean(username) && activeTab === 'projects',
+    // Non-designers show this total beside the photo, so keep it loaded.
+    enabled: Boolean(username) && (activeTab === 'projects' || !isDesignerProfile),
   });
   const favoritesQuery = usePersonFavorites({
     variables: { username },
@@ -61,7 +63,12 @@ export function useProfileScreen() {
       ...(designerPermalink ? { designerPermalink } : {}),
       ...(designerId != null ? { designerId } : {}),
     },
-    enabled: Boolean(username) && activeTab === 'designs',
+    // Designers show this total beside the photo, so keep it loaded.
+    enabled: Boolean(username) && (activeTab === 'designs' || isDesignerProfile),
+  });
+  const friendCountQuery = usePersonFriendCount({
+    variables: { username },
+    enabled: Boolean(username),
   });
 
   const person = personQuery.data;
@@ -88,6 +95,15 @@ export function useProfileScreen() {
     displayName: person?.username || username,
     avatarUrl: person?.photo_url ?? person?.small_photo_url ?? null,
     about: person?.about_me?.trim() || person?.first_name?.trim() || null,
+    workCount: isDesignerProfile
+      ? (designsQuery.data?.totalCount ?? null)
+      : (projectsQuery.data?.totalCount ?? null),
+    workLabel: isDesignerProfile ? 'designs' as const : 'projects' as const,
+    workPending: isDesignerProfile
+      ? designsQuery.isPending
+      : projectsQuery.isPending,
+    friendCount: friendCountQuery.data ?? null,
+    friendsPending: friendCountQuery.isPending,
     projectsPending: activeTab === 'projects' && projectsQuery.isPending,
     favoritesPending:
       activeTab === 'favourites' && isOwnProfile && favoritesQuery.isPending,

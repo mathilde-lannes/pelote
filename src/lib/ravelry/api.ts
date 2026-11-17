@@ -1033,7 +1033,7 @@ export async function fetchYarnColorways(
 function primaryPhotoFromStashEntry(raw: any): RavelryPhoto | null {
   return (
     normalizePhoto(raw?.first_photo)
-      ?? (Array.isArray(raw?.photos) ? normalizePhoto(raw.photos[0]) : null)
+    ?? (Array.isArray(raw?.photos) ? normalizePhoto(raw.photos[0]) : null)
   );
 }
 
@@ -1197,7 +1197,7 @@ export async function fetchYarnProjects(
   const { data } = await client.get('projects/search.json', {
     params: {
       page,
-      page_size: pageSize,
+      'page_size': pageSize,
       // Website project search yarn filter (`#yarn-link=`).
       'yarn-link': yarnKey,
     },
@@ -1256,13 +1256,13 @@ export async function fetchYarnCompany(options: {
     = (typeof id === 'number' && id > 0
       ? companies.find(company => company.id === id)
       : undefined)
-      ?? companies.find(company => company.name.toLowerCase() === needle)
-      ?? companies.find(
-        company => company.permalink?.toLowerCase() === needle,
-      )
-      ?? companies.find(company =>
-        company.name.toLowerCase().includes(needle))
-      ?? companies[0];
+    ?? companies.find(company => company.name.toLowerCase() === needle)
+    ?? companies.find(
+      company => company.permalink?.toLowerCase() === needle,
+    )
+    ?? companies.find(company =>
+      company.name.toLowerCase().includes(needle))
+    ?? companies[0];
 
   if (!match)
     throw new Error('Yarn company missing from response');
@@ -1469,6 +1469,18 @@ export async function fetchPatternProjects(
     { params: { page, page_size: pageSize } },
   );
   return projectsPageFromPayload(data, page, pageSize);
+}
+
+/** Friend total for a profile. Uses the documented friends list, without photo lookups. */
+export async function fetchFriendCount(username: string): Promise<number> {
+  const { data } = await client.get(
+    `people/${encodeURIComponent(username)}/friends/list.json`,
+  );
+  const totalRaw = data?.paginator?.results;
+  if (typeof totalRaw === 'number' && Number.isFinite(totalRaw))
+    return totalRaw;
+  const list = data?.friendships ?? data?.friends ?? [];
+  return Array.isArray(list) ? list.length : 0;
 }
 
 export async function fetchFriends(

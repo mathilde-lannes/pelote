@@ -6,6 +6,7 @@ import { Pressable, ScrollView } from 'react-native';
 import { ExpandableText } from '@/components/expandable-text';
 import { Text, View } from '@/components/ui';
 import { Settings as SettingsIcon } from '@/components/ui/icons';
+import { ProfileCountSkeleton } from './profile-skeletons';
 
 export type ProfileTab = 'designs' | 'projects' | 'queued' | 'favourites' | 'stash';
 
@@ -20,12 +21,41 @@ type Props = {
   username: string;
   avatarUrl: string | null;
   about: string | null;
+  workCount: number | null;
+  workLabel: 'designs' | 'projects';
+  workLoading: boolean;
+  friendCount: number | null;
+  friendsLoading: boolean;
   tab: ProfileTab;
   onTabChange: (tab: ProfileTab) => void;
   /** Designs chip leads the row and is the default selection. */
   showDesignsChip?: boolean;
   showSettings: boolean;
 };
+
+function Stat({
+  count,
+  label,
+  loading,
+}: {
+  count: number | null;
+  label: string;
+  loading?: boolean;
+}) {
+  if (loading)
+    return <ProfileCountSkeleton />;
+
+  return (
+    <View>
+      <Text className="text-base font-semibold text-white">
+        {count == null ? '—' : count}
+      </Text>
+      <Text className="text-sm text-fog-400">
+        {label}
+      </Text>
+    </View>
+  );
+}
 
 function ProfileChips({
   tab,
@@ -80,6 +110,11 @@ export function ProfileHeader({
   username,
   avatarUrl,
   about,
+  workCount,
+  workLabel,
+  workLoading,
+  friendCount,
+  friendsLoading,
   tab,
   onTabChange,
   showDesignsChip = false,
@@ -124,6 +159,10 @@ export function ProfileHeader({
                   </Pressable>
                 )
               : null}
+          </View>
+          <View className="mt-3 flex-row gap-6">
+            <Stat count={workCount} label={workLabel} loading={workLoading} />
+            <Stat count={friendCount} label="friends" loading={friendsLoading} />
           </View>
         </View>
       </View>

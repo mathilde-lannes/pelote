@@ -36,6 +36,15 @@ function SkeletonBlock({
   );
 }
 
+export function ProfileCountSkeleton() {
+  return (
+    <View className="gap-1.5">
+      <SkeletonBlock className="h-4 w-8 rounded-sm bg-ink-300" />
+      <SkeletonBlock className="h-3 w-14 rounded-sm bg-ink-200" delay={60} />
+    </View>
+  );
+}
+
 export function ProfileGridSkeleton({ rows = GRID_ROWS }: { rows?: number }) {
   const tiles = React.useMemo(
     () => Array.from({ length: PROFILE_GRID_COLS * rows }, (_, i) => i),
@@ -86,6 +95,10 @@ export function ProfileScreenSkeleton({
             {showSettings
               ? <SkeletonBlock className="size-6 rounded-sm bg-ink-300" delay={80} />
               : null}
+          </View>
+          <View className="mt-3 flex-row gap-6">
+            <ProfileCountSkeleton />
+            <ProfileCountSkeleton />
           </View>
         </View>
       </View>

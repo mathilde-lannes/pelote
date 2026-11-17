@@ -8,6 +8,7 @@ import type {
 import { createQuery } from 'react-query-kit';
 
 import {
+  fetchFriendCount,
   fetchPatternsByDesignerCandidates,
   fetchPerson,
   fetchPersonFavorites,
@@ -99,6 +100,15 @@ export const usePersonProjects = createQuery<
       totalCount: first.totalResults ?? all.length,
     };
   },
+});
+
+export const usePersonFriendCount = createQuery<
+  number,
+  { username: string },
+  AxiosError
+>({
+  queryKey: ['person-friend-count'],
+  fetcher: variables => fetchFriendCount(variables.username),
 });
 
 export const usePersonFavorites = createQuery<

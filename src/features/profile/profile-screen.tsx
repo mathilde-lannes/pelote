@@ -120,6 +120,11 @@ export function ProfileScreen() {
       username={profile.displayName}
       avatarUrl={profile.avatarUrl}
       about={profile.about}
+      workCount={profile.workCount}
+      workLabel={profile.workLabel}
+      workLoading={profile.workPending}
+      friendCount={profile.friendCount}
+      friendsLoading={profile.friendsPending}
       tab={profile.activeTab}
       onTabChange={profile.setTab}
       showDesignsChip={profile.showDesignsChip}
