@@ -31,18 +31,29 @@ export function useProfileScreen() {
       && Boolean(authUser?.username)
       && username.toLowerCase() === authUser!.username.toLowerCase();
 
+  /** Opened via designer link (`?designer=` / `designer_id`). */
+  const isDesignerProfile
+    = Boolean(designerPermalink) || designerId != null;
+  const showDesignsChip = isDesignerProfile;
+
+  const [tab, setTab] = React.useState<ProfileTab | null>(null);
+  const activeTab: ProfileTab
+    = tab != null && (tab !== 'designs' || showDesignsChip)
+      ? tab
+      : (showDesignsChip ? 'designs' : 'projects');
+
   const personQuery = usePerson({
     variables: { username },
     enabled: Boolean(username),
   });
   const projectsQuery = usePersonProjects({
     variables: { username },
-    enabled: Boolean(username),
+    enabled: Boolean(username) && activeTab === 'projects',
   });
   const favoritesQuery = usePersonFavorites({
     variables: { username },
     // Favourites are only loaded for the signed-in user's own profile.
-    enabled: Boolean(username) && isOwnProfile,
+    enabled: Boolean(username) && isOwnProfile && activeTab === 'favourites',
   });
   const designsQuery = useDesignerPatterns({
     variables: {
@@ -50,26 +61,13 @@ export function useProfileScreen() {
       ...(designerPermalink ? { designerPermalink } : {}),
       ...(designerId != null ? { designerId } : {}),
     },
-    enabled: Boolean(username),
+    enabled: Boolean(username) && activeTab === 'designs',
   });
 
   const person = personQuery.data;
   const projects = projectsQuery.data?.projects ?? [];
   const favorites = favoritesQuery.data?.favorites ?? [];
   const designs = designsQuery.data?.patterns ?? [];
-  const hasDesigns
-    = designs.length > 0
-      || ((designsQuery.data?.totalCount ?? 0) > 0);
-  /** Opened via designer link (`?designer=` / `designer_id`). */
-  const isDesignerProfile
-    = Boolean(designerPermalink) || designerId != null;
-  const showDesignsChip = isDesignerProfile || hasDesigns;
-
-  const [tab, setTab] = React.useState<ProfileTab | null>(null);
-  const activeTab: ProfileTab
-    = tab != null && (tab !== 'designs' || showDesignsChip)
-      ? tab
-      : (showDesignsChip ? 'designs' : 'projects');
 
   return {
     username,
@@ -90,17 +88,9 @@ export function useProfileScreen() {
     displayName: person?.username || username,
     avatarUrl: person?.photo_url ?? person?.small_photo_url ?? null,
     about: person?.about_me?.trim() || person?.first_name?.trim() || null,
-    projectCount: projectsQuery.isPending
-      ? null
-      : projectsQuery.data?.totalCount ?? null,
-    favouriteCount: favoritesQuery.isPending
-      ? null
-      : favoritesQuery.data?.totalCount ?? null,
-    designCount: designsQuery.isPending
-      ? null
-      : designsQuery.data?.totalCount ?? null,
-    projectsPending: projectsQuery.isPending,
-    favoritesPending: favoritesQuery.isPending,
-    designsPending: designsQuery.isPending,
+    projectsPending: activeTab === 'projects' && projectsQuery.isPending,
+    favoritesPending:
+      activeTab === 'favourites' && isOwnProfile && favoritesQuery.isPending,
+    designsPending: activeTab === 'designs' && designsQuery.isPending,
   };
 }

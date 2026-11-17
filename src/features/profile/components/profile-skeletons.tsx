@@ -36,15 +36,6 @@ function SkeletonBlock({
   );
 }
 
-export function ProfileCountSkeleton() {
-  return (
-    <View className="gap-1.5">
-      <SkeletonBlock className="h-4 w-8 rounded-sm bg-ink-300" />
-      <SkeletonBlock className="h-3 w-14 rounded-sm bg-ink-200" delay={60} />
-    </View>
-  );
-}
-
 export function ProfileGridSkeleton({ rows = GRID_ROWS }: { rows?: number }) {
   const tiles = React.useMemo(
     () => Array.from({ length: PROFILE_GRID_COLS * rows }, (_, i) => i),
@@ -89,19 +80,26 @@ export function ProfileScreenSkeleton({
     <View className="flex-1 bg-black pt-2">
       <View className="flex-row items-center gap-5 px-4 pb-2">
         <SkeletonBlock className="size-[86px] rounded-full bg-ink-300" />
-        <View className="min-w-0 flex-1 gap-3">
+        <View className="min-w-0 flex-1">
           <View className="flex-row items-start justify-between gap-3">
             <SkeletonBlock className="h-6 w-36 rounded-sm bg-ink-300" delay={40} />
             {showSettings
               ? <SkeletonBlock className="size-6 rounded-sm bg-ink-300" delay={80} />
               : null}
           </View>
-          <View className="flex-row gap-6">
-            <ProfileCountSkeleton />
-            <ProfileCountSkeleton />
-            <ProfileCountSkeleton />
-          </View>
+          {!showSettings
+            ? (
+                <View className="mt-3 flex-row gap-2">
+                  <SkeletonBlock className="h-9 flex-1 rounded-lg bg-ink-300" delay={50} />
+                  <SkeletonBlock className="h-9 flex-1 rounded-lg bg-ink-300" delay={70} />
+                </View>
+              )
+            : null}
         </View>
+      </View>
+      <View className="mt-2 mb-3 gap-1.5 px-4">
+        <SkeletonBlock className="h-3 w-full rounded-sm bg-ink-200" delay={60} />
+        <SkeletonBlock className="h-3 w-4/5 rounded-sm bg-ink-200" delay={100} />
       </View>
       <View className="mt-3 flex-row gap-2 px-4 pb-3">
         {chipWidths.map((width, index) => (

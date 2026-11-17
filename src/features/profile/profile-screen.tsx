@@ -8,10 +8,16 @@ import {
 import { ProfileHeader } from './components/profile-header';
 import { ProfileScreenSkeleton } from './components/profile-skeletons';
 import { ProfileTabLists } from './components/profile-tab-lists';
+import { useProfileFollow } from './use-profile-follow';
 import { useProfileScreen } from './use-profile-screen';
 
 export function ProfileScreen() {
   const profile = useProfileScreen();
+  const follow = useProfileFollow({
+    username: profile.username,
+    person: profile.person,
+    enabled: Boolean(profile.username) && !profile.isOwnProfile,
+  });
 
   if (!profile.username) {
     return (
@@ -56,18 +62,14 @@ export function ProfileScreen() {
       username={profile.displayName}
       avatarUrl={profile.avatarUrl}
       about={profile.about}
-      projectCount={profile.projectCount}
-      favouriteCount={profile.favouriteCount}
-      designCount={profile.designCount}
-      projectsLoading={profile.projectsPending}
-      favouritesLoading={profile.favoritesPending}
-      designsLoading={profile.designsPending}
       tab={profile.activeTab}
       onTabChange={profile.setTab}
-      showFavouritesTab={profile.isOwnProfile}
       showDesignsChip={profile.showDesignsChip}
-      designsTabFirst={profile.isDesignerProfile}
       showSettings={profile.isOwnProfile}
+      showActions={!profile.isOwnProfile}
+      followed={follow.followed}
+      followPending={follow.followPending}
+      onFollow={follow.onFollow}
     />
   );
 

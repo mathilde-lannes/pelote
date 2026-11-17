@@ -1,12 +1,11 @@
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import * as React from 'react';
-import { Pressable, ScrollView } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView } from 'react-native';
 
 import { ExpandableText } from '@/components/expandable-text';
 import { Text, View } from '@/components/ui';
 import { Settings as SettingsIcon } from '@/components/ui/icons';
-import { ProfileCountSkeleton } from './profile-skeletons';
 
 export type ProfileTab = 'designs' | 'projects' | 'queued' | 'favourites' | 'stash';
 
@@ -21,42 +20,79 @@ type Props = {
   username: string;
   avatarUrl: string | null;
   about: string | null;
-  projectCount: number | null;
-  favouriteCount: number | null;
-  designCount: number | null;
-  projectsLoading: boolean;
-  favouritesLoading: boolean;
-  designsLoading: boolean;
   tab: ProfileTab;
   onTabChange: (tab: ProfileTab) => void;
-  showFavouritesTab: boolean;
   /** Designs chip leads the row and is the default selection. */
   showDesignsChip?: boolean;
-  /** When true, the designs count leads the stats (designer profiles). */
-  designsTabFirst?: boolean;
   showSettings: boolean;
+  showActions?: boolean;
+  followed?: boolean;
+  followPending?: boolean;
+  onFollow?: () => void;
 };
 
-function Stat({
-  count,
+function ActionButton({
   label,
-  loading,
+  tone,
+  pending = false,
+  onPress,
+  testID,
 }: {
-  count: number | null;
   label: string;
-  loading?: boolean;
+  tone: 'primary' | 'secondary';
+  pending?: boolean;
+  onPress: () => void;
+  testID: string;
 }) {
-  if (loading)
-    return <ProfileCountSkeleton />;
-
   return (
-    <View>
-      <Text className="text-base font-semibold text-white">
-        {count == null ? '—' : count}
-      </Text>
-      <Text className="text-sm text-fog-400">
-        {label}
-      </Text>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled: pending, busy: pending }}
+      accessibilityLabel={label}
+      disabled={pending}
+      onPress={onPress}
+      testID={testID}
+      className={`h-9 flex-1 items-center justify-center rounded-lg ${
+        tone === 'primary' ? 'bg-[#0095F6]' : 'bg-ink-300'
+      }`}
+    >
+      {pending
+        ? <ActivityIndicator color="#ffffff" size="small" />
+        : (
+            <Text className="text-sm font-semibold text-white">
+              {label}
+            </Text>
+          )}
+    </Pressable>
+  );
+}
+
+function ProfileActions({
+  followed,
+  pending,
+  onFollow,
+  onMessage,
+}: {
+  followed: boolean;
+  pending: boolean;
+  onFollow: () => void;
+  onMessage: () => void;
+}) {
+  return (
+    <View className="mt-3 flex-row gap-2">
+      <ActionButton
+        label={followed ? 'Followed' : 'Follow'}
+        tone={followed ? 'secondary' : 'primary'}
+        pending={pending}
+        onPress={onFollow}
+        testID="profile-follow"
+      />
+      <ActionButton
+        label="Message"
+        tone="secondary"
+        onPress={onMessage}
+        testID="profile-message"
+      />
     </View>
   );
 }
@@ -114,23 +150,17 @@ export function ProfileHeader({
   username,
   avatarUrl,
   about,
-  projectCount,
-  favouriteCount,
-  designCount,
-  projectsLoading,
-  favouritesLoading,
-  designsLoading,
   tab,
   onTabChange,
-  showFavouritesTab,
   showDesignsChip = false,
-  designsTabFirst = false,
   showSettings,
+  showActions = false,
+  followed = false,
+  followPending = false,
+  onFollow,
 }: Props) {
   const router = useRouter();
   const initial = username.slice(0, 1).toUpperCase() || '?';
-  const showDesignsStat
-    = designsLoading || (designCount != null && designCount > 0);
 
   return (
     <View className="pt-2">
@@ -169,24 +199,16 @@ export function ProfileHeader({
                 )
               : null}
           </View>
-          <View className="mt-3 flex-row gap-6">
-            {designsTabFirst && showDesignsStat
-              ? <Stat count={designCount} label="designs" loading={designsLoading} />
-              : null}
-            <Stat count={projectCount} label="projects" loading={projectsLoading} />
-            {showFavouritesTab
-              ? (
-                  <Stat
-                    count={favouriteCount}
-                    label="favourites"
-                    loading={favouritesLoading}
-                  />
-                )
-              : null}
-            {!designsTabFirst && showDesignsStat
-              ? <Stat count={designCount} label="designs" loading={designsLoading} />
-              : null}
-          </View>
+          {showActions && onFollow
+            ? (
+                <ProfileActions
+                  followed={followed}
+                  pending={followPending}
+                  onFollow={onFollow}
+                  onMessage={() => router.push('/messages')}
+                />
+              )
+            : null}
         </View>
       </View>
       {about
